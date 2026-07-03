@@ -22,6 +22,10 @@ export class ClosedTasksComponent {
   newComment = '';
   fmt = formatDuration;
 
+  get totalTime() {
+    return this.timeEntries.reduce((sum, entry) => sum + (entry.duration || 0), 0);
+  }
+
   constructor(private location: Location, private apiService: ApiService, private route: ActivatedRoute) {
   }
 

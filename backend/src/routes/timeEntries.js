@@ -154,20 +154,13 @@ router.get('/task/:taskId', (req, res) => {
   }
 
   let entries;
-  if (admin) {
+  if (admin || assignee) {
     entries = db.prepare(`
       SELECT te.*, u.username as user_name FROM time_entries te
       JOIN users u ON u.id = te.user_id
       WHERE te.task_id = ? AND te.end IS NOT NULL
       ORDER BY te.start DESC
     `).all(taskId);
-  } else {
-    entries = db.prepare(`
-      SELECT te.*, u.name as user_name FROM time_entries te
-      JOIN users u ON u.id = te.user_id
-      WHERE te.task_id = ? AND te.user_id = ? AND te.end IS NOT NULL
-      ORDER BY te.start DESC
-    `).all(taskId, req.user.id);
   }
 
   res.json(entries);
@@ -229,9 +222,9 @@ router.get('/reports/team/:teamId', (req, res) => {
     JOIN tasks t ON t.id = te.task_id
     JOIN task_lists tl ON tl.id = t.task_list_id
     JOIN projects p ON p.id = tl.project_id
-    WHERE p.team_id = ? AND te.end IS NOT NULL ${userFilter}
+    WHERE p.team_id = ? AND te.end IS NOT NULL
     GROUP BY t.id ORDER BY total_seconds DESC
-  `).all(...params);
+  `).all(teamId);
 
   res.json({ byUser, byProject, byTask });
 });
@@ -281,9 +274,9 @@ router.get('/reports/project/:projectId', (req, res) => {
     FROM time_entries te
     JOIN tasks t ON t.id = te.task_id
     JOIN task_lists tl ON tl.id = t.task_list_id
-    WHERE tl.project_id = ? AND te.end IS NOT NULL ${userFilter}
+    WHERE tl.project_id = ? AND te.end IS NOT NULL
     GROUP BY t.id
-  `).all(...params);
+  `).all(projectId);
 
   res.json({ byUser, byTask });
 });
