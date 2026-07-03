@@ -1,6 +1,9 @@
+const dotent = require('dotenv')
+dotent.config();
+
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'timetrack-dev-secret-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET ;
 
 function authMiddleware(req, res, next) {
   const header = req.headers.authorization;
@@ -19,7 +22,7 @@ function authMiddleware(req, res, next) {
 
 function signToken(user) {
   return jwt.sign(
-    { id: user.id, email: user.email, name: user.name },
+    { id: user.id, email: user.email, username: user.username, profile: user.profile },
     JWT_SECRET,
     { expiresIn: '7d' }
   );

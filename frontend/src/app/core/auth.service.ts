@@ -25,9 +25,9 @@ export class AuthService {
     return !!this.token;
   }
 
-  register(email: string, password: string, name: string) {
+  register(email: string, password: string, username: string) {
     return this.http.post<{ user: User; token: string }>(`${API}/auth/register`, {
-      email, password, name,
+      email, password, username,
     }).pipe(tap(res => this.setSession(res)));
   }
 

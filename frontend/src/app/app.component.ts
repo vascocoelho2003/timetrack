@@ -29,7 +29,7 @@ import { TimerService, formatDuration } from './core/timer.service';
           </div>
         }
         <div class="header-user">
-          <span>{{ auth.currentUser()?.name }}</span>
+          <span>{{ auth.currentUser()?.username  }}</span>
           <button class="btn btn-ghost btn-sm" (click)="auth.logout()">Sair</button>
         </div>
       </header>

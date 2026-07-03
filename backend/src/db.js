@@ -12,24 +12,26 @@ db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
 function initDb() {
-  db.exec(`ola
+  db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
-      name TEXT NOT NULL,
+      profile TEXT NOT NULL DEFAULT 'user' CHECK(profile IN ('admin', 'user')),
+      active BOOLEAN NOT NULL DEFAULT 'True',
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS teams (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
+      active BOOLEAN NOT NULL DEFAULT 'TRUE',
       created_by INTEGER NOT NULL REFERENCES users(id),
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS team_members (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
       team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       role TEXT NOT NULL CHECK(role IN ('admin', 'member')),
@@ -41,6 +43,15 @@ function initDb() {
       team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
       description TEXT DEFAULT '',
+      active BOOLEAN NOT NULL DEFAULT 'TRUE',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS team_project (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      active BOOLEAN NOT NULL DEFAULT 'true',
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -48,13 +59,13 @@ function initDb() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
       name TEXT NOT NULL,
+      active BOOLEAN NOT NULL DEFAULT 'TRUE',
       position INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS tasks (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       task_list_id INTEGER NOT NULL REFERENCES task_lists(id) ON DELETE CASCADE,
-      parent_task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
       title TEXT NOT NULL,
       description TEXT DEFAULT '',
       status TEXT NOT NULL DEFAULT 'todo' CHECK(status IN ('todo', 'doing', 'done')),

@@ -6,86 +6,37 @@
         <h4>Closed Tasks</h4>
       </div>
       @for (task of closed_tasks; track task.id) {
-        <div class="task-card">
+        <div class="task-card" (click)="openTask(task.id)">
           <div class="task-title">{{ task.title }}</div>
             <div class="task-meta">
                 <span class="status-pill" [attr.data-status]="task.status">{{ statusLabel(task.status) }}</span>
-              <div>
             </div>
-          </div>
         </div>
       }
     </div>
     @if (selectedTask) {
       <div class="modal-overlay" (click)="closeTask()">
         <div class="modal card" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <h3>{{ isAdmin ? 'Editar tarefa' : 'Tarefa' }}</h3>
-            <button class="btn-icon" (click)="closeTask()">×</button>
-          </div>
-
-          @if (isAdmin) {
-            <label>Título</label>
-            <input [(ngModel)]="editTitle" />
-            <label>Descrição</label>
-            <textarea [(ngModel)]="editDescription" rows="3"></textarea>
-            <label>Estado</label>
-            <select [(ngModel)]="editStatus">
-              <option value="todo">Por fazer</option>
-              <option value="doing">Em progresso</option>
-              <option value="done">Concluída</option>
-            </select>
-            <label>Prioridade</label>
-            <select [(ngModel)]="editPriority">
-              <option value="low">Baixa</option>
-              <option value="medium">Média</option>
-              <option value="high">Alta</option>
-            </select>
-            <label>Prazo</label>
-            <input type="date" [(ngModel)]="editDueDate" />
-            <label>Atribuídos</label>
-            <div class="assignee-checks">
-              @for (m of members; track m.id) {
-                <label class="checkbox-label">
-                  <input type="checkbox"
-                    [checked]="editAssignees.includes(m.id)"
-                    (change)="toggleAssignee(m.id, $event)" />
-                  {{ m.name }}
-                </label>
-              }
-            </div>
- 
-          } @else {
             <h4>{{ selectedTask.title }}</h4>
             <p class="muted">{{ selectedTask.description || 'Sem descrição' }}</p>
-            <label>Estado</label>
-            <select [(ngModel)]="editStatus" (change)="saveStatusOnly()">
-              <option value="todo">A fazer</option>
-              <option value="doing">Em progresso</option>
-              <option value="done">Concluída</option>
-            </select>
-          }
-
-          @if (canTrackTime) {
-            <div class="timer-section">
-              <h4>Time tracking</h4>
-              @if (activeOnThisTask) {
-                <p class="timer-running">⏱ {{ fmt(timer.elapsedSeconds()) }}</p>
-                <button class="btn btn-danger" (click)="stopTimer()">Parar timer</button>
-              } @else {
-                <button class="btn btn-primary" (click)="startTimer()" [disabled]="!!timer.activeEntry()">
-                  Iniciar timer
-                </button>
-              }
-              @if (timeEntries.length) {
-                <ul class="time-list">
-                  @for (e of timeEntries; track e.id) {
-                    <li>{{ e.user_name }} — {{ fmt(e.duration || 0) }}</li>
-                  }
-                </ul>
-              }
+            <div class="detail-row">
+              <div><strong>Estado:</strong> {{ statusLabel(selectedTask.status) }}</div>
+              <div><strong>Prioridade:</strong> {{ selectedTask.priority }}</div>
+              <div><strong>Prazo:</strong> {{ selectedTask.due_date || 'Sem prazo' }}</div>
             </div>
-          }
+
+          <div class="time-entries-section">
+            <h4>Registos de tempo</h4>
+            @if (timeEntries.length) {
+              <ul class="time-list">
+                @for (entry of timeEntries; track entry.id) {
+                  <li>{{ entry.user_name || 'Unknown' }} — {{ fmt(entry.duration || 0) }}</li>
+                }
+              </ul>
+            } @else {
+              <p>Sem registos de tempo.</p>
+            }
+          </div>
 
           <div class="comments-section">
             <h4>Comentários</h4>
@@ -93,9 +44,6 @@
               <div class="comment">
                 <div class="comment-header">
                   <strong>{{ c.user_name }}</strong>
-                  @if (c.user_id === auth.currentUser()?.id) {
-                    <a href="#" class="delete-link" (click)="deleteComment(c.id); $event.preventDefault()" title="Eliminar comentário">x</a>
-                  }
                 </div>
                 <p>{{ c.content }}</p>
               </div>
@@ -105,26 +53,12 @@
               <button class="btn btn-primary" (click)="postComment()">Enviar</button>
             </div>
           </div>
-
           @if (isAdmin) {
-            <div class="subtasks-section">
-              <h4>Subtarefas</h4>
-              @for (st of selectedTask.subtasks || []; track st.id) {
-                <div class="subtask-row">{{ st.title }} — {{ statusLabel(st.status) }}</div>
-              }
-              <div class="inline-form">
-                <input [(ngModel)]="newSubtaskTitle" placeholder="Nova subtarefa" />
-                <button class="btn btn-ghost" (click)="createSubtask()">Adicionar</button>
-              </div>
+            <div class="modal-actions">
+              <button class="btn btn-primary" (click)="reopenTask()" [disabled]="selectedTask.status !== 'done'">Reabrir Tarefa</button>
+              <button class="btn btn-danger" (click)="deleteTask()">Eliminar</button>
             </div>
           }
-            <br>
-             <div class="modal-actions">
-              <button class="btn btn-primary" (click)="saveTask()">Guardar</button>
-              @if (isAdmin) {
-                <button class="btn btn-danger" (click)="deleteTask()">Eliminar</button>
-              }
-            </div>
         </div>
       </div>
     }

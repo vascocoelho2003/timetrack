@@ -103,11 +103,11 @@ router.get('/:teamId/members', (req, res) => {
   }
 
   const members = db.prepare(`
-    SELECT u.id, u.email, u.name, tm.role
+    SELECT u.id, u.email, u.username, tm.role
     FROM team_members tm
     JOIN users u ON u.id = tm.user_id
     WHERE tm.team_id = ?
-    ORDER BY u.name
+    ORDER BY u.username
   `).all(teamId);
 
   res.json(members);
@@ -159,14 +159,14 @@ router.post('/:teamId/members', (req, res) => {
     return res.status(400).json({ error: 'Role inválida' });
   }
 
-  const user = db.prepare('SELECT id, email, name FROM users WHERE email = ?')
+  const user = db.prepare('SELECT id, email, username FROM users WHERE email = ?')
     .get(email.trim().toLowerCase());
   if (!user) {
     return res.status(404).json({ error: 'Utilizador não encontrado. Deve registar-se primeiro.' });
   }
 
   const existing = db.prepare(
-    'SELECT id FROM team_members WHERE team_id = ? AND user_id = ?'
+    'SELECT * FROM team_members WHERE team_id = ? AND user_id = ?'
   ).get(teamId, user.id);
   if (existing) {
     return res.status(409).json({ error: 'Utilizador já pertence à equipa' });

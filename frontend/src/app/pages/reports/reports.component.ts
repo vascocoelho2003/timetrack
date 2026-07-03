@@ -16,7 +16,7 @@ import { ReportData } from '../../core/models';
       @if (report) {
         <div class="report-grid">
           <div class="card section">
-            <h3>Por utilizador</h3>
+            <h3>Relatórios por utilizador</h3>
             @if (report.byUser.length === 0) { <p class="muted">Sem dados</p> }
             @for (r of report.byUser; track r.id) {
               <div class="report-row">
@@ -26,7 +26,7 @@ import { ReportData } from '../../core/models';
             }
           </div>
           <div class="card section">
-            <h3>Por projeto</h3>
+            <h3>Relatório do projeto</h3>
             @if (report.byProject.length === 0) { <p class="muted">Sem dados</p> }
             @for (r of report.byProject; track r.id) {
               <div class="report-row">
@@ -36,7 +36,7 @@ import { ReportData } from '../../core/models';
             }
           </div>
           <div class="card section">
-            <h3>Por tarefa</h3>
+            <h3>Relatório de tarefa</h3>
             @if (report.byTask.length === 0) { <p class="muted">Sem dados</p> }
             @for (r of report.byTask; track r.id) {
               <div class="report-row">

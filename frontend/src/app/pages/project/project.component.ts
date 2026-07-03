@@ -89,7 +89,7 @@ import { Project, TaskList, Task, TeamMember, TimeEntry, Comment } from '../../c
                     <input type="checkbox"
                       [checked]="editAssignees.includes(m.id)"
                       (change)="toggleAssignee(m.id, $event)" />
-                    {{ m.name }}
+                    {{ m.username }}
                   </label>
                 }
               </div>
@@ -144,19 +144,6 @@ import { Project, TaskList, Task, TeamMember, TimeEntry, Comment } from '../../c
                 <button class="btn btn-primary" (click)="postComment()">Enviar</button>
               </div>
             </div>
-
-            @if (isAdmin) {
-              <div class="subtasks-section">
-                <h4>Subtarefas</h4>
-                @for (st of selectedTask.subtasks || []; track st.id) {
-                  <div class="subtask-row">{{ st.title }} — {{ statusLabel(st.status) }}</div>
-                }
-                <div class="inline-form">
-                  <input [(ngModel)]="newSubtaskTitle" placeholder="Nova subtarefa" />
-                  <button class="btn btn-ghost" (click)="createSubtask()">Adicionar</button>
-                </div>
-              </div>
-            }
               <br>
                <div class="modal-actions">
                 <button class="btn btn-primary" (click)="saveTask()">Guardar</button>
@@ -191,7 +178,7 @@ import { Project, TaskList, Task, TeamMember, TimeEntry, Comment } from '../../c
                   <input type="checkbox"
                     [checked]="newTaskAssignees.includes(m.id)"
                     (change)="toggleNewAssignee(m.id, $event)" />
-                  {{ m.name }}
+                  {{ m.username }}
                 </label>
               }
             </div>
@@ -226,7 +213,6 @@ export class ProjectComponent implements OnInit {
   editDueDate = '';
   editAssignees: number[] = [];
   newComment = '';
-  newSubtaskTitle = '';
   timeEntries: TimeEntry[] = [];
   fmt = formatDuration;
 
@@ -235,7 +221,9 @@ export class ProjectComponent implements OnInit {
     private api: ApiService,
     public auth: AuthService,
     public timer: TimerService,
-  ) {}
+  ) {
+    
+  }
 
   get canTrackTime(): boolean {
     if (!this.selectedTask) return false;
@@ -374,7 +362,11 @@ export class ProjectComponent implements OnInit {
   refreshTaskInBoard(task: Task) {
     const listId = task.task_list_id;
     const arr = this.tasksByList[listId] || [];
-    this.tasksByList[listId] = arr.map(t => t.id === task.id ? { ...t, ...task } : t);
+    if (task.status === 'done') {
+      this.tasksByList[listId] = arr.filter(t => t.id !== task.id);
+    } else {
+      this.tasksByList[listId] = arr.map(t => t.id === task.id ? { ...t, ...task } : t);
+    }
   }
 
   startTimer() {
@@ -404,17 +396,6 @@ export class ProjectComponent implements OnInit {
     });
   }
 
-  createSubtask() {
-    if (!this.selectedTask || !this.newSubtaskTitle.trim()) return;
-    this.api.createTask({
-      taskListId: this.selectedTask.task_list_id,
-      title: this.newSubtaskTitle,
-      parentTaskId: this.selectedTask.id,
-    }).subscribe(st => {
-      this.selectedTask!.subtasks = [...(this.selectedTask!.subtasks || []), st];
-      this.newSubtaskTitle = '';
-    });
-  }
 
   deleteList(listId: number) {
     if (confirm('Tem a certeza que quer eliminar esta lista?')) {

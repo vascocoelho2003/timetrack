@@ -156,7 +156,7 @@ router.get('/task/:taskId', (req, res) => {
   let entries;
   if (admin) {
     entries = db.prepare(`
-      SELECT te.*, u.name as user_name FROM time_entries te
+      SELECT te.*, u.username as user_name FROM time_entries te
       JOIN users u ON u.id = te.user_id
       WHERE te.task_id = ? AND te.end IS NOT NULL
       ORDER BY te.start DESC
@@ -203,7 +203,7 @@ router.get('/reports/team/:teamId', (req, res) => {
   const params = admin ? [teamId] : [teamId, req.user.id];
 
   const byUser = db.prepare(`
-    SELECT u.id, u.name, COALESCE(SUM(te.duration), 0) as total_seconds
+    SELECT u.id, u.username, COALESCE(SUM(te.duration), 0) as total_seconds
     FROM time_entries te
     JOIN tasks t ON t.id = te.task_id
     JOIN task_lists tl ON tl.id = t.task_list_id

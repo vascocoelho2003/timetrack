@@ -32,7 +32,7 @@ import { Project, TeamMember } from '../../core/models';
             @for (m of members; track m.id) {
               <li>
                 <div class="member-item">
-                  <span>{{ m.name }} ({{ m.email }})</span>
+                  <span>{{ m.username }} ({{ m.email }})</span>
                   <span class="badge" [class.badge-admin]="m.role === 'admin'">
                     {{ m.role === 'admin' ? 'Admin' : 'Membro' }}
                   </span>

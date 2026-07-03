@@ -82,9 +82,9 @@ router.post('/', (req, res) => {
   }
 
   const result = db.prepare(`
-    INSERT INTO tasks (task_list_id, parent_task_id, title, description, status, priority, due_date)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(taskListId, parentTaskId, title.trim(), description.trim(), status, priority, dueDate);
+    INSERT INTO tasks (task_list_id, title, description, status, priority, due_date)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(taskListId, title.trim(), description.trim(), status, priority, dueDate);
 
   const taskId = result.lastInsertRowid;
   setAssignees(taskId, assigneeIds);
@@ -123,11 +123,11 @@ router.get('/:taskId', (req, res) => {
     .all(taskId).map(r => r.user_id);
 
   const subtasks = db.prepare(
-    'SELECT * FROM tasks WHERE parent_task_id = ? ORDER BY created_at'
-  ).all(taskId);
+    'SELECT * FROM tasks ORDER BY created_at'
+  ).all();
 
   const comments = db.prepare(`
-    SELECT c.*, u.name as user_name
+    SELECT c.*, u.username as user_name
     FROM comments c JOIN users u ON u.id = c.user_id
     WHERE c.task_id = ? ORDER BY c.created_at
   `).all(taskId);
@@ -302,7 +302,7 @@ router.post('/:taskId/comments', (req, res) => {
   ).run(taskId, req.user.id, content.trim());
 
   const comment = db.prepare(`
-    SELECT c.*, u.name as user_name FROM comments c
+    SELECT c.*, u.username as user_name FROM comments c
     JOIN users u ON u.id = c.user_id WHERE c.id = ?
   `).get(result.lastInsertRowid);
 
@@ -375,5 +375,11 @@ router.get('/:projectId/get_closed_tasks', (req, res) => {
     SELECT * FROM tasks WHERE status = 'done' AND task_list_id IN (SELECT id FROM task_lists WHERE project_id = ?)`).all(projectId);
   return res.status(200).json(tasks)
 });
+
+router.get('',(req,res)=>{
+  const tasks = db.prepare(`SELECT * FROM tasks`).all()
+
+  return res.status(200).json(tasks)
+})
 
 module.exports = router;

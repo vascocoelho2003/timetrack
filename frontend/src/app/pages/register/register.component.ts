@@ -15,7 +15,7 @@ import { AuthService } from '../../core/auth.service';
         @if (error) { <div class="alert">{{ error }}</div> }
         <form (ngSubmit)="submit()">
           <label>Nome</label>
-          <input type="text" [(ngModel)]="name" name="name" required />
+          <input type="text" [(ngModel)]="username" name="username" required />
           <label>Email</label>
           <input type="email" [(ngModel)]="email" name="email" required />
           <label>Password</label>
@@ -31,7 +31,7 @@ import { AuthService } from '../../core/auth.service';
   `,
 })
 export class RegisterComponent {
-  name = '';
+  username = '';
   email = '';
   password = '';
   error = '';
@@ -42,7 +42,7 @@ export class RegisterComponent {
   submit() {
     this.error = '';
     this.loading = true;
-    this.auth.register(this.email, this.password, this.name).subscribe({
+    this.auth.register(this.email, this.password, this.username).subscribe({
       next: () => this.router.navigate(['/teams']),
       error: (err) => {
         this.loading = false;
