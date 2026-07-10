@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { Project, TeamMember } from '../../core/models';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-team',
@@ -89,7 +90,7 @@ export class TeamComponent implements OnInit {
   projectName = '';
   projectDesc = '';
 
-  constructor(private route: ActivatedRoute, private api: ApiService) {}
+  constructor(private route: ActivatedRoute, private api: ApiService, private http: HttpClient) {}
 
   ngOnInit() {
     this.teamId = +this.route.snapshot.paramMap.get('id')!;

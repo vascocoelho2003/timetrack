@@ -11,6 +11,7 @@ const projectRoutes = require('./routes/projects');
 const taskListRoutes = require('./routes/taskLists');
 const taskRoutes = require('./routes/tasks');
 const timeEntryRoutes = require('./routes/timeEntries');
+const importRoutes = require('./routes/import');
 const { swaggerSpec } = require('./swagger');
 
 const dataDir = path.join(__dirname, '..', 'data');
@@ -37,12 +38,26 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/task-lists', taskListRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/time', timeEntryRoutes);
+app.use('/api', importRoutes)
 
 app.use((err, _req, res, _next) => {
   console.error(err);
   res.status(500).json({ error: 'Erro interno do servidor' });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`TimeTrack API a correr em http://localhost:${PORT}`);
+});
+
+server.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    const fallbackPort = Number(PORT) + 1;
+    console.warn(`Porta ${PORT} ocupada. A tentar ${fallbackPort}...`);
+    app.listen(fallbackPort, () => {
+      console.log(`TimeTrack API a correr em http://localhost:${fallbackPort}`);
+    });
+  } else {
+    console.error(error);
+    process.exit(1);
+  }
 });

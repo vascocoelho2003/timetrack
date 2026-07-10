@@ -1,20 +1,65 @@
 <div class="page project-page">
 <a [routerLink]="['/projects', projectId]" class="back-link">← Voltar</a>
-<div class="board">
-    <div class="board-column card">
-      <div class="column-header">
-        <h4>Closed Tasks</h4>
-      </div>
-      @for (task of closed_tasks; track task.id) {
-        <div class="task-card" (click)="openTask(task.id)">
-          <div class="task-title">{{ task.title }}</div>
-            <div class="task-meta">
-                <span class="status-pill" [attr.data-status]="task.status">{{ statusLabel(task.status) }}</span>
-            </div>
-        </div>
-      }
+<div class="closed-tasks-panel card">
+  <div class="closed-tasks-header">
+    <div>
+      <h2>Closed Tasks</h2>
+      <p class="subtitle">Veja todas as tarefas concluídas e filtre por lista ou prazo.</p>
     </div>
-    @if (selectedTask) {
+    <div class="closed-tasks-summary">{{ displayedTasks.length }} tarefas encontradas</div>
+  </div>
+  <div class="filters">
+    <label>
+      TaskList
+      <select [(ngModel)]="selectedTaskListId">
+        <option [ngValue]="0">Todas</option>
+        @for (list of taskLists; track list.id) {
+          <option [ngValue]="list.id">{{ list.name }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Data
+      <select [(ngModel)]="dateFilter">
+        <option value="all">Todas</option>
+        <option value="week">Última semana</option>
+        <option value="month">Último mês</option>
+        <option value="year">Último ano</option>
+        <option value="range">Intervalo de datas</option>
+      </select>
+    </label>
+    @if (dateFilter === 'range') {
+      <label>
+        Data início
+        <input type="date" [(ngModel)]="fromDate" />
+      </label>
+      <label>
+        Data fim
+        <input type="date" [(ngModel)]="toDate" />
+      </label>
+    }
+  </div>
+  @if (!displayedTasks.length) {
+    <div class="empty-state card">
+      <p>Não há tarefas fechadas correspondentes aos filtros selecionados.</p>
+    </div>
+  }
+  <div class="tasks-grid">
+    @for (task of displayedTasks; track task.id) {
+      <div class="task-card" (click)="openTask(task.id)">
+        <div class="task-card-top">
+          <div class="task-title">{{ task.title }}</div>
+          <span class="status-pill" [attr.data-status]="task.status">{{ statusLabel(task.status) }}</span>
+        </div>
+        <div class="task-card-meta">
+          <span class="meta-item">Prazo: {{ formatDateDMY(task.due_date) }}</span>
+          <span class="meta-item">Lista: {{ task.task_list_id }}</span>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+@if (selectedTask) {
       <div class="modal-overlay" (click)="closeTask()">
         <div class="modal card" (click)="$event.stopPropagation()">
             <h4>{{ selectedTask.title }}</h4>
@@ -22,7 +67,7 @@
             <div class="detail-row">
               <div><strong>Estado:</strong> {{ statusLabel(selectedTask.status) }}</div>
               <div><strong>Prioridade:</strong> {{ selectedTask.priority }}</div>
-              <div><strong>Prazo:</strong> {{ selectedTask.due_date || 'Sem prazo' }}</div>
+              <div><strong>Prazo:</strong> {{ formatDateDMY(selectedTask.due_date) }}</div>
             </div>
 
           <div class="time-entries-section">
@@ -65,5 +110,4 @@
         </div>
       </div>
     }
-</div>
 </div>

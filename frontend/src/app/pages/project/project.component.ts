@@ -5,6 +5,8 @@ import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { TimerService, formatDuration } from '../../core/timer.service';
 import { Project, TaskList, Task, TeamMember, TimeEntry, Comment } from '../../core/models';
+import * as XLSX from 'xlsx';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-project',
@@ -12,6 +14,7 @@ import { Project, TaskList, Task, TeamMember, TimeEntry, Comment } from '../../c
   imports: [FormsModule, RouterLink],
   template: `
     <div class="page project-page">
+    
       <a [routerLink]="['/teams', project?.team_id]" class="back-link">← Equipa</a>
       <div class="page-header">
         <h2>{{ project?.name }}</h2>
@@ -20,8 +23,16 @@ import { Project, TaskList, Task, TeamMember, TimeEntry, Comment } from '../../c
           <button class="btn btn-ghost" [routerLink]="['/projects', project?.id, 'closed-tasks']">Closed Tasks</button>
           <button class="btn btn-danger btn-sm" (click)="deleteProject()" title="Eliminar projeto">Eliminar projeto</button>
         }
+      </div>  
+      <div class="inline-form file-upload-row" style="display:flex;align-items:center;gap:8px;">
+        <input type="file" id="excelFile" accept=".xlsx,.xls" (change)="onFileSelected($event)" style="display:none;" />
+        <label for="excelFile" class="btn btn-ghost">Escolher ficheiro</label>
+        @if (selectedFileName) {
+          <span class="muted">{{ selectedFileName }}</span>
+        }
+        <button class="btn btn-primary" (click)="submitExcel()" [disabled]="!selectedFile">Submeter</button>
       </div>
-
+      
       @if (showNewList && isAdmin) {
         <div class="card inline-form">
           <input [(ngModel)]="newListName" placeholder="Nome da lista" />
@@ -215,12 +226,15 @@ export class ProjectComponent implements OnInit {
   newComment = '';
   timeEntries: TimeEntry[] = [];
   fmt = formatDuration;
+  selectedFile: File | null = null;
+  selectedFileName = '';
 
   constructor(
     private route: ActivatedRoute,
     private api: ApiService,
     public auth: AuthService,
     public timer: TimerService,
+    private http: HttpClient
   ) {
     
   }
@@ -411,5 +425,53 @@ export class ProjectComponent implements OnInit {
     this.api.deleteProject(this.project.id).subscribe(() => {
       window.location.href = `/teams/${this.project!.team_id}`;
     });
+  }
+
+  onFileSelected(event: any) {
+    const target: DataTransfer = <DataTransfer>event.target;
+    if (!target.files || target.files.length !== 1) {
+      this.selectedFile = null;
+      this.selectedFileName = '';
+      return;
+    }
+    this.selectedFile = target.files[0];
+    this.selectedFileName = this.selectedFile.name;
+  }
+
+  submitExcel() {
+    if (!this.selectedFile || !this.project) return;
+
+    const reader: FileReader = new FileReader();
+    reader.onload = (e: any) => {
+      const binaryStr: string = e.target.result;
+      const workbook = XLSX.read(binaryStr, { type: 'binary' });
+
+      workbook.SheetNames.forEach(sheetName => {
+        const worksheet = workbook.Sheets[sheetName];
+        const data = XLSX.utils.sheet_to_json(worksheet);
+
+        this.http.post(
+          `http://localhost:3000/api/import/${this.project?.team_id}/${this.project?.id}`,
+          data
+        ).subscribe({
+          next: () => {
+            console.log(`Importação da folha "${sheetName}" concluída.`);
+            this.selectedFile = null;
+            this.selectedFileName = '';
+            this.reloadBoard();
+          },
+          error: err => {
+            console.error(`Erro ao importar a folha "${sheetName}"`, err);
+          }
+        });
+      });
+    };
+
+    reader.readAsBinaryString(this.selectedFile);
+  }
+
+  reloadBoard() {
+    if (!this.project) return;
+    this.loadBoard(this.project.id);
   }
 }

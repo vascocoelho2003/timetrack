@@ -206,7 +206,7 @@ router.put('/:taskId', (req, res) => {
       WHERE id = ?
     `).run(
       title?.trim() ?? null,
-      description !== undefined ? description.trim() : null,
+      description !== undefined ? (description !== null ? description.trim() : null) : null,
       status ?? null,
       priority ?? null,
       dueDate !== undefined ? dueDate : null,

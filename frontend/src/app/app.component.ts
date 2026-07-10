@@ -20,7 +20,10 @@ import { TimerService, formatDuration } from './core/timer.service';
           <a routerLink="/projects" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Projetos</a>
         </nav>
         <nav>
-          <a routerLink="/teams" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">&nbsp;&nbsp;Equipas</a>
+          <a routerLink="/teams" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Equipas</a>
+        </nav>
+        <nav>
+          <a routerLink="/teams" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Calendário</a>
         </nav>
         @if (timer.activeEntry(); as active) {
           <div class="header-timer">
