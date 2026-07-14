@@ -17,6 +17,7 @@ import { TimerService, formatDuration } from './core/timer.service';
           <a routerLink="/reports" class="nav-link" [class.active]="isActive('/reports')">Dashboard</a>
           <a routerLink="/teams" class="nav-link" [class.active]="isActive('/teams')">Calendário</a>
           <a routerLink="/projects" class="nav-link" [class.active]="isActive('/projects')">Projetos</a>
+          <a routerLink="/my-tasks" class="nav-link" [class.active]="isActive('/my-tasks')">Tarefas</a>
         </nav>
         @if (timer.activeEntry(); as active) {
           <div class="header-timer">

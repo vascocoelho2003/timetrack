@@ -19,6 +19,10 @@ import { environment } from '../../../environments/environments';
       <a [routerLink]="['/teams', project?.team_id]" class="back-link">← Equipa</a>
       <div class="page-header">
         <h2>{{ project?.name }}</h2>
+        <div class="inline-form" style="gap:8px;">
+          <button class="btn btn-ghost" [class.active]="viewMode === 'board'" (click)="viewMode = 'board'">Quadro</button>
+          <button class="btn btn-ghost" [class.active]="viewMode === 'list'" (click)="viewMode = 'list'">Lista</button>
+        </div>
         @if (isAdmin) {
           <button class="btn btn-ghost" (click)="showNewList = !showNewList">+ Lista</button>
           <button class="btn btn-ghost" [routerLink]="['/projects', project?.id, 'closed-tasks']">Closed Tasks</button>
@@ -41,31 +45,85 @@ import { environment } from '../../../environments/environments';
         </div>
       }
 
-      <div class="board">
-        @for (list of lists; track list.id) {
-          <div class="board-column card">
-            <div class="column-header">
-              <h4>{{ list.name }}</h4>
-              <div class="column-actions">
-                @if (isAdmin) {
-                  <button class="btn-icon" (click)="openNewTask(list.id)" title="Nova tarefa">+</button>
-                  <button class="btn-icon btn-danger" (click)="deleteList(list.id)" title="Eliminar lista">🗑</button>
-                }
-              </div>
-            </div>
-            @for (task of tasksByList[list.id] || []; track task.id) {
-              <div class="task-card" (click)="openTask(task.id)">
-                <div class="task-title">{{ task.title }}</div>
-                <div class="task-meta">
-                <div class="status-pill">{{ formatDate(task.due_date) }}</div>
-                  <span class="status-pill" [attr.data-status]="task.status">{{ statusLabel(task.status) }}</span>
-                  <span class="priority-pill" [attr.data-priority]="task.priority">{{ task.priority }}</span>
+      @if (viewMode === 'board') {
+        <div class="board">
+          @for (list of lists; track list.id) {
+            <div class="board-column card">
+              <div class="column-header">
+                <h4>{{ list.name }}</h4>
+                <div class="column-actions">
+                  @if (isAdmin) {
+                    <button class="btn-icon" (click)="openNewTask(list.id)" title="Nova tarefa">+</button>
+                    <button class="btn-icon btn-danger" (click)="deleteList(list.id)" title="Eliminar lista">🗑</button>
+                  }
                 </div>
               </div>
-            }
+              @for (task of tasksByList[list.id] || []; track task.id) {
+                <div class="task-card" (click)="openTask(task.id)">
+                  <div class="task-title">{{ task.title }}</div>
+                  <div class="task-meta">
+                  <div class="status-pill">{{ formatDate(task.due_date) }}</div>
+                    <span class="status-pill" [attr.data-status]="task.status">{{ statusLabel(task.status) }}</span>
+                    <span class="priority-pill" [attr.data-priority]="task.priority">{{ task.priority }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="card">
+          <div class="inline-form" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px;">
+            <input [(ngModel)]="listSearch" placeholder="Pesquisa" />
+            <select [(ngModel)]="listFilterList">
+              <option value="">Todas as listas</option>
+              @for (list of lists; track list.id) {
+                <option [value]="list.id">{{ list.name }}</option>
+              }
+            </select>
+            <select [(ngModel)]="listFilterStatus">
+              <option value="">Todos os estados</option>
+              <option value="todo">Por fazer</option>
+              <option value="doing">Em progresso</option>
+            </select>
+            <select [(ngModel)]="listFilterPriority">
+              <option value="">Todas as prioridades</option>
+              <option value="low">Baixa</option>
+              <option value="medium">Média</option>
+              <option value="high">Alta</option>
+            </select>
+            <select [(ngModel)]="listFilterDueDate">
+              <option value="">Todos os prazos</option>
+              <option value="today">Hoje</option>
+              <option value="week">Esta semana</option>
+              <option value="overdue">Atrasadas</option>
+            </select>
           </div>
-        }
-      </div>
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:8px;padding:8px 0;border-bottom:1px solid #e5e7eb;font-weight:600;">
+            <span>Tarefa</span>
+            <span>Lista</span>
+            <span>Estado</span>
+            <span>Prazo</span>
+            <span>Prioridade</span>
+          </div>
+          @for (entry of pagedListViewTasks; track entry.task.id) {
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:8px;padding:10px 0;border-bottom:1px solid #f3f4f6;cursor:pointer;" (click)="openTask(entry.task.id)">
+              <span>{{ entry.task.title }}</span>
+              <span>{{ entry.listName }}</span>
+              <span class="status-pill" [attr.data-status]="entry.task.status">{{ statusLabel(entry.task.status) }}</span>
+              <span>{{ formatDate(entry.task.due_date) }}</span>
+              <span class="priority-pill" [attr.data-priority]="entry.task.priority">{{ entry.task.priority }}</span>
+            </div>
+          }
+          @if (totalListPages > 1) {
+            <div class="inline-form" style="justify-content:center;margin-top:12px;gap:8px;">
+              <button class="btn btn-ghost" [disabled]="listPage === 1" (click)="listPage = listPage - 1">Anterior</button>
+              <span class="muted">Página {{ listPage }} de {{ totalListPages }}</span>
+              <button class="btn btn-ghost" [disabled]="listPage === totalListPages" (click)="listPage = listPage + 1">Seguinte</button>
+            </div>
+          }
+        </div>
+      }
 
       @if (selectedTask) {
         <div class="modal-overlay" (click)="closeTask()">
@@ -154,6 +212,7 @@ import { environment } from '../../../environments/environments';
                     <option value="monthly">Mensal</option>
                     <option value="yearly">Anual</option>
                   </select>
+                  <br>
                   <label>Intervalo</label>
                   <input type="number" min="1" [(ngModel)]="recurrenceInterval" />
                 </div>
@@ -262,6 +321,7 @@ export class ProjectComponent implements OnInit {
   members: TeamMember[] = [];
   isAdmin = false;
   showNewList = false;
+  viewMode: 'board' | 'list' = 'board';
 
   newListName = '';
   showNewTaskForm = false;
@@ -292,6 +352,13 @@ export class ProjectComponent implements OnInit {
   recurrenceStartDate = '';
   recurrenceEndDate = '';
   recurrenceMessage = '';
+  listSearch = '';
+  listFilterList = '';
+  listFilterStatus = '';
+  listFilterPriority = '';
+  listFilterDueDate = '';
+  listPage = 1;
+  listPageSize = 10;
 
   constructor(
     private route: ActivatedRoute,
@@ -341,6 +408,54 @@ export class ProjectComponent implements OnInit {
 
   statusLabel(s: string) {
     return { todo: 'Por fazer', doing: 'Em progresso', done: 'Concluída' }[s] || s;
+  }
+
+  get listViewTasks(): Array<{ task: Task; listName: string }> {
+    const rows: Array<{ task: Task; listName: string }> = [];
+    for (const list of this.lists) {
+      for (const task of this.tasksByList[list.id] || []) {
+        rows.push({ task, listName: list.name });
+      }
+    }
+    return rows;
+  }
+
+  get filteredListViewTasks(): Array<{ task: Task; listName: string }> {
+    const search = this.listSearch.trim().toLowerCase();
+    return this.listViewTasks.filter(({ task, listName }) => {
+      const matchesList = !this.listFilterList || this.listFilterList === String(task.task_list_id);
+      const matchesStatus = !this.listFilterStatus || task.status === this.listFilterStatus;
+      const matchesPriority = !this.listFilterPriority || task.priority === this.listFilterPriority;
+      const matchesSearch = !search || task.title.toLowerCase().includes(search) || listName.toLowerCase().includes(search);
+
+      let matchesDueDate = true;
+      if (this.listFilterDueDate && task.due_date) {
+        const due = new Date(task.due_date);
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+        if (this.listFilterDueDate === 'today') {
+          matchesDueDate = due >= startOfToday && due < new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
+        } else if (this.listFilterDueDate === 'week') {
+          matchesDueDate = due >= startOfWeek && due < new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000);
+        } else if (this.listFilterDueDate === 'overdue') {
+          matchesDueDate = due < startOfToday;
+        }
+      } else if (this.listFilterDueDate && !task.due_date) {
+        matchesDueDate = false;
+      }
+
+      return matchesList && matchesStatus && matchesPriority && matchesSearch && matchesDueDate;
+    });
+  }
+
+  get totalListPages(): number {
+    return Math.max(1, Math.ceil(this.filteredListViewTasks.length / this.listPageSize));
+  }
+
+  get pagedListViewTasks(): Array<{ task: Task; listName: string }> {
+    const start = (this.listPage - 1) * this.listPageSize;
+    return this.filteredListViewTasks.slice(start, start + this.listPageSize);
   }
 
   formatDate(value: string | null) {
