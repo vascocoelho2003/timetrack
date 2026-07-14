@@ -13,6 +13,8 @@ const taskRoutes = require('./routes/tasks');
 const timeEntryRoutes = require('./routes/timeEntries');
 const importRoutes = require('./routes/import');
 const { swaggerSpec } = require('./swagger');
+const dotenv = require('dotenv');
+dotenv.config();
 
 const dataDir = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -20,7 +22,8 @@ if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 initDb();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
+const URI = process.env.URI;
 
 app.use(cors({ origin: 'http://localhost:4200', credentials: true }));
 app.use(express.json());
@@ -46,7 +49,7 @@ app.use((err, _req, res, _next) => {
 });
 
 const server = app.listen(PORT, () => {
-  console.log(`TimeTrack API a correr em http://localhost:${PORT}`);
+  console.log(`TimeTrack API a correr em ${URI}:${PORT}`);
 });
 
 server.on('error', (error) => {
@@ -54,7 +57,7 @@ server.on('error', (error) => {
     const fallbackPort = Number(PORT) + 1;
     console.warn(`Porta ${PORT} ocupada. A tentar ${fallbackPort}...`);
     app.listen(fallbackPort, () => {
-      console.log(`TimeTrack API a correr em http://localhost:${fallbackPort}`);
+      console.log(`TimeTrack API a correr em ${URI}:${fallbackPort}`);
     });
   } else {
     console.error(error);

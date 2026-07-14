@@ -55,6 +55,7 @@ function getTaskWithContext(taskId) {
   `).get(taskId);
 }
 
+
 function canViewTask(userId, taskId) {
   const task = getTaskWithContext(taskId);
   if (!task) return false;
@@ -77,6 +78,8 @@ function attachAssignees(tasks) {
   }));
 }
 
+
+
 module.exports = {
   getTeamMembership,
   isTeamAdmin,
@@ -88,5 +91,5 @@ module.exports = {
   getTaskWithContext,
   canViewTask,
   getAssigneeIds,
-  attachAssignees,
+  attachAssignees
 };

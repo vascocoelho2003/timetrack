@@ -1,4 +1,5 @@
 const swaggerJsdoc = require('swagger-jsdoc');
+const URI = process.env.URI;
 
 const options = {
   definition: {
@@ -10,7 +11,7 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:3000',
+        url: URI,
         description: 'Servidor local',
       },
     ],

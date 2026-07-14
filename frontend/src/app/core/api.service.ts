@@ -3,8 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import {
   Team, TeamMember, Project, TaskList, Task, TimeEntry, ReportData, Comment,
 } from './models';
+import {environment} from '../../environments/environments';
 
-const API = 'http://localhost:3000/api';
+const API = environment.apiUrl;
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -80,6 +81,9 @@ export class ApiService {
   }
   deleteComment(taskId: number, commentId: number) {
     return this.http.delete(`${API}/tasks/${taskId}/comments/${commentId}`);
+  }
+  createRecurrence(taskId: number, data: Record<string, unknown>) {
+    return this.http.post<{ message: string }>(`${API}/tasks/recurrence/${taskId}`, data);
   }
 
   // Time

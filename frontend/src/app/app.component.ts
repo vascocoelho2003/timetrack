@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from './core/auth.service';
 import { TimerService, formatDuration } from './core/timer.service';
 
@@ -13,17 +13,10 @@ import { TimerService, formatDuration } from './core/timer.service';
         <a routerLink="/teams" class="logo">
           JC Ribeiro - Task Management
         </a>
-        <nav>
-          <a routerLink="/reports" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">&nbsp;&nbsp;Dashboard</a>
-        </nav>
-        <nav>
-          <a routerLink="/projects" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Projetos</a>
-        </nav>
-        <nav>
-          <a routerLink="/teams" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Equipas</a>
-        </nav>
-        <nav>
-          <a routerLink="/teams" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Calendário</a>
+        <nav class="header-nav">
+          <a routerLink="/reports" class="nav-link" [class.active]="isActive('/reports')">Dashboard</a>
+          <a routerLink="/teams" class="nav-link" [class.active]="isActive('/teams')">Calendário</a>
+          <a routerLink="/projects" class="nav-link" [class.active]="isActive('/projects')">Projetos</a>
         </nav>
         @if (timer.activeEntry(); as active) {
           <div class="header-timer">
@@ -45,9 +38,13 @@ import { TimerService, formatDuration } from './core/timer.service';
 export class AppComponent implements OnInit {
   fmt = formatDuration;
 
-  constructor(public auth: AuthService, public timer: TimerService) {}
+  constructor(public auth: AuthService, public timer: TimerService, private router: Router) {}
 
   ngOnInit() {
     if (this.auth.isLoggedIn) this.timer.refresh();
+  }
+
+  isActive(path: string): boolean {
+    return this.router.url.startsWith(path);
   }
 }

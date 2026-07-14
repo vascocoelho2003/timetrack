@@ -1,6 +1,7 @@
 const express = require('express');
 const { db } = require('../db');
 const { authMiddleware } = require('../middleware/auth');
+const { createRecurrency, recurrenceRuleExists, getRecurrency } = require('../controllers/recurrency_controller');
 const {
   isTeamAdmin,
   canViewTask,
@@ -140,6 +141,12 @@ router.get('/:taskId', (req, res) => {
   });
 });
 
+router.get('/recurrenceexists/:taskId/', (req, res) => {
+  const taskId = +req.params.taskId;
+  const exists = recurrenceRuleExists(taskId);
+  return res.status(200).json({ exists });
+});
+
 /**
  * @openapi
  * /api/tasks/{taskId}:
@@ -182,6 +189,7 @@ router.get('/:taskId', (req, res) => {
  *         description: Tarefa atualizada
  */
 router.put('/:taskId', (req, res) => {
+
   const taskId = +req.params.taskId;
   const ctx = getTaskWithContext(taskId);
   if (!ctx) return res.status(404).json({ error: 'Tarefa não encontrada' });
@@ -213,11 +221,19 @@ router.put('/:taskId', (req, res) => {
       taskId
     );
     if (assigneeIds !== undefined) setAssignees(taskId, assigneeIds);
+    if (status === 'done' && recurrenceRuleExists(taskId)) {
+      console.log("ola")
+      createRecurrency(taskId);
+    }
   } else {
     if (status === undefined) {
       return res.status(400).json({ error: 'Utilizadores só podem alterar o estado' });
     }
     db.prepare('UPDATE tasks SET status = ? WHERE id = ?').run(status, taskId);
+    if (status === 'done' && recurrenceRuleExists(taskId)===true) {
+      console.log("ola")
+      createRecurrency(taskId);
+    }
   }
 
   const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId);
@@ -381,5 +397,87 @@ router.get('',(req,res)=>{
 
   return res.status(200).json(tasks)
 })
+
+/**
+ * @openapi
+ * /api/tasks/recurrence/{taskId}:
+ *   post:
+ *     tags: [Tasks]
+ *     summary: Cria uma regra de recorrência para uma tarefa
+ *     description: Cria uma regra de recorrência para uma tarefa existente.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: taskId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [frequency, interval, start_date]
+ *             properties:
+ *               frequency:
+ *                 type: string
+ *                 enum: [daily, weekly, monthly, yearly]
+ *               interval:
+ *                 type: integer
+ *               weekday:
+ *                 type: string
+ *                 enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+ *               day_of_month:
+ *                 type: integer
+ *               month_of_year:
+ *                 type: integer
+ *               start_date:
+ *                 type: string
+ *                 format: date-time
+ *               end_date:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       201:
+ *         description: Regra de recorrência criada com sucesso
+ */
+router.post('/recurrence/:taskId', (req,res)=>{
+  const taskId = +req.params.taskId;
+  const { frequency, interval, weekday, day_of_month, month_of_year, start_date, end_date, rule_type } = req.body;
+
+  exists = recurrenceRuleExists(taskId);
+  if(exists){
+    return res.status(400).json({ message: 'Regra de recorrência já existe para esta tarefa' });
+  }
+
+  db.prepare(`
+    INSERT INTO recurrence_rules (task_id, frequency, interval, weekday, day_of_month, month_of_year, start_date, end_date, rule_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(taskId, frequency, interval, weekday, day_of_month, month_of_year, start_date, end_date, rule_type);
+
+  res.status(201).json({ message: 'Regra de recorrência criada com sucesso' });
+});
+
+router.put('/change_recurrence_status/:taskId', (req, res) => {
+  const taskId = +req.params.taskId;
+  const task = getTaskWithContext(taskId);
+  const recurrence = getRecurrency(task);
+
+  if (!recurrence) {
+    return res.status(404).json({ message: 'Regra de recorrência não encontrada' });
+  }
+
+  const isActive = recurrence.active === 1 || recurrence.active === true || String(recurrence.active).toLowerCase() === 'true';
+
+  if (isActive) {
+    db.prepare('UPDATE recurrence_rules SET active = ? WHERE task_id = ?').run(0, taskId);
+    return res.status(200).json({ message: 'Regra de recorrência desativada com sucesso' });
+  }
+
+  db.prepare('UPDATE recurrence_rules SET active = ? WHERE task_id = ?').run(1, taskId);
+  return res.status(200).json({ message: 'Regra de recorrência ativada com sucesso' });
+});
 
 module.exports = router;

@@ -3,8 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs/operators';
 import { User } from './models';
+import {environment} from '../../environments/environments';
 
-const API = 'http://localhost:3000/api';
+const API = environment.apiUrl;
 const TOKEN_KEY = 'timetrack_token';
 const USER_KEY = 'timetrack_user';
 

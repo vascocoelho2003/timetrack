@@ -7,6 +7,7 @@ import { TimerService, formatDuration } from '../../core/timer.service';
 import { Project, TaskList, Task, TeamMember, TimeEntry, Comment } from '../../core/models';
 import * as XLSX from 'xlsx';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environments';
 
 @Component({
   selector: 'app-project',
@@ -56,7 +57,7 @@ import { HttpClient } from '@angular/common/http';
               <div class="task-card" (click)="openTask(task.id)">
                 <div class="task-title">{{ task.title }}</div>
                 <div class="task-meta">
-                <div class="status-pill">{{ task.due_date }}</div>
+                <div class="status-pill">{{ formatDate(task.due_date) }}</div>
                   <span class="status-pill" [attr.data-status]="task.status">{{ statusLabel(task.status) }}</span>
                   <span class="priority-pill" [attr.data-priority]="task.priority">{{ task.priority }}</span>
                 </div>
@@ -133,6 +134,60 @@ import { HttpClient } from '@angular/common/http';
                       <li>{{ e.user_name }} — {{ fmt(e.duration || 0) }}</li>
                     }
                   </ul>
+                }
+              </div>
+            }
+
+            @if (isAdmin) {
+              <div class="comments-section">
+                <h4>Recorrência</h4>
+                <div class="inline-form">
+                  <label>Tipo</label>
+                  <select [(ngModel)]="recurrenceRuleType">
+                    <option value="fixed_day">Dia fixo</option>
+                    <option value="business_day">Dia útil</option>
+                  </select>
+                  <label>Frequência</label>
+                  <select [(ngModel)]="recurrenceFrequency">
+                    <option value="daily">Diária</option>
+                    <option value="weekly">Semanal</option>
+                    <option value="monthly">Mensal</option>
+                    <option value="yearly">Anual</option>
+                  </select>
+                  <label>Intervalo</label>
+                  <input type="number" min="1" [(ngModel)]="recurrenceInterval" />
+                </div>
+                @if (recurrenceFrequency === 'weekly') {
+                  <label>Dia da semana</label>
+                  <select [(ngModel)]="recurrenceWeekday">
+                    <option value="monday">Segunda</option>
+                    <option value="tuesday">Terça</option>
+                    <option value="wednesday">Quarta</option>
+                    <option value="thursday">Quinta</option>
+                    <option value="friday">Sexta</option>
+                    <option value="saturday">Sábado</option>
+                    <option value="sunday">Domingo</option>
+                  </select>
+                }
+                @if (recurrenceFrequency === 'monthly' || recurrenceFrequency === 'yearly') {
+                  <div class="inline-form">
+                    <label>Dia do mês</label>
+                    <input type="number" min="1" max="31" [(ngModel)]="recurrenceDayOfMonth" />
+                    @if (recurrenceFrequency === 'yearly') {
+                      <label>Mês</label>
+                      <input type="number" min="1" max="12" [(ngModel)]="recurrenceMonthOfYear" />
+                    }
+                  </div>
+                }
+                <div class="inline-form">
+                  <label>Data início</label>
+                  <input type="date" [(ngModel)]="recurrenceStartDate" />
+                  <label>Data fim</label>
+                  <input type="date" [(ngModel)]="recurrenceEndDate" />
+                </div>
+                <button class="btn btn-primary" (click)="createRecurrence()">Criar recorrência</button>
+                @if (recurrenceMessage) {
+                  <p class="muted">{{ recurrenceMessage }}</p>
                 }
               </div>
             }
@@ -228,6 +283,15 @@ export class ProjectComponent implements OnInit {
   fmt = formatDuration;
   selectedFile: File | null = null;
   selectedFileName = '';
+  recurrenceRuleType = 'fixed_day';
+  recurrenceFrequency = 'daily';
+  recurrenceInterval = 1;
+  recurrenceWeekday = 'monday';
+  recurrenceDayOfMonth = 1;
+  recurrenceMonthOfYear = 1;
+  recurrenceStartDate = '';
+  recurrenceEndDate = '';
+  recurrenceMessage = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -277,6 +341,13 @@ export class ProjectComponent implements OnInit {
 
   statusLabel(s: string) {
     return { todo: 'Por fazer', doing: 'Em progresso', done: 'Concluída' }[s] || s;
+  }
+
+  formatDate(value: string | null) {
+    if (!value) return 'Sem prazo';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Sem prazo';
+    return date.toLocaleDateString('pt-PT');
   }
 
   createList() {
@@ -329,6 +400,7 @@ export class ProjectComponent implements OnInit {
       this.editPriority = task.priority;
       this.editDueDate = task.due_date?.slice(0, 10) || '';
       this.editAssignees = [...task.assigneeIds];
+      this.resetRecurrenceForm();
       this.api.getTaskTimeEntries(taskId).subscribe(e => this.timeEntries = e);
     });
   }
@@ -361,6 +433,50 @@ export class ProjectComponent implements OnInit {
     if (!this.selectedTask) return;
     this.api.updateTask(this.selectedTask.id, { status: this.editStatus as Task['status'] })
       .subscribe(updated => this.refreshTaskInBoard(updated));
+  }
+
+  resetRecurrenceForm() {
+    this.recurrenceRuleType = 'fixed_day';
+    this.recurrenceFrequency = 'daily';
+    this.recurrenceInterval = 1;
+    this.recurrenceWeekday = 'monday';
+    this.recurrenceDayOfMonth = 1;
+    this.recurrenceMonthOfYear = 1;
+    this.recurrenceStartDate = this.editDueDate;
+    this.recurrenceEndDate = '';
+    this.recurrenceMessage = '';
+  }
+
+  createRecurrence() {
+    if (!this.selectedTask) return;
+
+    const payload: Record<string, unknown> = {
+      frequency: this.recurrenceFrequency,
+      interval: this.recurrenceInterval,
+      start_date: this.recurrenceStartDate || this.editDueDate || null,
+      end_date: this.recurrenceEndDate || null,
+      rule_type: this.recurrenceRuleType,
+    };
+
+    if (this.recurrenceFrequency === 'weekly') {
+      payload['weekday'] = this.recurrenceWeekday;
+    }
+    if (this.recurrenceFrequency === 'monthly') {
+      payload['day_of_month'] = this.recurrenceDayOfMonth;
+    }
+    if (this.recurrenceFrequency === 'yearly') {
+      payload['day_of_month'] = this.recurrenceDayOfMonth;
+      payload['month_of_year'] = this.recurrenceMonthOfYear;
+    }
+
+    this.api.createRecurrence(this.selectedTask.id, payload).subscribe({
+      next: () => {
+        this.recurrenceMessage = 'Recorrência criada com sucesso.';
+      },
+      error: (err) => {
+        this.recurrenceMessage = err?.error?.message || 'Não foi possível criar a recorrência.';
+      }
+    });
   }
 
   deleteTask() {
@@ -451,7 +567,7 @@ export class ProjectComponent implements OnInit {
         const data = XLSX.utils.sheet_to_json(worksheet);
 
         this.http.post(
-          `http://localhost:3000/api/import/${this.project?.team_id}/${this.project?.id}`,
+          `${environment.apiUrl}/import/${this.project?.team_id}/${this.project?.id}`,
           data
         ).subscribe({
           next: () => {

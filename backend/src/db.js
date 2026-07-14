@@ -66,12 +66,29 @@ function initDb() {
     CREATE TABLE IF NOT EXISTS tasks (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       task_list_id INTEGER NOT NULL REFERENCES task_lists(id) ON DELETE CASCADE,
+      parent_task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
       title TEXT NOT NULL,
       description TEXT DEFAULT '',
       status TEXT NOT NULL DEFAULT 'todo' CHECK(status IN ('todo', 'doing', 'done')),
       priority TEXT NOT NULL DEFAULT 'medium' CHECK(priority IN ('low', 'medium', 'high')),
       due_date TEXT,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      completed_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS recurrence_rules(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id INTEGER UNIQUE NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    frequency TEXT NOT NULL CHECK(frequency IN ('daily', 'weekly', 'monthly', 'yearly')),
+    interval INTEGER NOT NULL DEFAULT 1,
+    weekday TEXT CHECK(weekday IN ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')),
+    day_of_month INTEGER CHECK(day_of_month BETWEEN 1 AND 31),
+    month_of_year INTEGER CHECK(month_of_year BETWEEN 1 AND 12),
+    start_date TEXT NOT NULL DEFAULT (datetime('now')),
+    end_date TEXT,
+    active BOOLEAN NOT NULL DEFAULT 'TRUE',
+    rule_type TEXT CHECK(rule_type IN ('fixed_day', 'business_day')) NOT NULL DEFAULT 'fixed_day',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS task_assignees (
