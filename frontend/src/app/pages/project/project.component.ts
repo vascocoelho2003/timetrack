@@ -8,10 +8,13 @@ import { Project, TaskList, Task, TeamMember, TimeEntry, Comment } from '../../c
 import * as XLSX from 'xlsx';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environments';
+import {MatCheckboxModule} from '@angular/material/checkbox';
+import { MatCheckboxChange } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-project',
   standalone: true,
+<<<<<<< Updated upstream
   imports: [FormsModule, RouterLink],
   template: `
     <div class="page project-page">
@@ -255,6 +258,13 @@ import { environment } from '../../../environments/environments';
     </div>
   `,
 })
+=======
+  imports: [FormsModule, RouterLink,MatCheckboxModule],
+  styleUrls: ['./project.component.css'],
+  templateUrl: './project.component.html',
+  })
+
+>>>>>>> Stashed changes
 export class ProjectComponent implements OnInit {
   project: Project | null = null;
   lists: TaskList[] = [];
@@ -262,7 +272,12 @@ export class ProjectComponent implements OnInit {
   members: TeamMember[] = [];
   isAdmin = false;
   showNewList = false;
+<<<<<<< Updated upstream
 
+=======
+  viewMode: 'board' | 'list' = 'board';
+  showOnlyMyTasks = false;
+>>>>>>> Stashed changes
   newListName = '';
   showNewTaskForm = false;
   newTaskListId = 0;
@@ -300,7 +315,31 @@ export class ProjectComponent implements OnInit {
     public timer: TimerService,
     private http: HttpClient
   ) {
-    
+  }
+
+  toggleTaskFilter(event: MatCheckboxChange) {
+    if (this.isAdmin) {
+      this.showOnlyMyTasks = event.checked;
+    } else {
+      this.showOnlyMyTasks = !event.checked;
+    }
+  }
+
+  getTasksForList(listId: number): Task[] {
+    const tasks = this.tasksByList[listId] || [];
+
+    if (!this.showOnlyMyTasks) {
+      return tasks;
+    }
+    const userId = this.currentUserId;
+    return tasks.filter(task =>
+      task.assigneeIds?.includes(userId!)
+    );
+  }
+
+
+  get currentUserId(): number | undefined{
+    return this.auth.currentUser()?.id;
   }
 
   get canTrackTime(): boolean {
@@ -323,9 +362,16 @@ export class ProjectComponent implements OnInit {
         this.isAdmin = t?.role === 'admin';
       });
       this.api.getTeamMembers(p.team_id).subscribe(m => this.members = m);
+      this.api.getTeams().subscribe(teams => {
+        const t = teams.find(x => x.id === p.team_id);
+        this.isAdmin = t?.role === 'admin';
+      
+        this.showOnlyMyTasks = !this.isAdmin;
+      });
     });
     this.loadBoard(projectId);
     this.timer.refresh();
+    
   }
 
   loadBoard(projectId: number) {
@@ -343,6 +389,59 @@ export class ProjectComponent implements OnInit {
     return { todo: 'Por fazer', doing: 'Em progresso', done: 'Concluída' }[s] || s;
   }
 
+<<<<<<< Updated upstream
+=======
+  get listViewTasks(): Array<{ task: Task; listName: string }> {
+    const rows: Array<{ task: Task; listName: string }> = [];
+    for (const list of this.lists) {
+      for (const task of this.tasksByList[list.id] || []) {
+        rows.push({ task, listName: list.name });
+      }
+    }
+    return rows;
+  }
+
+  get filteredListViewTasks(): Array<{ task: Task; listName: string }> {
+    const search = this.listSearch.trim().toLowerCase();
+    return this.listViewTasks.filter(({ task, listName }) => {
+      
+      const userId = this.currentUserId;
+      const matchesMyTasks =!this.showOnlyMyTasks ||task.assigneeIds?.includes(userId!);
+      const matchesList = !this.listFilterList || this.listFilterList === String(task.task_list_id);
+      const matchesStatus = !this.listFilterStatus || task.status === this.listFilterStatus;
+      const matchesPriority = !this.listFilterPriority || task.priority === this.listFilterPriority;
+      const matchesSearch = !search || task.title.toLowerCase().includes(search) || listName.toLowerCase().includes(search);
+
+      let matchesDueDate = true;
+      if (this.listFilterDueDate && task.due_date) {
+        const due = new Date(task.due_date);
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+        if (this.listFilterDueDate === 'today') {
+          matchesDueDate = due >= startOfToday && due < new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
+        } else if (this.listFilterDueDate === 'week') {
+          matchesDueDate = due >= startOfWeek && due < new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000);
+        } else if (this.listFilterDueDate === 'overdue') {
+          matchesDueDate = due < startOfToday;
+        }
+      } else if (this.listFilterDueDate && !task.due_date) {
+        matchesDueDate = false;
+      }
+      return matchesMyTasks && matchesList && matchesStatus && matchesPriority && matchesSearch && matchesDueDate;
+    });
+  }
+
+  get totalListPages(): number {
+    return Math.max(1, Math.ceil(this.filteredListViewTasks.length / this.listPageSize));
+  }
+
+  get pagedListViewTasks(): Array<{ task: Task; listName: string }> {
+    const start = (this.listPage - 1) * this.listPageSize;
+    return this.filteredListViewTasks.slice(start, start + this.listPageSize);
+  }
+
+>>>>>>> Stashed changes
   formatDate(value: string | null) {
     if (!value) return 'Sem prazo';
     const date = new Date(value);

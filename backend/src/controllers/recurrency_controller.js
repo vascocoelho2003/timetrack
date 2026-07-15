@@ -6,6 +6,14 @@ function getRecurrency(taskOrTaskId){
   return db.prepare('SELECT * FROM recurrence_rules WHERE task_id = ?').get(taskId);
 }
 
+function getAssingments(taskId){
+    const result = db.prepare('SELECT * FROM task_assignees WHERE task_id = ? ').all(taskId);
+    if(result){
+        return result
+    }
+    return null;
+}
+
 function recurrenceRuleExists(taskId) {
   const rec = db.prepare(`
     SELECT *
@@ -21,9 +29,13 @@ function recurrenceRuleExists(taskId) {
   return !!rec;
 }
 
-function cloneTask(task, date, sourceTaskId){
+function cloneTask(task, date, sourceTaskId, users){
     const result = db.prepare(`INSERT INTO tasks (task_list_id, parent_task_id, title, description, priority, due_date) VALUES (?, ?, ?, ?, ?, ?)`).run(task.task_list_id, task.id, task.title, task.description, task.priority, date.toISOString());
     db.prepare(`UPDATE recurrence_rules SET task_id = ? WHERE task_id = ?`).run(result.lastInsertRowid, sourceTaskId);
+    users.forEach(user => {
+        db.prepare(`INSERT INTO task_assignees (task_id, user_id) VALUES(?,?)`).run(result.lastInsertRowid, user.user_id)
+    });
+    
 }
 
 function typeofRecurrency(taskId){
@@ -37,19 +49,18 @@ function typeofRecurrency(taskId){
 function createRecurrency(taskId){
     const task = getTaskWithContext(taskId);
     const recurrenceRule = getRecurrency(taskId);
-
     if(!recurrenceRule || !recurrenceRuleExists(taskId)){
         throw new Error('No active recurrence rule found for this task');
     }
-
+    users = getAssingments(taskId);
     switch(recurrenceRule.rule_type){
         case 'fixed_day':
             const date = calculateFixedDay(recurrenceRule, task.due_date);
-            cloneTask(task, date, taskId);
+            cloneTask(task, date, taskId,users);
             break;
         case 'business_day':
             const businessDate = calculateBusinessDay(recurrenceRule, task.due_date);
-            cloneTask(task, businessDate, taskId);
+            cloneTask(task, businessDate, taskId,users);
             break;
         default:
             throw new Error('Unknown recurrence type');

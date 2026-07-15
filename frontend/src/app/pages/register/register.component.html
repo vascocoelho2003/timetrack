@@ -1,0 +1,20 @@
+<div class="auth-page">
+    <div class="auth-card card">
+      <h1>Task Management</h1>
+      <p class="subtitle">Criar conta</p>
+      @if (error) { <div class="alert">{{ error }}</div> }
+      <form (ngSubmit)="submit()">
+        <label>Nome</label>
+        <input type="text" [(ngModel)]="username" name="username" required />
+        <label>Email</label>
+        <input type="email" [(ngModel)]="email" name="email" required />
+        <label>Password</label>
+        <input type="password" [(ngModel)]="password" name="password" required minlength="6" />
+         <br> <br>
+        <button type="submit" class="btn btn-primary" [disabled]="loading">
+          {{ loading ? 'A criar...' : 'Registar' }}
+        </button>
+      </form>
+      <p class="footer-link">Já tem conta? <a routerLink="/login">Entrar</a></p>
+    </div>
+  </div>
