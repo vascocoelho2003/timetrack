@@ -20,6 +20,8 @@ export class ClosedTasksComponent {
   dateFilter: 'all' | 'week' | 'month' | 'year' | 'range' = 'all';
   fromDate = '';
   toDate = '';
+  searchTitle = '';
+  viewMode: 'grid' | 'list' = 'grid';
   projectId: number = 0;
   isAdmin = false;
   selectedTask: (Task & { comments?: Comment[] }) | null = null;
@@ -104,12 +106,22 @@ export class ClosedTasksComponent {
     return `${day}/${month}/${year}`;
   }
 
+  getTaskListName(taskListId?: number | null) {
+    return this.taskLists.find(list => list.id === taskListId)?.name || 'Sem lista';
+  }
+
   get displayedTasks() {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
+    const searchText = this.searchTitle.trim().toLowerCase();
+
     return this.closed_tasks.filter(task => {
       if (this.selectedTaskListId > 0 && task.task_list_id !== this.selectedTaskListId) {
+        return false;
+      }
+
+      if (searchText && !task.title?.toLowerCase().includes(searchText)) {
         return false;
       }
 

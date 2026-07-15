@@ -128,19 +128,10 @@ router.get('/:listId/tasks', (req, res) => {
   const isAdmin = isTeamAdmin(req.user.id, teamId);
   let tasks;
 
-  if (isAdmin) {
     tasks = db.prepare(`
       SELECT * FROM tasks WHERE task_list_id = ? AND status != 'done'
       ORDER BY created_at DESC
     `).all(listId);
-  } else {
-    tasks = db.prepare(`
-      SELECT t.* FROM tasks t
-      JOIN task_assignees ta ON ta.task_id = t.id
-      WHERE t.task_list_id = ? AND ta.user_id = ? AND t.status != 'done'
-      ORDER BY t.created_at DESC
-    `).all(listId, req.user.id);
-  }
 
   res.json(attachAssignees(tasks));
 });

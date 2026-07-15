@@ -8,47 +8,8 @@ import { ReportData } from '../../core/models';
   selector: 'app-reports',
   standalone: true,
   imports: [RouterLink],
-  template: `
-    <div class="page">
-      <a [routerLink]="['/teams', teamId]" class="back-link">← Equipa</a>
-      <h2>Relatórios de tempo</h2>
-
-      @if (report) {
-        <div class="report-grid">
-          <div class="card section">
-            <h3>Relatórios por utilizador</h3>
-            @if (report.byUser.length === 0) { <p class="muted">Sem dados</p> }
-            @for (r of report.byUser; track r.id) {
-              <div class="report-row">
-                <span>{{ r.name }}</span>
-                <strong>{{ fmt(r.total_seconds) }}</strong>
-              </div>
-            }
-          </div>
-          <div class="card section">
-            <h3>Relatório do projeto</h3>
-            @if (report.byProject.length === 0) { <p class="muted">Sem dados</p> }
-            @for (r of report.byProject; track r.id) {
-              <div class="report-row">
-                <span>{{ r.name }}</span>
-                <strong>{{ fmt(r.total_seconds) }}</strong>
-              </div>
-            }
-          </div>
-          <div class="card section">
-            <h3>Relatório de tarefa</h3>
-            @if (report.byTask.length === 0) { <p class="muted">Sem dados</p> }
-            @for (r of report.byTask; track r.id) {
-              <div class="report-row">
-                <span>{{ r.title }}</span>
-                <strong>{{ fmt(r.total_seconds) }}</strong>
-              </div>
-            }
-          </div>
-        </div>
-      }
-    </div>
-  `,
+  templateUrl: './reports.component.html',
+  styleUrl: './reports.component.css'
 })
 export class ReportsComponent implements OnInit {
   teamId = 0;

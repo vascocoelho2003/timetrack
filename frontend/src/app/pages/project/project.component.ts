@@ -8,10 +8,13 @@ import { Project, TaskList, Task, TeamMember, TimeEntry, Comment } from '../../c
 import * as XLSX from 'xlsx';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environments';
+import {MatCheckboxModule} from '@angular/material/checkbox';
+import { MatCheckboxChange } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-project',
   standalone: true,
+<<<<<<< Updated upstream
   imports: [FormsModule, RouterLink],
   template: `
     <div class="page project-page">
@@ -314,6 +317,13 @@ import { environment } from '../../../environments/environments';
     </div>
   `,
 })
+=======
+  imports: [FormsModule, RouterLink,MatCheckboxModule],
+  styleUrls: ['./project.component.css'],
+  templateUrl: './project.component.html',
+  })
+
+>>>>>>> Stashed changes
 export class ProjectComponent implements OnInit {
   project: Project | null = null;
   lists: TaskList[] = [];
@@ -321,8 +331,16 @@ export class ProjectComponent implements OnInit {
   members: TeamMember[] = [];
   isAdmin = false;
   showNewList = false;
+<<<<<<< HEAD
   viewMode: 'board' | 'list' = 'board';
+=======
+<<<<<<< Updated upstream
+>>>>>>> Branch_do_vaskinhoooo
 
+=======
+  viewMode: 'board' | 'list' = 'board';
+  showOnlyMyTasks = false;
+>>>>>>> Stashed changes
   newListName = '';
   showNewTaskForm = false;
   newTaskListId = 0;
@@ -367,7 +385,31 @@ export class ProjectComponent implements OnInit {
     public timer: TimerService,
     private http: HttpClient
   ) {
-    
+  }
+
+  toggleTaskFilter(event: MatCheckboxChange) {
+    if (this.isAdmin) {
+      this.showOnlyMyTasks = event.checked;
+    } else {
+      this.showOnlyMyTasks = !event.checked;
+    }
+  }
+
+  getTasksForList(listId: number): Task[] {
+    const tasks = this.tasksByList[listId] || [];
+
+    if (!this.showOnlyMyTasks) {
+      return tasks;
+    }
+    const userId = this.currentUserId;
+    return tasks.filter(task =>
+      task.assigneeIds?.includes(userId!)
+    );
+  }
+
+
+  get currentUserId(): number | undefined{
+    return this.auth.currentUser()?.id;
   }
 
   get canTrackTime(): boolean {
@@ -390,9 +432,16 @@ export class ProjectComponent implements OnInit {
         this.isAdmin = t?.role === 'admin';
       });
       this.api.getTeamMembers(p.team_id).subscribe(m => this.members = m);
+      this.api.getTeams().subscribe(teams => {
+        const t = teams.find(x => x.id === p.team_id);
+        this.isAdmin = t?.role === 'admin';
+      
+        this.showOnlyMyTasks = !this.isAdmin;
+      });
     });
     this.loadBoard(projectId);
     this.timer.refresh();
+    
   }
 
   loadBoard(projectId: number) {
@@ -410,6 +459,11 @@ export class ProjectComponent implements OnInit {
     return { todo: 'Por fazer', doing: 'Em progresso', done: 'Concluída' }[s] || s;
   }
 
+<<<<<<< HEAD
+=======
+<<<<<<< Updated upstream
+=======
+>>>>>>> Branch_do_vaskinhoooo
   get listViewTasks(): Array<{ task: Task; listName: string }> {
     const rows: Array<{ task: Task; listName: string }> = [];
     for (const list of this.lists) {
@@ -423,6 +477,12 @@ export class ProjectComponent implements OnInit {
   get filteredListViewTasks(): Array<{ task: Task; listName: string }> {
     const search = this.listSearch.trim().toLowerCase();
     return this.listViewTasks.filter(({ task, listName }) => {
+<<<<<<< HEAD
+=======
+      
+      const userId = this.currentUserId;
+      const matchesMyTasks =!this.showOnlyMyTasks ||task.assigneeIds?.includes(userId!);
+>>>>>>> Branch_do_vaskinhoooo
       const matchesList = !this.listFilterList || this.listFilterList === String(task.task_list_id);
       const matchesStatus = !this.listFilterStatus || task.status === this.listFilterStatus;
       const matchesPriority = !this.listFilterPriority || task.priority === this.listFilterPriority;
@@ -444,8 +504,12 @@ export class ProjectComponent implements OnInit {
       } else if (this.listFilterDueDate && !task.due_date) {
         matchesDueDate = false;
       }
+<<<<<<< HEAD
 
       return matchesList && matchesStatus && matchesPriority && matchesSearch && matchesDueDate;
+=======
+      return matchesMyTasks && matchesList && matchesStatus && matchesPriority && matchesSearch && matchesDueDate;
+>>>>>>> Branch_do_vaskinhoooo
     });
   }
 
@@ -458,6 +522,10 @@ export class ProjectComponent implements OnInit {
     return this.filteredListViewTasks.slice(start, start + this.listPageSize);
   }
 
+<<<<<<< HEAD
+=======
+>>>>>>> Stashed changes
+>>>>>>> Branch_do_vaskinhoooo
   formatDate(value: string | null) {
     if (!value) return 'Sem prazo';
     const date = new Date(value);

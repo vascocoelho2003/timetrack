@@ -1,65 +1,80 @@
 <div class="page project-page">
-<a [routerLink]="['/projects', projectId]" class="back-link">← Voltar</a>
-<div class="closed-tasks-panel card">
-  <div class="closed-tasks-header">
-    <div>
-      <h2>Closed Tasks</h2>
-      <p class="subtitle">Veja todas as tarefas concluídas e filtre por lista ou prazo.</p>
+  <a [routerLink]="['/projects', projectId]" class="back-link">← Voltar</a>
+
+  <div class="page-header">
+    <h2>Closed Tasks</h2>
+    <div class="inline-form">
+      <button class="btn btn-ghost" [class.active]="viewMode === 'grid'" (click)="viewMode = 'grid'">Grade</button>
+      <button class="btn btn-ghost" [class.active]="viewMode === 'list'" (click)="viewMode = 'list'">Lista</button>
     </div>
-    <div class="closed-tasks-summary">{{ displayedTasks.length }} tarefas encontradas</div>
   </div>
-  <div class="filters">
-    <label>
-      TaskList
+
+  <div class="card">
+    <div class="inline-form filters-grid">
+      <input [(ngModel)]="searchTitle" placeholder="Pesquisa por título" />
       <select [(ngModel)]="selectedTaskListId">
-        <option [ngValue]="0">Todas</option>
+        <option [ngValue]="0">Todas as listas</option>
         @for (list of taskLists; track list.id) {
           <option [ngValue]="list.id">{{ list.name }}</option>
         }
       </select>
-    </label>
-    <label>
-      Data
       <select [(ngModel)]="dateFilter">
-        <option value="all">Todas</option>
+        <option value="all">Todos os prazos</option>
         <option value="week">Última semana</option>
         <option value="month">Último mês</option>
         <option value="year">Último ano</option>
         <option value="range">Intervalo de datas</option>
       </select>
-    </label>
-    @if (dateFilter === 'range') {
-      <label>
-        Data início
+      @if (dateFilter === 'range') {
         <input type="date" [(ngModel)]="fromDate" />
-      </label>
-      <label>
-        Data fim
         <input type="date" [(ngModel)]="toDate" />
-      </label>
-    }
-  </div>
-  @if (!displayedTasks.length) {
-    <div class="empty-state card">
-      <p>Não há tarefas fechadas correspondentes aos filtros selecionados.</p>
+      }
     </div>
-  }
-  <div class="tasks-grid">
-    @for (task of displayedTasks; track task.id) {
-      <div class="task-card" (click)="openTask(task.id)">
-        <div class="task-card-top">
-          <div class="task-title">{{ task.title }}</div>
-          <span class="status-pill" [attr.data-status]="task.status">{{ statusLabel(task.status) }}</span>
-        </div>
-        <div class="task-card-meta">
-          <span class="meta-item">Prazo: {{ formatDateDMY(task.due_date) }}</span>
-          <span class="meta-item">Lista: {{ task.task_list_id }}</span>
-        </div>
+
+    <div class="summary-row">
+      <span class="muted">{{ displayedTasks.length }} tarefas encontradas</span>
+    </div>
+
+    @if (!displayedTasks.length) {
+      <div class="empty-state card">
+        <p>Não há tarefas fechadas correspondentes aos filtros selecionados.</p>
       </div>
     }
+
+    @if (viewMode === 'grid') {
+      <div class="tasks-grid">
+        @for (task of displayedTasks; track task.id) {
+          <div class="task-card" (click)="openTask(task.id)">
+            <div class="task-card-top">
+              <div class="task-title">{{ task.title }}</div>
+              <span class="status-pill" [attr.data-status]="task.status">{{ statusLabel(task.status) }}</span>
+            </div>
+            <div class="task-card-meta">
+              <span class="meta-item">Prazo: {{ formatDateDMY(task.due_date) }}</span>
+              <span class="meta-item">Lista: {{ getTaskListName(task.task_list_id) }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="list-table-header">
+        <span>Tarefa</span>
+        <span>Lista</span>
+        <span>Estado</span>
+        <span>Prazo</span>
+      </div>
+      @for (task of displayedTasks; track task.id) {
+        <div class="list-table-row" (click)="openTask(task.id)">
+          <span>{{ task.title }}</span>
+          <span>{{ getTaskListName(task.task_list_id) }}</span>
+          <span class="status-pill" [attr.data-status]="task.status">{{ statusLabel(task.status) }}</span>
+          <span>{{ formatDateDMY(task.due_date) }}</span>
+        </div>
+      }
+    }
   </div>
-</div>
-@if (selectedTask) {
+
+  @if (selectedTask) {
       <div class="modal-overlay" (click)="closeTask()">
         <div class="modal card" (click)="$event.stopPropagation()">
             <h4>{{ selectedTask.title }}</h4>
