@@ -213,4 +213,14 @@ router.delete('/:projectId', (req, res) => {
   res.status(204).send();
 });
 
+router.get('/:projectId/users', (req, res) => {
+  const { projectId } = req.params;
+
+  const users = db.prepare(`
+    SELECT u.id, u.username, u.email, tm.role FROM users u JOIN team_members tm ON tm.user_id = u.id JOIN projects p ON p.team_id = tm.team_id WHERE p.id = ? ORDER BY u.username
+  `).all(projectId);
+
+  return res.status(200).json(users);
+});
+
 module.exports = router;

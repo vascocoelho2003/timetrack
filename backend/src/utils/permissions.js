@@ -71,11 +71,22 @@ function getAssigneeIds(taskId) {
 }
 
 function attachAssignees(tasks) {
-  const stmt = db.prepare('SELECT user_id FROM task_assignees WHERE task_id = ?');
-  return tasks.map(t => ({
-    ...t,
-    assigneeIds: stmt.all(t.id).map(r => r.user_id),
-  }));
+  const assigneeStmt = db.prepare(`
+    SELECT u.id, u.username, u.email
+    FROM users u
+    JOIN task_assignees ta ON ta.user_id = u.id
+    WHERE ta.task_id = ?
+  `);
+
+  return tasks.map(t => {
+    const assignees = assigneeStmt.all(t.id);
+
+    return {
+      ...t,
+      assigneeIds: assignees.map(a => a.id),
+      assignees
+    };
+  });
 }
 
 

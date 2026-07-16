@@ -18,6 +18,14 @@
           <option [ngValue]="list.id">{{ list.name }}</option>
         }
       </select>
+      <select [(ngModel)]="selectedAssignedUserId">
+      <option [ngValue]="0">Atribuído a:</option>
+      @for (user of users_projects; track user.id) {
+        <option [ngValue]="user.id">
+          {{ user.username }}
+        </option>
+      }
+      </select>
       <select [(ngModel)]="dateFilter">
         <option value="all">Todos os prazos</option>
         <option value="week">Última semana</option>
@@ -52,6 +60,9 @@
             <div class="task-card-meta">
               <span class="meta-item">Prazo: {{ formatDateDMY(task.due_date) }}</span>
               <span class="meta-item">Lista: {{ getTaskListName(task.task_list_id) }}</span>
+              @for(a of task.assignees; track a.id){
+              <span class="meta-item">{{ a.username }}</span>
+              }
             </div>
           </div>
         }

@@ -41,6 +41,7 @@ export interface Task {
   assigneeIds: number[];
   subtasks?: Task[];
   comments?: Comment[];
+  assignees: User[];
 }
 
 export interface Comment {

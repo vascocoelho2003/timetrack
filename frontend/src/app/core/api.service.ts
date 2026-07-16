@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import {
   Team, TeamMember, Project, TaskList, Task, TimeEntry, ReportData, Comment,
+  User,
 } from './models';
 import {environment} from '../../environments/environments';
 
@@ -97,5 +98,9 @@ export class ApiService {
   }
   getTeamReport(teamId: number) {
     return this.http.get<ReportData>(`${API}/time/reports/team/${teamId}`);
+  }
+
+  getProjectMembers(projectId: number){
+    return this.http.get<User[]>(`${API}/projects/${projectId}/users`);
   }
 }

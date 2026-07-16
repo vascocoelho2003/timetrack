@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { Project, Task, Comment, TimeEntry, Team, TaskList } from '../../core/models';
+import { Project, Task, Comment, TimeEntry, Team, TaskList, User } from '../../core/models';
 import { CommonModule, Location } from '@angular/common';
 import { ApiService } from '../../core/api.service';
 import { RouterLink } from '@angular/router';
@@ -16,6 +16,8 @@ import { formatDuration } from '../../core/timer.service';
 export class ClosedTasksComponent {
   closed_tasks: Task[] = [];
   taskLists: TaskList[] = [];
+  selectedAssignedUserId = 0;
+  users_projects: User[] = [];
   selectedTaskListId = 0;
   dateFilter: 'all' | 'week' | 'month' | 'year' | 'range' = 'all';
   fromDate = '';
@@ -47,6 +49,7 @@ export class ClosedTasksComponent {
           this.isAdmin = team?.role === 'admin';
         });
       });
+      this.apiService.getProjectMembers(this.projectId).subscribe(users => {this.users_projects = users;})
     });
   }
 
@@ -117,6 +120,12 @@ export class ClosedTasksComponent {
     const searchText = this.searchTitle.trim().toLowerCase();
 
     return this.closed_tasks.filter(task => {
+      if (
+        this.selectedAssignedUserId > 0 &&
+        !task.assignees.some(a => a.id === this.selectedAssignedUserId)
+      ) {
+        return false;
+      }
       if (this.selectedTaskListId > 0 && task.task_list_id !== this.selectedTaskListId) {
         return false;
       }

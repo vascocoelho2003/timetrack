@@ -18,6 +18,7 @@ import { MatCheckboxChange } from '@angular/material/checkbox';
   styleUrls: ['./project.component.css'],
   templateUrl: './project.component.html',
   })
+
 export class ProjectComponent implements OnInit {
   project: Project | null = null;
   lists: TaskList[] = [];
@@ -71,8 +72,9 @@ export class ProjectComponent implements OnInit {
     public timer: TimerService,
     private http: HttpClient
   ) {
-  }
 
+  }
+  
   toggleTaskFilter(event: MatCheckboxChange) {
     if (this.isAdmin) {
       this.showOnlyMyTasks = event.checked;
@@ -80,19 +82,20 @@ export class ProjectComponent implements OnInit {
       this.showOnlyMyTasks = !event.checked;
     }
   }
-
+  
   getTasksForList(listId: number): Task[] {
     const tasks = this.tasksByList[listId] || [];
 
     if (!this.showOnlyMyTasks) {
       return tasks;
     }
+
     const userId = this.currentUserId;
+
     return tasks.filter(task =>
       task.assigneeIds?.includes(userId!)
     );
   }
-
 
   get currentUserId(): number | undefined{
     return this.auth.currentUser()?.id;
@@ -118,16 +121,9 @@ export class ProjectComponent implements OnInit {
         this.isAdmin = t?.role === 'admin';
       });
       this.api.getTeamMembers(p.team_id).subscribe(m => this.members = m);
-      this.api.getTeams().subscribe(teams => {
-        const t = teams.find(x => x.id === p.team_id);
-        this.isAdmin = t?.role === 'admin';
-      
-        this.showOnlyMyTasks = !this.isAdmin;
-      });
     });
     this.loadBoard(projectId);
     this.timer.refresh();
-    
   }
 
   loadBoard(projectId: number) {
@@ -137,6 +133,7 @@ export class ProjectComponent implements OnInit {
         this.api.getTasks(list.id).subscribe(tasks => {
           this.tasksByList[list.id] = tasks;
         });
+        console.log(this.tasksByList);
       }
     });
   }
@@ -179,11 +176,10 @@ export class ProjectComponent implements OnInit {
         } else if (this.listFilterDueDate === 'overdue') {
           matchesDueDate = due < startOfToday;
         }
-      } else if (this.listFilterDueDate && !task.due_date) {
+      }else if (this.listFilterDueDate && !task.due_date) {
         matchesDueDate = false;
       }
-
-      return matchesList && matchesStatus && matchesPriority && matchesSearch && matchesDueDate;
+      return matchesMyTasks && matchesList && matchesStatus && matchesPriority && matchesSearch && matchesDueDate;
     });
   }
 

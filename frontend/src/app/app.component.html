@@ -1,13 +1,6 @@
 @if (auth.isLoggedIn) {
   <header class="app-header">
     <div class="header-left">
-  @if (showBurger) {
-    <button
-      class="burger-btn"
-      (click)="toggleMenu()">
-      ☰
-    </button>
-  }
       <a routerLink="/teams" class="logo">
         JC Ribeiro - Task Management
       </a>

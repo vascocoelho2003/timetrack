@@ -50,6 +50,7 @@
       </div>
     }
     @if (viewMode === 'board') {
+
       <div class="board">
         @for (list of lists; track list.id) {
           <div class="board-column card">
@@ -70,6 +71,10 @@
                   <span class="status-pill" [attr.data-status]="task.status">{{ statusLabel(task.status) }}</span>
                   <span class="priority-pill" [attr.data-priority]="task.priority">{{ task.priority }}</span>
                 </div>
+                @for(a of task.assignees; track a.id){
+                <span class="assign-pill" >&nbsp;&nbsp;{{ a.username }} </span>
+                <br>
+                }
               </div>
             }
           </div>
@@ -106,7 +111,7 @@
         <div class="list-table-header">
           <span>Tarefa</span>
           <span>Lista</span>
-          <span>Estado</span>
+          <span>Atribuído</span>
           <span>Prazo</span>
           <span>Prioridade</span>
         </div>
@@ -114,7 +119,7 @@
           <div class="list-table-row" (click)="openTask(entry.task.id)">
             <span>{{ entry.task.title }}</span>
             <span>{{ entry.listName }}</span>
-            <span class="status-pill" [attr.data-status]="entry.task.status">{{ statusLabel(entry.task.status) }}</span>
+            <span>@for (a of entry.task.assignees; track a.id){{{a.username}}<br>}</span>
             <span>{{ formatDate(entry.task.due_date) }}</span>
             <span class="priority-pill" [attr.data-priority]="entry.task.priority">{{ entry.task.priority }}</span>
           </div>

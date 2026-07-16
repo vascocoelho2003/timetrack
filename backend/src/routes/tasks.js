@@ -384,12 +384,16 @@ router.delete('/:taskId/comments/:commentId', (req, res) => {
  */
 router.get('/:projectId/get_closed_tasks', (req, res) => {
   const { projectId } = req.params;
-  const taskss = []
-  const tasklists = db.prepare('SELECT * FROM task_lists WHERE project_id=?').all(projectId);
 
-  const tasks = db.prepare(`
-    SELECT * FROM tasks WHERE status = 'done' AND task_list_id IN (SELECT id FROM task_lists WHERE project_id = ?)`).all(projectId);
-  return res.status(200).json(tasks)
+  const tasks = db.prepare(`SELECT * FROM tasks WHERE status = 'done' AND task_list_id IN(SELECT id FROM task_lists WHERE project_id = ?)`).all(projectId);
+  const assigneesStmt = db.prepare(`SELECT u.id, u.username FROM task_assignees ta JOIN users u ON u.id = ta.user_id WHERE ta.task_id = ?`);
+
+  const result = tasks.map(task => ({
+    ...task,
+    assignees: assigneesStmt.all(task.id)
+  }));
+  
+  return res.status(200).json(result);
 });
 
 router.get('',(req,res)=>{
