@@ -15,8 +15,6 @@ const importRoutes = require('./routes/import');
 const dashboardRoutes = require('./routes/dashboard');
 const { swaggerSpec } = require('./swagger');
 const dotenv = require('dotenv');
-const cron = require('node-cron');
-const { checkDueTasks } = require('./controllers/tasks_crontoller')
 dotenv.config();
 
 const dataDir = path.join(__dirname, '..', 'data');
@@ -50,10 +48,6 @@ app.use('/api', dashboardRoutes);
 app.use((err, _req, res, _next) => {
   console.error(err);
   res.status(500).json({ error: 'Erro interno do servidor' });
-});
-
-cron.schedule('30 10 * * *', () => {
-  checkDueTasks();
 });
 
 const server = app.listen(PORT, () => {

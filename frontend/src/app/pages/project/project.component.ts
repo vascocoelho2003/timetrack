@@ -14,257 +14,11 @@ import { MatCheckboxChange } from '@angular/material/checkbox';
 @Component({
   selector: 'app-project',
   standalone: true,
-<<<<<<< Updated upstream
-  imports: [FormsModule, RouterLink],
-  template: `
-    <div class="page project-page">
-    
-      <a [routerLink]="['/teams', project?.team_id]" class="back-link">← Equipa</a>
-      <div class="page-header">
-        <h2>{{ project?.name }}</h2>
-        @if (isAdmin) {
-          <button class="btn btn-ghost" (click)="showNewList = !showNewList">+ Lista</button>
-          <button class="btn btn-ghost" [routerLink]="['/projects', project?.id, 'closed-tasks']">Closed Tasks</button>
-          <button class="btn btn-danger btn-sm" (click)="deleteProject()" title="Eliminar projeto">Eliminar projeto</button>
-        }
-      </div>  
-      <div class="inline-form file-upload-row" style="display:flex;align-items:center;gap:8px;">
-        <input type="file" id="excelFile" accept=".xlsx,.xls" (change)="onFileSelected($event)" style="display:none;" />
-        <label for="excelFile" class="btn btn-ghost">Escolher ficheiro</label>
-        @if (selectedFileName) {
-          <span class="muted">{{ selectedFileName }}</span>
-        }
-        <button class="btn btn-primary" (click)="submitExcel()" [disabled]="!selectedFile">Submeter</button>
-      </div>
-      
-      @if (showNewList && isAdmin) {
-        <div class="card inline-form">
-          <input [(ngModel)]="newListName" placeholder="Nome da lista" />
-          <button class="btn btn-primary" (click)="createList()">Criar</button>
-        </div>
-      }
-
-      <div class="board">
-        @for (list of lists; track list.id) {
-          <div class="board-column card">
-            <div class="column-header">
-              <h4>{{ list.name }}</h4>
-              <div class="column-actions">
-                @if (isAdmin) {
-                  <button class="btn-icon" (click)="openNewTask(list.id)" title="Nova tarefa">+</button>
-                  <button class="btn-icon btn-danger" (click)="deleteList(list.id)" title="Eliminar lista">🗑</button>
-                }
-              </div>
-            </div>
-            @for (task of tasksByList[list.id] || []; track task.id) {
-              <div class="task-card" (click)="openTask(task.id)">
-                <div class="task-title">{{ task.title }}</div>
-                <div class="task-meta">
-                <div class="status-pill">{{ formatDate(task.due_date) }}</div>
-                  <span class="status-pill" [attr.data-status]="task.status">{{ statusLabel(task.status) }}</span>
-                  <span class="priority-pill" [attr.data-priority]="task.priority">{{ task.priority }}</span>
-                </div>
-              </div>
-            }
-          </div>
-        }
-      </div>
-
-      @if (selectedTask) {
-        <div class="modal-overlay" (click)="closeTask()">
-          <div class="modal card" (click)="$event.stopPropagation()">
-            <div class="modal-header">
-              <h3>{{ isAdmin ? 'Editar tarefa' : 'Tarefa' }}</h3>
-              <button class="btn-icon" (click)="closeTask()">×</button>
-            </div>
-
-            @if (isAdmin) {
-              <label>Título</label>
-              <input [(ngModel)]="editTitle" />
-              <label>Descrição</label>
-              <textarea [(ngModel)]="editDescription" rows="3"></textarea>
-              <label>Estado</label>
-              <select [(ngModel)]="editStatus">
-                <option value="todo">Por fazer</option>
-                <option value="doing">Em progresso</option>
-                <option value="done">Concluída</option>
-              </select>
-              <label>Prioridade</label>
-              <select [(ngModel)]="editPriority">
-                <option value="low">Baixa</option>
-                <option value="medium">Média</option>
-                <option value="high">Alta</option>
-              </select>
-              <label>Prazo</label>
-              <input type="date" [(ngModel)]="editDueDate" />
-              <label>Atribuídos</label>
-              <div class="assignee-checks">
-                @for (m of members; track m.id) {
-                  <label class="checkbox-label">
-                    <input type="checkbox"
-                      [checked]="editAssignees.includes(m.id)"
-                      (change)="toggleAssignee(m.id, $event)" />
-                    {{ m.username }}
-                  </label>
-                }
-              </div>
-   
-            } @else {
-              <h4>{{ selectedTask.title }}</h4>
-              <p class="muted">{{ selectedTask.description || 'Sem descrição' }}</p>
-              <label>Estado</label>
-              <select [(ngModel)]="editStatus" (change)="saveStatusOnly()">
-                <option value="todo">A fazer</option>
-                <option value="doing">Em progresso</option>
-                <option value="done">Concluída</option>
-              </select>
-            }
-
-            @if (canTrackTime) {
-              <div class="timer-section">
-                <h4>Time tracking</h4>
-                @if (activeOnThisTask) {
-                  <p class="timer-running">⏱ {{ fmt(timer.elapsedSeconds()) }}</p>
-                  <button class="btn btn-danger" (click)="stopTimer()">Parar timer</button>
-                } @else {
-                  <button class="btn btn-primary" (click)="startTimer()" [disabled]="!!timer.activeEntry()">
-                    Iniciar timer
-                  </button>
-                }
-                @if (timeEntries.length) {
-                  <ul class="time-list">
-                    @for (e of timeEntries; track e.id) {
-                      <li>{{ e.user_name }} — {{ fmt(e.duration || 0) }}</li>
-                    }
-                  </ul>
-                }
-              </div>
-            }
-
-            @if (isAdmin) {
-              <div class="comments-section">
-                <h4>Recorrência</h4>
-                <div class="inline-form">
-                  <label>Tipo</label>
-                  <select [(ngModel)]="recurrenceRuleType">
-                    <option value="fixed_day">Dia fixo</option>
-                    <option value="business_day">Dia útil</option>
-                  </select>
-                  <label>Frequência</label>
-                  <select [(ngModel)]="recurrenceFrequency">
-                    <option value="daily">Diária</option>
-                    <option value="weekly">Semanal</option>
-                    <option value="monthly">Mensal</option>
-                    <option value="yearly">Anual</option>
-                  </select>
-                  <label>Intervalo</label>
-                  <input type="number" min="1" [(ngModel)]="recurrenceInterval" />
-                </div>
-                @if (recurrenceFrequency === 'weekly') {
-                  <label>Dia da semana</label>
-                  <select [(ngModel)]="recurrenceWeekday">
-                    <option value="monday">Segunda</option>
-                    <option value="tuesday">Terça</option>
-                    <option value="wednesday">Quarta</option>
-                    <option value="thursday">Quinta</option>
-                    <option value="friday">Sexta</option>
-                    <option value="saturday">Sábado</option>
-                    <option value="sunday">Domingo</option>
-                  </select>
-                }
-                @if (recurrenceFrequency === 'monthly' || recurrenceFrequency === 'yearly') {
-                  <div class="inline-form">
-                    <label>Dia do mês</label>
-                    <input type="number" min="1" max="31" [(ngModel)]="recurrenceDayOfMonth" />
-                    @if (recurrenceFrequency === 'yearly') {
-                      <label>Mês</label>
-                      <input type="number" min="1" max="12" [(ngModel)]="recurrenceMonthOfYear" />
-                    }
-                  </div>
-                }
-                <div class="inline-form">
-                  <label>Data início</label>
-                  <input type="date" [(ngModel)]="recurrenceStartDate" />
-                  <label>Data fim</label>
-                  <input type="date" [(ngModel)]="recurrenceEndDate" />
-                </div>
-                <button class="btn btn-primary" (click)="createRecurrence()">Criar recorrência</button>
-                @if (recurrenceMessage) {
-                  <p class="muted">{{ recurrenceMessage }}</p>
-                }
-              </div>
-            }
-
-            <div class="comments-section">
-              <h4>Comentários</h4>
-              @for (c of selectedTask.comments || []; track c.id) {
-                <div class="comment">
-                  <div class="comment-header">
-                    <strong>{{ c.user_name }}</strong>
-                    @if (c.user_id === auth.currentUser()?.id) {
-                      <a href="#" class="delete-link" (click)="deleteComment(c.id); $event.preventDefault()" title="Eliminar comentário">x</a>
-                    }
-                  </div>
-                  <p>{{ c.content }}</p>
-                </div>
-              }
-              <div class="inline-form">
-                <input [(ngModel)]="newComment" placeholder="Adicionar comentário..." />
-                <button class="btn btn-primary" (click)="postComment()">Enviar</button>
-              </div>
-            </div>
-              <br>
-               <div class="modal-actions">
-                <button class="btn btn-primary" (click)="saveTask()">Guardar</button>
-                @if (isAdmin) {
-                  <button class="btn btn-danger" (click)="deleteTask()">Eliminar</button>
-                }
-              </div>
-          </div>
-        </div>
-      }
-
-      @if (showNewTaskForm) {
-        <div class="modal-overlay" (click)="showNewTaskForm = false">
-          <div class="modal card" (click)="$event.stopPropagation()">
-            <h3>Nova tarefa</h3>
-            <label>Título</label>
-            <input [(ngModel)]="newTaskTitle" />
-            <label>Descrição</label>
-            <textarea [(ngModel)]="newTaskDescription" rows="2"></textarea>
-            <label>Prioridade</label>
-            <select [(ngModel)]="newTaskPriority">
-              <option value="low">Baixa</option>
-              <option value="medium">Média</option>
-              <option value="high">Alta</option>
-            </select>
-            <label>Prazo</label>
-            <input type="date" [(ngModel)]="newTaskDueDate" />
-            <label>Atribuídos</label>
-            <div class="assignee-checks">
-              @for (m of members; track m.id) {
-                <label class="checkbox-label">
-                  <input type="checkbox"
-                    [checked]="newTaskAssignees.includes(m.id)"
-                    (change)="toggleNewAssignee(m.id, $event)" />
-                  {{ m.username }}
-                </label>
-              }
-            </div>
-            <button class="btn btn-primary" (click)="createTask()">Criar tarefa</button>
-          </div>
-        </div>
-      }
-    </div>
-  `,
-})
-=======
   imports: [FormsModule, RouterLink,MatCheckboxModule],
   styleUrls: ['./project.component.css'],
   templateUrl: './project.component.html',
   })
 
->>>>>>> Stashed changes
 export class ProjectComponent implements OnInit {
   project: Project | null = null;
   lists: TaskList[] = [];
@@ -272,12 +26,15 @@ export class ProjectComponent implements OnInit {
   members: TeamMember[] = [];
   isAdmin = false;
   showNewList = false;
-<<<<<<< Updated upstream
-
-=======
   viewMode: 'board' | 'list' = 'board';
   showOnlyMyTasks = false;
->>>>>>> Stashed changes
+  listSearch = '';
+  listFilterList = '';
+  listFilterStatus = '';
+  listFilterPriority = '';
+  listFilterDueDate = '';
+  listPage = 1;
+  listPageSize = 10;
   newListName = '';
   showNewTaskForm = false;
   newTaskListId = 0;
@@ -389,8 +146,6 @@ export class ProjectComponent implements OnInit {
     return { todo: 'Por fazer', doing: 'Em progresso', done: 'Concluída' }[s] || s;
   }
 
-<<<<<<< Updated upstream
-=======
   get listViewTasks(): Array<{ task: Task; listName: string }> {
     const rows: Array<{ task: Task; listName: string }> = [];
     for (const list of this.lists) {
@@ -441,7 +196,6 @@ export class ProjectComponent implements OnInit {
     return this.filteredListViewTasks.slice(start, start + this.listPageSize);
   }
 
->>>>>>> Stashed changes
   formatDate(value: string | null) {
     if (!value) return 'Sem prazo';
     const date = new Date(value);
