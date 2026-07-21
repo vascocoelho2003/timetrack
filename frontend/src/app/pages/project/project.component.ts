@@ -64,13 +64,6 @@ export class ProjectComponent implements OnInit {
   recurrenceStartDate = '';
   recurrenceEndDate = '';
   recurrenceMessage = '';
-  listSearch = '';
-  listFilterList = '';
-  listFilterStatus = '';
-  listFilterPriority = '';
-  listFilterDueDate = '';
-  listPage = 1;
-  listPageSize = 10;
 
   constructor(
     private route: ActivatedRoute,
