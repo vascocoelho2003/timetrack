@@ -1,39 +1,79 @@
-<div class="page">
-    <a [routerLink]="['/teams', teamId]" class="back-link">← Equipa</a>
-    <h2>Relatórios de tempo</h2>
+<main class="page">
 
-    @if (report) {
-      <div class="report-grid">
-        <div class="card section">
-          <h3>Relatórios por utilizador</h3>
-          @if (report.byUser.length === 0) { <p class="muted">Sem dados</p> }
-          @for (r of report.byUser; track r.id) {
-            <div class="report-row">
-              <span>{{ r.name }}</span>
-              <strong>{{ fmt(r.total_seconds) }}</strong>
-            </div>
-          }
-        </div>
-        <div class="card section">
-          <h3>Relatório do projeto</h3>
-          @if (report.byProject.length === 0) { <p class="muted">Sem dados</p> }
-          @for (r of report.byProject; track r.id) {
-            <div class="report-row">
-              <span>{{ r.name }}</span>
-              <strong>{{ fmt(r.total_seconds) }}</strong>
-            </div>
-          }
-        </div>
-        <div class="card section">
-          <h3>Relatório de tarefa</h3>
-          @if (report.byTask.length === 0) { <p class="muted">Sem dados</p> }
-          @for (r of report.byTask; track r.id) {
-            <div class="report-row">
-              <span>{{ r.title }}</span>
-              <strong>{{ fmt(r.total_seconds) }}</strong>
-            </div>
-          }
-        </div>
-      </div>
-    }
+  <div class="page-header">
+    <h1 class="page-title">Dashboard</h1>
+    <div class="page-actions">
+      <button routerLink="/projects-reports" class="btn-outline">Relatórios Projeto</button>
+      <button routerLink="/colaborators-reports" class="btn-outline">Relatórios Colaborador</button>
+    </div>
   </div>
+
+  <div class="dashboard-card">
+
+    <div class="stats-row top">
+      <div class="stat-tile large">
+        <span routerLink="/teams" class="stat-value">{{this.nr_equipas}}</span>
+        <span routerLink="/teams" class="stat-label">Equipas</span>
+      </div>
+      <div class="stat-tile large">
+        <span routerLink="/my_projects" class="stat-value">{{this.nr_projetos}}</span>
+        <span routerLink="/my_projects" class="stat-label">Projetos</span>
+      </div>
+    </div>
+
+    <div class="stats-row bottom">
+      <div class="stat-tile">
+        <span class="stat-value">{{this.total_tasks}}</span>
+        <span class="stat-label">Assigned Tasks</span>
+      </div>
+      <div class="stat-tile">
+        <span class="stat-value">{{this.todo_tasks}}</span>
+        <span class="stat-label">To Do Tasks</span>
+      </div>
+      <div class="stat-tile">
+        <span class="stat-value">{{this.closed_tasks}}</span>
+        <span class="stat-label">Closed Tasks</span>
+      </div>
+      <div class="stat-tile">
+        <span class="stat-value">{{ formatHours(total_hours) }}</span>
+        <span class="stat-label">Horas Registadas</span>
+      </div>
+      <div class="stat-tile">
+        <span class="stat-value">{{this.overdue_tasks}}</span>
+        <span class="stat-label">Tarefas Atrasadas</span>
+      </div>
+      <div class="stat-tile">
+        <span class="stat-value">{{this.high_priority_tasks}}</span>
+        <span class="stat-label">Tarefas Prioritárias</span>
+      </div>
+    </div>
+
+    <div class="lists-row">
+
+      <div class="list-section">
+        <div routerLink="/my-tasks" class="list-title">My To Do Tasks</div>
+        @for (task of todo_task.slice(0,5); track task.title) {
+        <div routerLink="/my-tasks"  class="list-item">
+          <span class="list-item-name">{{task.title}}</span>
+          <span  class="list-item-meta">
+            {{ task.due_date | date:'yyyy-MM-dd' }}
+          </span>
+        </div>
+      }
+      </div>
+
+      <div class="list-section">
+        <div  routerLink="/my_projects" class="list-title">My Projects</div>
+        @for (proj of my_projects.slice(0,5); track proj.project_name){
+          <div routerLink="/my_projects" class="list-item">
+            <span class="list-item-name">{{proj.project_name}}</span>
+            <span class="list-item-meta">{{proj.team_name}}</span>
+          </div>
+        }
+
+      </div>
+
+    </div>
+  </div>
+
+</main>

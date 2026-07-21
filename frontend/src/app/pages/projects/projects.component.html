@@ -1,0 +1,17 @@
+<div class="page">
+  <div class="page-header">
+    <h2>Os meus projetos</h2>
+  </div>
+    <section>
+         <div class="grid">
+          @for(proj of projects; track proj.id){
+          <div class="card project-card">
+            <a [routerLink]="['/projects', proj.id]" class="project-link">
+              <h4>{{proj.name}}</h4>
+              <p class="muted">{{proj.description}}</p>
+            </a>
+          </div>
+        }
+      </div>
+    </section>
+  </div>

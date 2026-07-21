@@ -1,0 +1,128 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.page {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 24px 60px;
+  color: #1a1a1a;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  color: #1a1a1a;
+  text-decoration: none;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.search {
+  position: relative;
+  width: min(100%, 280px);
+}
+
+.search input {
+  width: 100%;
+  padding: 10px 36px 10px 14px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  outline: none;
+}
+
+.search svg {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  color: #999;
+  transform: translateY(-50%);
+}
+
+.filter {
+  display: flex;
+  min-width: 180px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  color: #666;
+  font-size: 14px;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 22px 24px;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 14px;
+}
+
+th {
+  padding-top: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+  color: #1a1a1a;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+th:first-child, td:first-child { text-align: left; }
+tbody tr + tr td { border-top: 1px solid #eee; }
+.team-name { margin-bottom: 6px; font-weight: 700; }
+.team-members { color: #1a1a1a; line-height: 1.7; }
+.team-members a,
+.team-members span {
+  display: block;
+}
+.team-members a {
+  color: #1a1a1a;
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .page { padding: 20px 16px 40px; }
+  h1 { font-size: 20px; }
+  .toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .search { width: 100%; }
+  .filter { width: 100%; }
+  th, td {
+    padding: 16px 14px;
+    font-size: 13px;
+  }
+}

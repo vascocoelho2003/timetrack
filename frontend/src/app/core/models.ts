@@ -4,6 +4,29 @@ export interface User {
   username: string;
 }
 
+export interface DashboardData {
+  id: number;
+  username: string;
+  total_teams: number;
+  total_projects: number;
+  total_tasks: number;
+  todo_tasks: number;
+  closed_tasks: number;
+  total_hours: number;
+  overdua_tasks: number;
+  high_priority_tasks: number;
+}
+
+export interface todo_tasks {
+  title: string;
+  due_date: string;
+}
+
+export interface my_projects {
+  project_name: string;
+  team_name: string;
+}
+
 export interface Team {
   id: number;
   name: string;
@@ -31,6 +54,25 @@ export interface TaskList {
 
 export interface Task {
   id: number;
+  task_list_id: number;
+  parent_task_id: number | null;
+  title: string;
+  description: string;
+  status: 'todo' | 'doing' | 'done';
+  priority: 'low' | 'medium' | 'high';
+  due_date: string | null;
+  assigneeIds: number[];
+  subtasks?: Task[];
+  comments?: Comment[];
+  assignees: User[];
+}
+
+export interface Task_proj {
+  id: number;
+  team_id: number;
+  project_id: number;
+  task_list_name: string,
+  project_name: string;
   task_list_id: number;
   parent_task_id: number | null;
   title: string;

@@ -89,8 +89,6 @@ function attachAssignees(tasks) {
   });
 }
 
-
-
 module.exports = {
   getTeamMembership,
   isTeamAdmin,

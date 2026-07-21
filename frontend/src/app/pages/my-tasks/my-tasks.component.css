@@ -1,0 +1,107 @@
+.project-page {
+  width: 100%;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin-bottom: 12px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.empty-state {
+  margin: 0;
+}
+  
+  .list-table-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+  }
+  
+  .list-table-row {
+    display: grid; 
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+  }
+  
+  .assign-pill {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  
+  @media (max-width: 1024px) {
+    .list-table-header {
+      grid-template-columns: 2fr 1.5fr 1fr 1fr;
+    }
+  
+    .list-table-row {
+      grid-template-columns: 2fr 1.5fr 1fr 1fr;
+    }
+  
+    .list-table-row > :nth-child(4) {
+      display: none;
+    }
+  
+    .list-table-header > :nth-child(4) {
+      display: none;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .list-table-header {
+      grid-template-columns: 1.5fr 1fr 1fr;
+      font-size: 0.85rem;
+    }
+  
+    .list-table-row {
+      grid-template-columns: 1.5fr 1fr 1fr;
+      font-size: 0.85rem;
+      padding: 8px 0;
+    }
+  
+    .list-table-row > :nth-child(2),
+    .list-table-header > :nth-child(2) {
+      display: none;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .list-table-header {
+      grid-template-columns: 1fr 1fr;
+      font-size: 0.75rem;
+    }
+  
+    .list-table-row {
+      grid-template-columns: 1fr 1fr;
+      font-size: 0.75rem;
+      padding: 6px 0;
+    }
+  
+    .list-table-row > :nth-child(n+2),
+    .list-table-header > :nth-child(n+2) {
+      display: none;
+    }
+  
+    .list-table-row > :first-child,
+    .list-table-header > :first-child {
+      grid-column: 1;
+    }
+  }
+  

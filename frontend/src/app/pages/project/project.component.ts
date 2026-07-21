@@ -28,6 +28,13 @@ export class ProjectComponent implements OnInit {
   showNewList = false;
   viewMode: 'board' | 'list' = 'board';
   showOnlyMyTasks = false;
+  listSearch = '';
+  listFilterList = '';
+  listFilterStatus = '';
+  listFilterPriority = '';
+  listFilterDueDate = '';
+  listPage = 1;
+  listPageSize = 10;
   newListName = '';
   showNewTaskForm = false;
   newTaskListId = 0;

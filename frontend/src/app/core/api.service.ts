@@ -1,8 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import {
-  Team, TeamMember, Project, TaskList, Task, TimeEntry, ReportData, Comment,
+  Team, TeamMember, Project, TaskList, Task, TimeEntry, ReportData, Comment,Task_proj,
   User,
+  DashboardData,
+  todo_tasks,
+  my_projects,
 } from './models';
 import {environment} from '../../environments/environments';
 
@@ -102,5 +105,25 @@ export class ApiService {
 
   getProjectMembers(projectId: number){
     return this.http.get<User[]>(`${API}/projects/${projectId}/users`);
+  }
+
+  getDashboard(){
+    return this.http.get<DashboardData>(`${API}/dashboard`);
+  }
+
+  getMyTodoTasks(){
+    return this.http.get<todo_tasks[]>(`${API}/my-todo-tasks`);
+  }
+
+  getMyProjects(){
+    return this.http.get<my_projects[]>(`${API}/my-projects`);
+  }
+
+  getUserProjects(){
+    return this.http.get<Project[]>(`${API}/projects`);
+  }
+
+  getUserTasks(){
+    return this.http.get<Task_proj[]>(`${API}/tasks/`);
   }
 }

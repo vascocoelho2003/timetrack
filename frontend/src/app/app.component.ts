@@ -7,7 +7,7 @@ import { TimerService, formatDuration } from './core/timer.service';
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet, RouterLink],
-  templateUrl: './app.component.html' 
+  templateUrl: './app.component.html'
 })
 export class AppComponent implements OnInit {
 
@@ -18,12 +18,12 @@ export class AppComponent implements OnInit {
 
   @HostListener('window:resize')
   checkMenu() {
-    this.showBurger = window.innerWidth < 980; // ou calcular dinamicamente
+    this.showBurger = window.innerWidth < 980;
   }
 
-ngAfterViewInit() {
-  this.checkMenu();
-}
+  ngAfterViewInit() {
+    this.checkMenu();
+  }
 
   constructor(
     public auth: AuthService,
@@ -48,5 +48,4 @@ ngAfterViewInit() {
   isActive(path: string): boolean {
     return this.router.url.startsWith(path);
   }
-
 }

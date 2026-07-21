@@ -1,8 +1,8 @@
 @if (auth.isLoggedIn) {
   <header class="app-header">
     <div class="header-left">
-      <a routerLink="/teams" class="logo">
-        JC Ribeiro - Task Management
+      <a routerLink="/reports" class="logo">
+        <span style="font-weight: 300;">JC Ribeiro - Task Management</span>
       </a>
     </div>
     <nav
@@ -13,19 +13,19 @@
         class="nav-link"
         [class.active]="isActive('/reports')"
         (click)="closeMenu()">
-        Dashboard
+        Relatórios
       </a>
       <a
         routerLink="/teams"
         class="nav-link"
         [class.active]="isActive('/teams')"
         (click)="closeMenu()">
-        Teams
+        Equipas
       </a>
       <a
-        routerLink="/projects"
+        routerLink="/my_projects"
         class="nav-link"
-        [class.active]="isActive('/projects')"
+        [class.active]="isActive('/my_projects')"
         (click)="closeMenu()">
         Projetos
       </a>
@@ -51,7 +51,7 @@
       </div>
     }
     <div class="header-user">
-      <span>{{ auth.currentUser()?.username }}</span>
+      <span style="font-weight: 300;">{{ auth.currentUser()?.username }}</span>
       <button
         class="btn btn-ghost btn-sm"
         (click)="auth.logout()">
@@ -62,5 +62,5 @@
 }
 
 <main [class.with-header]="auth.isLoggedIn">
-  <router-outlet />
+  <router-outlet/>
 </main>
