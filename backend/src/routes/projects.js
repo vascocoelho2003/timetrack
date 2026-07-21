@@ -12,6 +12,66 @@ function sanitizeProjectDescription(value = '') {
   return String(value ?? '').trim().slice(0, MAX_PROJECT_DESCRIPTION_LENGTH);
 }
 
+router.get('/userProjectsDetails', (req, res) => {
+  const user_id = req.user.id;
+
+  const data = db.prepare(`
+    SELECT
+      p.id,
+      p.name,
+      p.description,
+      p.team_id,
+      t.name AS team_name,
+
+      json_group_array(
+        DISTINCT json_object(
+          'id', u.id,
+          'username', u.username,
+          'email', u.email
+        )
+      ) AS members,
+
+      (
+        SELECT COUNT(*)
+        FROM tasks ta
+        JOIN task_lists tl ON tl.id = ta.task_list_id
+        WHERE tl.project_id = p.id
+          AND ta.status = 'todo'
+      ) AS todo_tasks,
+
+      (
+        SELECT COUNT(*)
+        FROM tasks ta
+        JOIN task_lists tl ON tl.id = ta.task_list_id
+        WHERE tl.project_id = p.id
+          AND ta.status = 'done'
+      ) AS done_tasks
+
+    FROM projects p
+
+    JOIN teams t
+      ON t.id = p.team_id
+
+    JOIN team_members tm
+      ON tm.team_id = p.team_id
+
+    JOIN team_members tm2
+      ON tm2.team_id = p.team_id
+
+    JOIN users u
+      ON u.id = tm2.user_id
+
+    WHERE tm.user_id = ?
+
+    GROUP BY p.id;
+  `).all(user_id).map(project => ({
+    ...project,
+    members: JSON.parse(project.members)
+  }));
+
+  return res.status(200).json(data);
+});
+
 /**
  * @openapi
  * /api/projects/team/{teamId}:
@@ -229,5 +289,7 @@ router.get('/', (req, res) => {
 
   return res.status(200).json(projects);
 });
+
+
 
 module.exports = router;

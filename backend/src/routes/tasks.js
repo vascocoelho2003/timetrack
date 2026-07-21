@@ -32,7 +32,7 @@ router.get('/',(req,res)=>{
     JOIN task_lists tl ON tl.id = t.task_list_id
     JOIN projects p ON p.id = tl.project_id
     WHERE ta.user_id = ?
-      AND t.status != 'done';`).all(user_id);
+      AND t.status != 'done' ORDER BY t.due_date DESC`).all(user_id);
   return res.status(200).json(tasks);
 })
 

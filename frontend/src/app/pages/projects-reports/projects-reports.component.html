@@ -23,51 +23,23 @@
         </tr>
       </thead>
       <tbody>
+        @for( proj of projects; track proj.id){
         <tr>
-          <td>Tarefas Administrativas</td>
+          <td>{{proj.name}}</td>
           <td>
-            <div class="team-name">Equipa Administrativa</div>
-            <div class="team-members">
-              <a href="#">sergio.melo</a>
-              <span>renata.mendes</span>
-              <span>susana.mendes</span>
-              <span>silvia.relvas</span>
-              <a href="#">joao.vivas</a>
-            </div>
+            <a [routerLink]="['/teams', proj.team_id]" class="team-name">
+              {{ proj.team_name }}
+            </a>
+            @for (m of proj.members; track m.id) {
+              <div class="team-members">
+                <span>{{ m.username }}</span>
+              </div>
+            }
           </td>
-          <td>5 tarefas</td>
-          <td>5 tarefas</td>
+          <td>{{proj.todo_tasks}}</td>
+          <td>{{proj.done_tasks}}</td>
         </tr>
-        <tr>
-          <td>Tarefas Administrativas</td>
-          <td>
-            <div class="team-name">Equipa Administrativa + RH</div>
-            <div class="team-members">
-              <a href="#">sergio.melo</a>
-              <span>renata.mendes</span>
-              <span>susana.mendes</span>
-              <span>silvia.relvas</span>
-              <a href="#">joao.vivas</a>
-              <span>Sílvia Bento</span>
-              <span>Fátima Dias</span>
-            </div>
-          </td>
-          <td>5 tarefas</td>
-          <td>5 tarefas</td>
-        </tr>
-        <tr>
-          <td>Tarefas Administrativas</td>
-          <td>
-            <div class="team-name">Equipa Administrativa</div>
-            <div class="team-members">
-              <a href="#">sergio.melo</a>
-              <span>renata.mendes</span>
-              <span>susana.mendes</span>
-            </div>
-          </td>
-          <td>5 tarefas</td>
-          <td>5 tarefas</td>
-        </tr>
+      }
       </tbody>
     </table>
   </div>

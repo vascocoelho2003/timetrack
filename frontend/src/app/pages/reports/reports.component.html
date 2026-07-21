@@ -22,27 +22,27 @@
     </div>
 
     <div class="stats-row bottom">
-      <div class="stat-tile">
+      <div routerLink="/my-tasks" class="stat-tile">
         <span class="stat-value">{{this.total_tasks}}</span>
         <span class="stat-label">Assigned Tasks</span>
       </div>
-      <div class="stat-tile">
+      <div routerLink="/my-tasks" class="stat-tile">
         <span class="stat-value">{{this.todo_tasks}}</span>
         <span class="stat-label">To Do Tasks</span>
       </div>
-      <div class="stat-tile">
+      <div routerLink="/my-tasks" class="stat-tile">
         <span class="stat-value">{{this.closed_tasks}}</span>
         <span class="stat-label">Closed Tasks</span>
       </div>
-      <div class="stat-tile">
+      <div routerLink="/my-tasks" class="stat-tile">
         <span class="stat-value">{{ formatHours(total_hours) }}</span>
         <span class="stat-label">Horas Registadas</span>
       </div>
-      <div class="stat-tile">
+      <div routerLink="/my-tasks" class="stat-tile">
         <span class="stat-value">{{this.overdue_tasks}}</span>
         <span class="stat-label">Tarefas Atrasadas</span>
       </div>
-      <div class="stat-tile">
+      <div routerLink="/my-tasks" class="stat-tile">
         <span class="stat-value">{{this.high_priority_tasks}}</span>
         <span class="stat-label">Tarefas Prioritárias</span>
       </div>

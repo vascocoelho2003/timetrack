@@ -42,7 +42,7 @@ export class ReportsComponent implements OnInit {
         this.todo_tasks = data.todo_tasks ?? 0;
         this.closed_tasks = data.closed_tasks ?? 0;
         this.total_hours = data.total_hours ?? 0;
-        this.overdue_tasks = data.overdua_tasks ?? 0;
+        this.overdue_tasks = data.overdue_tasks ?? 0;
         this.high_priority_tasks = data.high_priority_tasks ?? 0;
       },
       error: (error) => {

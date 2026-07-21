@@ -13,8 +13,19 @@ export interface DashboardData {
   todo_tasks: number;
   closed_tasks: number;
   total_hours: number;
-  overdua_tasks: number;
+  overdue_tasks: number;
   high_priority_tasks: number;
+}
+
+export interface userProjectsDetails{
+  id: number;
+  name: string;
+  description: string;
+  team_id: number;
+  team_name: string;
+  members: User[];
+  todo_tasks: number;
+  done_tasks: number;
 }
 
 export interface todo_tasks {

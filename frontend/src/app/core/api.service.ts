@@ -5,7 +5,7 @@ import {
   User,
   DashboardData,
   todo_tasks,
-  my_projects,
+  my_projects, userProjectsDetails,
 } from './models';
 import {environment} from '../../environments/environments';
 
@@ -126,4 +126,9 @@ export class ApiService {
   getUserTasks(){
     return this.http.get<Task_proj[]>(`${API}/tasks/`);
   }
+
+  getUserProjectDetails(){
+    return this.http.get<userProjectsDetails[]>(`${API}/projects/userProjectsDetails`);
+  }
+
 }
