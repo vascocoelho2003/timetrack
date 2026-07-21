@@ -22,7 +22,7 @@
     }
 
     <div class="grid">
-      @for (team of teams; track team.id) {
+      @for (team of teams; track team.id){
         <div class="card team-card">
           <a [routerLink]="['/teams', team.id]" class="team-link">
             <h3>{{ team.name }}</h3>

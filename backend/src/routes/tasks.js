@@ -21,6 +21,21 @@ function setAssignees(taskId, assigneeIds) {
   }
 }
 
+router.get('/',(req,res)=>{
+  const user_id = req.user.id;
+  tasks = db.prepare(`SELECT
+    t.*, tl.name as task_list_name,
+    p.id AS project_id,
+    p.name AS project_name
+    FROM tasks t
+    JOIN task_assignees ta ON ta.task_id = t.id
+    JOIN task_lists tl ON tl.id = t.task_list_id
+    JOIN projects p ON p.id = tl.project_id
+    WHERE ta.user_id = ?
+      AND t.status != 'done';`).all(user_id);
+  return res.status(200).json(tasks);
+})
+
 /**
  * @openapi
  * /api/tasks:
@@ -93,6 +108,50 @@ router.post('/', (req, res) => {
   const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId);
   res.status(201).json({ ...task, assigneeIds: assigneeIds || [] });
 });
+
+
+router.get('/my_tasks',(req,res)=> {
+  const tasks = db.prepare(`
+    SELECT
+        t.id,
+        t.title,
+        t.description,
+        t.status,
+        t.priority,
+        t.due_date,
+        t.created_at,
+        t.completed_at,
+
+        tl.id AS task_list_id,
+        tl.name AS task_list_name,
+
+        p.id AS project_id,
+        p.name AS project_name,
+
+        te.id AS team_id,
+        te.name AS team_name
+    FROM task_assignees ta
+    JOIN tasks t
+        ON t.id = ta.task_id
+    JOIN task_lists tl
+        ON tl.id = t.task_list_id
+    JOIN projects p
+        ON p.id = tl.project_id
+    JOIN teams te
+        ON te.id = p.team_id
+    WHERE ta.user_id = ?
+    ORDER BY
+        CASE t.priority
+            WHEN 'high' THEN 1
+            WHEN 'medium' THEN 2
+            WHEN 'low' THEN 3
+        END,
+        t.due_date ASC,
+        t.created_at DESC;
+`).all(req.user.id);
+
+return res.status(200).json(tasks);
+})
 
 /**
  * @openapi
@@ -397,6 +456,7 @@ router.get('',(req,res)=>{
 
   return res.status(200).json(tasks)
 })
+
 
 /**
  * @openapi

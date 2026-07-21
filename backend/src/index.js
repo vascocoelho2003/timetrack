@@ -12,6 +12,7 @@ const taskListRoutes = require('./routes/taskLists');
 const taskRoutes = require('./routes/tasks');
 const timeEntryRoutes = require('./routes/timeEntries');
 const importRoutes = require('./routes/import');
+const dashboardRoutes = require('./routes/dashboard');
 const { swaggerSpec } = require('./swagger');
 const dotenv = require('dotenv');
 const cron = require('node-cron');
@@ -43,7 +44,8 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/task-lists', taskListRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/time', timeEntryRoutes);
-app.use('/api', importRoutes)
+app.use('/api/', timeEntryRoutes);
+app.use('/api', dashboardRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error(err);
