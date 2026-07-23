@@ -14,4 +14,6 @@ export const routes: Routes = [
   { path: 'projects-reports', loadComponent: () => import('./pages/projects-reports/projects-reports.component').then(m => m.ProjectsReportsComponent), canActivate: [authGuard] },
   { path: 'colaborators-reports', loadComponent: () => import('./pages/colaborators-reports/colaborators-reports.component').then(m => m.ColaboratorsReportsComponent), canActivate: [authGuard] },
   { path: 'my_projects', loadComponent: () => import('./pages/projects/projects.component').then(m => m.ProjectsComponent), canActivate: [authGuard] },
+  { path: 'project-report/:id', loadComponent: () => import('./pages/project-report/project-report.component').then(m => m.ProjectReportComponent), canActivate: [authGuard] },
+  { path: 'colaborator-report/:id', loadComponent: () => import('./pages/colaborator-report/colaborator-report.component').then(m => m.ColaboratorReportComponent), canActivate: [authGuard] },
 ];
