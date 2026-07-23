@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import {
   Team, TeamMember, Project, TaskList, Task, TimeEntry, ReportData, Comment,Task_proj,
-  User,
-  DashboardData,
+  User, colaboratorReport,
+  DashboardData,project_report,
   todo_tasks,
   my_projects, userProjectsDetails,
 } from './models';
@@ -129,6 +129,18 @@ export class ApiService {
 
   getUserProjectDetails(){
     return this.http.get<userProjectsDetails[]>(`${API}/projects/userProjectsDetails`);
+  }
+
+  getProjectReport(projectId: number, startDate?: string, endDate?: string){
+    const params: Record<string, string> = {};
+    if (startDate) params['startDate'] = startDate;
+    if (endDate) params['endDate'] = endDate;
+
+    return this.http.get<project_report>(`${API}/project_report/${projectId}`, { params });
+  }
+
+  getColaboratorReport(){
+    return this.http.get<colaboratorReport[]>(`${API}/colaborator_report`);
   }
 
 }

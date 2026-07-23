@@ -6,6 +6,10 @@ body {
   min-height: 100vh;
 }
 
+td{
+  cursor:pointer;
+}
+
 .navbar {
   background: #fff;
   border-bottom: 1px solid #e5e5e5;
@@ -132,6 +136,28 @@ tbody td {
 }
 tbody td:not(:first-child) { text-align: center; }
 tbody tr:last-child td { border-bottom: none; }
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0;
+  font-size: 13px;
+}
+
+.pagination button {
+  padding: 6px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
 
 @media (max-width: 640px) {
   .navbar { padding: 14px 16px; }

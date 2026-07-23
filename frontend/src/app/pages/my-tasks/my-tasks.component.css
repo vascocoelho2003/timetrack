@@ -1,5 +1,7 @@
 .project-page {
-  width: 100%;
+  max-width: 1250px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
 }
 
 .filters {

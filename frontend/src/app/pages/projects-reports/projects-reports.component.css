@@ -8,6 +8,12 @@
   color: #1a1a1a;
 }
 
+.dropdown {
+  width: 150px;
+  height: 30px;
+  font-size: 14px;
+}
+
 .back {
   display: inline-flex;
   align-items: center;
@@ -15,6 +21,7 @@
   text-decoration: none;
   font-size: 14px;
   margin-bottom: 20px;
+  cursor: pointer;
 }
 
 h1 {
@@ -107,6 +114,7 @@ tbody tr + tr td { border-top: 1px solid #eee; }
 .team-members span {
   display: block;
 }
+
 .team-members a {
   color: #1a1a1a;
   text-decoration: underline;

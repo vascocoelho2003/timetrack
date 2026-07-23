@@ -17,6 +17,14 @@ export interface DashboardData {
   high_priority_tasks: number;
 }
 
+export interface colaboratorReport{
+  user_id: number;
+  username: string;
+  nr_tasks: number;
+  nr_closed_tasks: number;
+  total_time: number; 
+}
+
 export interface userProjectsDetails{
   id: number;
   name: string;
@@ -26,6 +34,37 @@ export interface userProjectsDetails{
   members: User[];
   todo_tasks: number;
   done_tasks: number;
+}
+
+export interface projectForReport{
+  id: number;
+  name: string;
+}
+
+export interface assigneesForReport{
+  id: number;
+  username: string;
+  time: number;
+}
+
+export interface taskForReport{
+  id: number;
+  title: string;
+  status: string;
+  due_date: string | null;
+  total_time: number;
+  assignees : assigneesForReport[];
+}
+
+export interface tasklistForReport{
+  id: number;
+  name: string;
+  tasks: taskForReport[];
+}
+
+export interface project_report{
+  project: projectForReport;
+  task_lists : tasklistForReport [];
 }
 
 export interface todo_tasks {
@@ -44,6 +83,12 @@ export interface Team {
   created_by: number;
   role: 'admin' | 'member';
 }
+
+export interface TeamModel {
+  id: number;
+  name: string;
+}
+
 
 export interface TeamMember extends User {
   role: 'admin' | 'member';

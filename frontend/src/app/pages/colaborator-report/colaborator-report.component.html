@@ -1,0 +1,37 @@
+<main class="main-container">
+    <a routerLink="/colaborators-reports" class="back-link">← Equipa</a>
+    <section class="report-header">
+      <div class="report-title">
+        <h1>Relatório de Colaborador</h1>
+        <div class="report-meta">
+          <h2>Colaborador: sergio.melo</h2>
+          <h3>Tempo Total: 45:30</h3>
+        </div>
+      </div>
+      <div class="report-controls">
+        <div class="date-range">
+          <select class="select"><option>Período Personalizado</option></select>
+          <input type="date" class="date-input" value="2025-07-01" />
+          <input type="date" class="date-input" value="2025-07-30" />
+        </div>
+        <button class="btn export-btn">Exportar PDF ↓</button>
+      </div>
+    </section>
+
+    <section class="report-card">
+      <div class="task-group">
+        <div class="group-header">
+          <div>Lista de Tarefas: Pagamentos</div>
+          <div>Tempo Registado</div>
+          <div>Estado da Tarefa</div>
+          <div>Prazo</div>
+        </div>
+        <div class="task-row">
+          <div class="task-name">IMPI - Junho</div>
+          <div class="task-time" data-label="Tempo">00:30</div>
+          <div class="task-status" data-label="Estado"><span class="status status-done">Done</span></div>
+          <div class="task-deadline" data-label="Prazo">10/06/2025</div>
+        </div>
+      </div>
+    </section>
+  </main>
