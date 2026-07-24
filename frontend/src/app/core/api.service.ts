@@ -144,8 +144,12 @@ export class ApiService {
     return this.http.get<colaboratorReport[]>(`${API}/colaborators_reports`);
   }
 
-  getColaboratorReportDetails(id: number){
-    return this.http.get<ColaboratorReportDetails[]>(`${API}/colaborator_report/${id}`);
+  getColaboratorReportDetails(id: number, startDate?: string, endDate?: string){
+    const params: Record<string, string> = {};
+    if (startDate) params['startDate'] = startDate;
+    if (endDate) params['endDate'] = endDate;
+
+    return this.http.get<ColaboratorReportDetails[]>(`${API}/colaborator_report/${id}`, { params });
   }
 
 }

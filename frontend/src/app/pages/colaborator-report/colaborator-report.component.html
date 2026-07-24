@@ -10,9 +10,16 @@
       </div>
       <div class="report-controls">
         <div class="date-range">
-          <select class="select"><option>Período Personalizado</option></select>
-          <input type="date" class="date-input" value="2025-07-01" />
-          <input type="date" class="date-input" value="2025-07-30" />
+          <select class="select" [(ngModel)]="selectedPeriod" (ngModelChange)="onPeriodChange()">
+            <option value="custom">Período Personalizado</option>
+            <option value="month">Este mês</option>
+            <option value="last-month">Mês passado</option>
+            <option value="year">Este ano</option>
+          </select>
+          @if (selectedPeriod === 'custom') {
+            <input type="date" class="date-input" [(ngModel)]="startDate" (ngModelChange)="onCustomDateChange()" />
+            <input type="date" class="date-input" [(ngModel)]="endDate" (ngModelChange)="onCustomDateChange()" />
+          }
         </div>
         <button class="btn export-btn">Exportar PDF ↓</button>
       </div>

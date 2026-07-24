@@ -314,6 +314,8 @@ router.get('/colaborators_reports/', authMiddleware, async(req,res)=>{
 
 router.get('/colaborator_report/:id', authMiddleware, (req, res) => {
     const userId = req.params.id;
+    const { startDate, endDate } = req.query;
+    const hasDateRange = startDate && endDate;
 
     const timeEntries = db.prepare(`
         SELECT
@@ -336,8 +338,8 @@ router.get('/colaborator_report/:id', authMiddleware, (req, res) => {
             ON tm.team_id = p.team_id
            AND tm.user_id = te.user_id
         WHERE te.user_id = ?
-    `).all(userId);
-    console.log(timeEntries)
+        ${hasDateRange ? "AND date(te.start) >= date(?) AND date(te.start) < date(?, '+1 day')" : ''}
+    `).all(...(hasDateRange ? [userId, startDate, endDate] : [userId]));
 
     return res.status(200).json(timeEntries);
 });

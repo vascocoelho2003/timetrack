@@ -2,10 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ColaboratorReportDetails } from '../../core/models';
 import { ApiService } from '../../core/api.service';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-colaborator-report',
-  imports: [RouterLink],
+  imports: [RouterLink, FormsModule],
   templateUrl: './colaborator-report.component.html',
   styleUrl: './colaborator-report.component.css'
 })
@@ -15,6 +16,9 @@ export class ColaboratorReportComponent implements OnInit{
   totalTime = 0;
   username = '';
   colaboratorId = 0;
+  selectedPeriod = 'custom';
+  startDate = '';
+  endDate = '';
 
   constructor(private route: ActivatedRoute, private apiService: ApiService) {
     this.route.queryParamMap.subscribe(params => {
@@ -29,11 +33,61 @@ export class ColaboratorReportComponent implements OnInit{
       return;
     }
 
-    this.apiService.getColaboratorReportDetails(this.colaboratorId).subscribe(data =>{
-      this.colaboradores=data;
+    this.loadReport();
+  }
+
+  loadReport(): void {
+    const dates = this.selectedPeriod === 'custom'
+      ? { startDate: this.startDate, endDate: this.endDate }
+      : this.getPeriodDates(this.selectedPeriod);
+
+    this.apiService.getColaboratorReportDetails(
+      this.colaboratorId,
+      dates.startDate,
+      dates.endDate
+    ).subscribe(data => {
+      this.colaboradores = data;
       this.groupedColaboradores = this.groupByProjectAndTaskList(data);
-    })
-    
+      this.totalTime = data.reduce((total, entry) => total + (entry.duration || 0), 0);
+    });
+  }
+
+  onPeriodChange(): void {
+    if (this.selectedPeriod !== 'custom') {
+      const dates = this.getPeriodDates(this.selectedPeriod);
+      this.startDate = dates.startDate;
+      this.endDate = dates.endDate;
+      this.loadReport();
+    }
+  }
+
+  onCustomDateChange(): void {
+    if (this.selectedPeriod === 'custom' && this.startDate && this.endDate) {
+      this.loadReport();
+    }
+  }
+
+  private getPeriodDates(period: string): { startDate: string; endDate: string } {
+    const now = new Date();
+    let start: Date;
+
+    if (period === 'last-month') {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const end = new Date(now.getFullYear(), now.getMonth(), 0);
+      return { startDate: this.toDateInput(start), endDate: this.toDateInput(end) };
+    }
+
+    if (period === 'year') {
+      start = new Date(now.getFullYear(), 0, 1);
+    } else {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    return { startDate: this.toDateInput(start), endDate: this.toDateInput(now) };
+  }
+
+  private toDateInput(date: Date): string {
+    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
   }
 
   private groupByProjectAndTaskList(tasks: ColaboratorReportDetails[]) {
