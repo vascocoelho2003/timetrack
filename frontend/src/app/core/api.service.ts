@@ -6,6 +6,7 @@ import {
   DashboardData,project_report,
   todo_tasks,
   my_projects, userProjectsDetails,
+  ColaboratorReportDetails,
 } from './models';
 import {environment} from '../../environments/environments';
 
@@ -140,7 +141,11 @@ export class ApiService {
   }
 
   getColaboratorReport(){
-    return this.http.get<colaboratorReport[]>(`${API}/colaborator_report`);
+    return this.http.get<colaboratorReport[]>(`${API}/colaborators_reports`);
+  }
+
+  getColaboratorReportDetails(id: number){
+    return this.http.get<ColaboratorReportDetails[]>(`${API}/colaborator_report/${id}`);
   }
 
 }

@@ -231,11 +231,10 @@ router.get('/project_report/:projectId', authMiddleware, async(req, res) => {
         }
 
     });
-    console.log(report);
     res.status(200).json(report);
 });
 
-router.get('/colaborator_report/', authMiddleware, async(req,res)=>{
+router.get('/colaborators_reports/', authMiddleware, async(req,res)=>{
     const id = req.user.id;
     const teamMates = db.prepare(`
         SELECT
@@ -311,6 +310,36 @@ router.get('/colaborator_report/', authMiddleware, async(req,res)=>{
     });
 
     return res.status(200).json(teamMates);
+});
+
+router.get('/colaborator_report/:id', authMiddleware, (req, res) => {
+    const userId = req.params.id;
+
+    const timeEntries = db.prepare(`
+        SELECT
+            t.title,
+            t.status,
+            tl.name AS task_list_name,
+            p.name AS project_name,
+            te.*
+        FROM time_entries te
+        JOIN task_assignees ta
+            ON ta.task_id = te.task_id
+           AND ta.user_id = te.user_id
+        JOIN tasks t
+            ON t.id = te.task_id
+        JOIN task_lists tl
+            ON tl.id = t.task_list_id
+        JOIN projects p
+            ON p.id = tl.project_id
+        JOIN team_members tm
+            ON tm.team_id = p.team_id
+           AND tm.user_id = te.user_id
+        WHERE te.user_id = ?
+    `).all(userId);
+    console.log(timeEntries)
+
+    return res.status(200).json(timeEntries);
 });
 
 module.exports = router;
