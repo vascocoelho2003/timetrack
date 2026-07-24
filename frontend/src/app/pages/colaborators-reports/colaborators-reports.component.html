@@ -28,7 +28,15 @@
         </thead>
         <tbody>
           @for(linha of pagedLinhas; track linha.user_id){
-          <tr [routerLink]="['/colaborator-report', linha.user_id]"><td>{{linha.username}}</td><td>{{formatDuration(linha.total_time)}}</td><td>{{linha.nr_tasks}}</td><td>{{linha.nr_closed_tasks}}</td></tr>
+          <tr
+            (click)="openReport(linha)"
+            tabindex="0"
+          >
+            <td>{{linha.username}}</td>
+            <td>{{formatDuration(linha.total_time)}}</td>
+            <td>{{linha.nr_tasks}}</td>
+            <td>{{linha.nr_closed_tasks}}</td>
+          </tr>
           } @empty {
           <tr><td colspan="4">Não foram encontrados registos.</td></tr>
           }

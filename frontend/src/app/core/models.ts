@@ -167,3 +167,17 @@ export interface ReportData {
   byProject: { id: number; name: string; total_seconds: number }[];
   byTask: { id: number; title: string; total_seconds: number }[];
 }
+
+export interface ColaboratorReportDetails{
+  title: string;
+  id: number;
+  status: string;
+  project_name: string;
+  task_list_name: string;
+  user_id: string;
+  task_id: string;
+  start: string;
+  end: string;
+  duration: number;
+  created_at: string;
+}

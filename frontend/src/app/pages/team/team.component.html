@@ -2,7 +2,6 @@
     <a routerLink="/teams" class="back-link">← Equipas</a>
     <div class="page-header">
       <h2>{{ teamName }}</h2>
-      <a [routerLink]="['/teams', teamId, 'reports']" class="btn btn-ghost">Relatórios</a>
     </div>
 
     @if (isAdmin) {

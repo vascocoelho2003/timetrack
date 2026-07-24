@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { colaboratorReport } from '../../core/models';
@@ -19,7 +19,11 @@ export class ColaboratorsReportsComponent implements OnInit{
   page = 1;
   pageSize = 10;
 
-  constructor(private authService: AuthService, private apiService: ApiService){}
+  constructor(
+    private authService: AuthService,
+    private apiService: ApiService,
+    private router: Router
+  ){}
 
 
   ngOnInit(): void {
@@ -51,11 +55,19 @@ export class ColaboratorsReportsComponent implements OnInit{
     return this.filteredLinhas.slice(start, start + this.pageSize);
   }
 
+  openReport(linha: colaboratorReport): void {
+    this.router.navigate(['/colaborator-report', linha.user_id], {
+      queryParams: {
+        total_time: linha.total_time,
+        username: linha.username
+      }
+    });
+  }
+
   
   formatDuration(seconds:number) {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   }
 }

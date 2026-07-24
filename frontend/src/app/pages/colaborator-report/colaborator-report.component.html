@@ -4,8 +4,8 @@
       <div class="report-title">
         <h1>Relatório de Colaborador</h1>
         <div class="report-meta">
-          <h2>Colaborador: sergio.melo</h2>
-          <h3>Tempo Total: 45:30</h3>
+          <h2>Colaborador: {{this.username}}</h2>
+          <h3>Tempo Total: {{formatDuration(this.totalTime)}}</h3>
         </div>
       </div>
       <div class="report-controls">
@@ -19,19 +19,37 @@
     </section>
 
     <section class="report-card">
+      @for(group of groupedColaboradores; track group.projectName + group.taskListName){
       <div class="task-group">
         <div class="group-header">
-          <div>Lista de Tarefas: Pagamentos</div>
+          <div>
+            <span>Projeto: {{group.projectName}}</span>
+            <br>
+            <span>Lista de Tarefas: {{group.taskListName}}</span>
+          </div>
           <div>Tempo Registado</div>
           <div>Estado da Tarefa</div>
           <div>Prazo</div>
         </div>
+        @for(col of group.tasks; track col.id){
         <div class="task-row">
-          <div class="task-name">IMPI - Junho</div>
-          <div class="task-time" data-label="Tempo">00:30</div>
-          <div class="task-status" data-label="Estado"><span class="status status-done">Done</span></div>
-          <div class="task-deadline" data-label="Prazo">10/06/2025</div>
+          <div class="task-name">{{col.title}}</div>
+          <div class="task-time" data-label="Tempo">{{formatDuration(col.duration)}}</div>
+          @if (col.status === 'todo') {
+          <div class="task-status" data-label="Estado"><span class="status status-{{col.status}}">Por Fazer</span></div>
+          }
+          @if (col.status === 'doing') {
+          <div class="task-status" data-label="Estado"><span class="status status-{{col.status}}">Em Progresso</span></div>
+          }
+          @if (col.status === 'done') {
+          <div class="task-status" data-label="Estado"><span class="status status-{{col.status}}">Concluído</span></div>
+          }
+          <div class="task-deadline" data-label="Data">{{formatDate(col.start)}}</div>
         </div>
+      }
       </div>
+      } @empty {
+        <div class="empty-state">Não foram encontrados registos de tempo.</div>
+      }
     </section>
   </main>
