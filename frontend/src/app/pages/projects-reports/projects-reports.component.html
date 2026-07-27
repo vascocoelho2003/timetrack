@@ -1,7 +1,6 @@
 <div class="page">
   <a class="back" routerLink="/reports">← Dashboard</a>
   <h1>Relatórios de Projeto</h1>
-
   <div class="toolbar">
     <div class="search">
       <input type="text" placeholder="Pesquisar Projeto" [(ngModel)]="searchText" (input)="applyFilters()">
@@ -50,4 +49,5 @@
       </tbody>
     </table>
   </div>
+  <div style="font-size: small;">**só aparecem relatórios dos projetos dos quais o utilizador é membro</div>
 </div>
