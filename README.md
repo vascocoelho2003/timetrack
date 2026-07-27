@@ -33,7 +33,7 @@ O objetivo deste projeto é desenvolver uma aplicação WEB que permita fazer a 
 - ✅ Alertas por email das tarefas que estão prestes a expirar;
 - ✅ Controlar o tempo despendido em cada tarefa por cada colaborador;
 - ✅ Gerir as tarefas por prioridade;
-- 🔄 Dashboards e relatórios de tempo;
+- ✅ Exportar Relatórios de Tempos para PDF;
 - 🚀 View em formato de calendário;
 - 🚀 Possível integração com Microsoft To Do, Teams, Planner.
 
