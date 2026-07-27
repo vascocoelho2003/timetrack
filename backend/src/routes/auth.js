@@ -124,4 +124,43 @@ router.get('/me', authMiddleware, (req, res) => {
   res.json(user);
 });
 
+router.put('/me', authMiddleware, (req, res) => {
+  const { username, email, password } = req.body;
+  const normalizedEmail = email?.trim().toLowerCase();
+  const normalizedUsername = username?.trim();
+
+  if (!normalizedEmail || !normalizedUsername) {
+    return res.status(400).json({ error: 'Email e username são obrigatórios' });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    return res.status(400).json({ error: 'Email inválido' });
+  }
+  if (password !== undefined && password !== '' && password.length < 6) {
+    return res.status(400).json({ error: 'Password deve ter pelo menos 6 caracteres' });
+  }
+
+  const existing = db.prepare('SELECT id FROM users WHERE email = ? AND id != ?')
+    .get(normalizedEmail, req.user.id);
+  if (existing) {
+    return res.status(409).json({ error: 'Email já registado' });
+  }
+
+  if (password) {
+    const passwordHash = bcrypt.hashSync(password, 10);
+    db.prepare(
+      'UPDATE users SET username = ?, email = ?, password_hash = ? WHERE id = ?'
+    ).run(normalizedUsername, normalizedEmail, passwordHash, req.user.id);
+  } else {
+    db.prepare(
+      'UPDATE users SET username = ?, email = ? WHERE id = ?'
+    ).run(normalizedUsername, normalizedEmail, req.user.id);
+  }
+
+  const user = db.prepare(
+    'SELECT id, email, username, profile FROM users WHERE id = ?'
+  ).get(req.user.id);
+  const token = signToken(user);
+  res.json({ user, token });
+});
+
 module.exports = router;

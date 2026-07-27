@@ -18,14 +18,19 @@ export class ApiService {
 
   // Teams
   getTeams() { return this.http.get<Team[]>(`${API}/teams`); }
+
   createTeam(name: string) { return this.http.post<Team>(`${API}/teams`, { name }); }
+
   deleteTeam(teamId: number) { return this.http.delete(`${API}/teams/${teamId}`); }
+
   getTeamMembers(teamId: number) {
     return this.http.get<TeamMember[]>(`${API}/teams/${teamId}/members`);
   }
+
   addTeamMember(teamId: number, email: string, role: string) {
     return this.http.post<TeamMember>(`${API}/teams/${teamId}/members`, { email, role });
   }
+
   removeTeamMember(teamId: number, userId: number) {
     return this.http.delete(`${API}/teams/${teamId}/members/${userId}`);
   }
@@ -34,12 +39,15 @@ export class ApiService {
   getProjects(teamId: number) {
     return this.http.get<Project[]>(`${API}/projects/team/${teamId}`);
   }
+  
   createProject(teamId: number, name: string, description: string) {
     return this.http.post<Project>(`${API}/projects/team/${teamId}`, { name, description });
   }
+
   getProject(projectId: number) {
     return this.http.get<Project>(`${API}/projects/${projectId}`);
   }
+
   deleteProject(projectId: number) {
     return this.http.delete(`${API}/projects/${projectId}`);
   }
@@ -48,18 +56,23 @@ export class ApiService {
   getTaskLists(projectId: number) {
     return this.http.get<TaskList[]>(`${API}/task-lists/project/${projectId}`);
   }
+
   createTaskList(projectId: number, name: string) {
     return this.http.post<TaskList>(`${API}/task-lists/project/${projectId}`, { name });
   }
+
   deleteTaskList(listId: number) {
     return this.http.delete(`${API}/task-lists/${listId}`);
   }
+  
   getTasks(listId: number) {
     return this.http.get<Task[]>(`${API}/task-lists/${listId}/tasks`);
   }
 
   // Tasks
-  getTask(taskId: number) { return this.http.get<Task>(`${API}/tasks/${taskId}`); }
+  getTask(taskId: number) { return this.http.get<Task>(`${API}/tasks/${taskId}`); 
+}
+
   createTask(data: {
     taskListId: number;
     title: string;
@@ -72,21 +85,27 @@ export class ApiService {
   }) {
     return this.http.post<Task>(`${API}/tasks`, data);
   }
+
   getClosedTasks(projectId: number) {
     return this.http.get<Task[]>(`${API}/tasks/${projectId}/get_closed_tasks`);
   }
+
   updateTask(taskId: number, data: Record<string, unknown>) {
     return this.http.put<Task>(`${API}/tasks/${taskId}`, data);
   }
+
   deleteTask(taskId: number) {
     return this.http.delete(`${API}/tasks/${taskId}`);
   }
+
   addComment(taskId: number, content: string) {
     return this.http.post<Comment>(`${API}/tasks/${taskId}/comments`, { content });
   }
+
   deleteComment(taskId: number, commentId: number) {
     return this.http.delete(`${API}/tasks/${taskId}/comments/${commentId}`);
   }
+
   createRecurrence(taskId: number, data: Record<string, unknown>) {
     return this.http.post<{ message: string }>(`${API}/tasks/recurrence/${taskId}`, data);
   }
@@ -96,7 +115,9 @@ export class ApiService {
     return this.http.post<TimeEntry>(`${API}/time/start`, { taskId });
   }
   stopTimer() { return this.http.post<TimeEntry>(`${API}/time/stop`, {}); }
+
   getActiveTimer() { return this.http.get<TimeEntry | null>(`${API}/time/active`); }
+
   getTaskTimeEntries(taskId: number) {
     return this.http.get<TimeEntry[]>(`${API}/time/task/${taskId}`);
   }

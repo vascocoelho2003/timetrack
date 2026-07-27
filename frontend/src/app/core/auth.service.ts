@@ -38,6 +38,14 @@ export class AuthService {
     }).pipe(tap(res => this.setSession(res)));
   }
 
+  updateProfile(username: string, email: string, password?: string) {
+    return this.http.put<{ user: User; token: string }>(`${API}/auth/me`, {
+      username,
+      email,
+      ...(password ? { password } : {}),
+    }).pipe(tap(res => this.setSession(res)));
+  }
+
   logout() {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);

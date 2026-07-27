@@ -1,0 +1,59 @@
+<div class="page profile-page">
+  <div class="page-header">
+    <h2>My Profile</h2>
+  </div>
+
+  <section class="card profile-card">
+    <form class="profile-form" (ngSubmit)="submit()">
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" [(ngModel)]="username" required />
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" [(ngModel)]="email"
+               required email #emailField="ngModel" />
+        @if (emailField.invalid && emailField.touched) {
+          <small class="field-error">Introduza um email válido.</small>
+        }
+      </div>
+
+      <div class="field">
+        <label for="newpw">Password Nova</label>
+        <div class="password-wrap">
+          <input id="newpw" name="newPassword" [type]="showNewPassword ? 'text' : 'password'"
+                 [(ngModel)]="newPassword" minlength="6" />
+          <button class="toggle-pw" type="button"
+                  [attr.aria-label]="showNewPassword ? 'Ocultar password' : 'Mostrar password'"
+                  [attr.aria-pressed]="showNewPassword"
+                  (click)="showNewPassword = !showNewPassword">👁</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="newpw2">Password Nova (Confirmação)</label>
+        <div class="password-wrap">
+          <input id="newpw2" name="confirmationPassword"
+                 [type]="showConfirmationPassword ? 'text' : 'password'"
+                 [(ngModel)]="confirmationPassword" />
+          <button class="toggle-pw" type="button"
+                  [attr.aria-label]="showConfirmationPassword ? 'Ocultar password' : 'Mostrar password'"
+                  [attr.aria-pressed]="showConfirmationPassword"
+                  (click)="showConfirmationPassword = !showConfirmationPassword">👁</button>
+        </div>
+      </div>
+
+      @if (error) {
+        <p class="alert">{{ error }}</p>
+      }
+      @if (success) {
+        <p class="success">{{ success }}</p>
+      }
+
+      <button class="btn btn-primary btn-submit" type="submit" [disabled]="loading">
+        {{ loading ? 'A atualizar...' : 'Atualizar' }}
+      </button>
+    </form>
+  </section>
+</div>
