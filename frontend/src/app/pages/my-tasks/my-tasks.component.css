@@ -39,6 +39,16 @@
     border-bottom: 1px solid #f3f4f6;
     cursor: pointer;
   }
+
+  .list-table-row-done {
+    display: grid; 
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 10px 0;
+    background-color: #eefff1;
+    border-bottom: 1px solid rgb(0, 0, 0)4f6 ;
+    cursor: pointer;
+  }
   
   .assign-pill {
     max-width: 100px;

@@ -21,6 +21,7 @@
         <option value="">Todos os estados</option>
         <option value="todo">Por fazer</option>
         <option value="doing">Em progresso</option>
+        <option value="done">Concluída</option>
       </select>
       <select [(ngModel)]="filterPriority" (ngModelChange)="resetPage()">
         <option value="">Todas as prioridades</option>
@@ -39,7 +40,7 @@
       <span>Tarefa</span><span>Projeto/Lista</span><span>Estado</span><span>Prazo</span><span>Prioridade</span>
     </div>
     @for (task of pagedTasks; track task.id) {
-      <div class="list-table-row" (click)="openTask(task)">
+      <div [class.list-table-row]="task.status !== 'done'" [class.list-table-row-done]="task.status === 'done'" (click)="openTask(task)">
         <span>{{ task.title }}</span>
         <span>{{ task.project_name }}<br><small>{{ task.task_list_name }}</small></span>
         <span class="status-pill" [attr.data-status]="task.status">{{ statusLabel(task.status) }}</span>
@@ -63,7 +64,7 @@
       <div class="modal card" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h3>{{ isAdmin ? 'Editar tarefa' : 'Tarefa' }}</h3>
-          <button class="btn-icon" (click)="closeTask()">×</button>
+          <button class="btn-icon" (click)="closeTask()">X</button>
         </div>
         @if (isAdmin) {
           <label>Título</label><input [(ngModel)]="editTitle" />
