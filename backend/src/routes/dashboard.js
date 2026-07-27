@@ -124,6 +124,7 @@ router.get('/project_report/:projectId', authMiddleware, async(req, res) => {
         SELECT
             p.id AS project_id,
             p.name AS project_name,
+            team.name AS team_name,
 
             tl.id AS list_id,
             tl.name AS list_name,
@@ -140,6 +141,9 @@ router.get('/project_report/:projectId', authMiddleware, async(req, res) => {
             COALESCE(SUM(te.duration), 0) AS user_time
 
         FROM projects p
+
+        JOIN teams team
+            ON team.id = p.team_id
 
         LEFT JOIN task_lists tl
             ON tl.project_id = p.id
@@ -184,7 +188,8 @@ router.get('/project_report/:projectId', authMiddleware, async(req, res) => {
     const report = {
         project: {
             id: rows[0].project_id,
-            name: rows[0].project_name
+            name: rows[0].project_name,
+            team_name: rows[0].team_name
         },
         task_lists: []
     };

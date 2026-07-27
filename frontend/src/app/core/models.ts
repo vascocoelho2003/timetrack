@@ -39,6 +39,7 @@ export interface userProjectsDetails{
 export interface projectForReport{
   id: number;
   name: string;
+  team_name?: string;
 }
 
 export interface assigneesForReport{

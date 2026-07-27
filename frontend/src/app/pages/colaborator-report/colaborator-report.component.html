@@ -21,7 +21,7 @@
             <input type="date" class="date-input" [(ngModel)]="endDate" (ngModelChange)="onCustomDateChange()" />
           }
         </div>
-        <button class="btn export-btn">Exportar PDF ↓</button>
+        <button class="btn export-btn" type="button" (click)="exportPdf()">Exportar PDF ↓</button>
       </div>
     </section>
 

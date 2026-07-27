@@ -21,7 +21,7 @@
     @if (dados) {
     <div class="project-header">
       <h2 class="project-title">Projeto: {{dados.project.name}}</h2>
-      <button class="btn-export">
+      <button class="btn-export" type="button" (click)="exportPdf()">
         <span>Exportar PDF</span>
         <span>↓</span>
       </button>
