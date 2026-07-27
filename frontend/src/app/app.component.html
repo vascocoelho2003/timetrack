@@ -51,7 +51,7 @@
       </div>
     }
     <div class="header-user">
-      <span style="font-weight: 300;">{{ auth.currentUser()?.username }}</span>
+      <span routerLink="/my-profile" style="font-weight: 300; cursor: pointer;"><u style="color: rgb(100, 100, 100);">{{ auth.currentUser()?.username }}</u></span>
       <button
         class="btn btn-ghost btn-sm"
         (click)="auth.logout()">

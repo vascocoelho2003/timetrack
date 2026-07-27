@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { TimerService, formatDuration } from '../../core/timer.service';
@@ -47,11 +48,18 @@ export class MyTasksComponent implements OnInit {
 
   constructor(
     private api: ApiService,
+    private route: ActivatedRoute,
     public auth: AuthService,
     public timer: TimerService
   ) {}
 
   ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      this.filterStatus = params['status'] || '';
+      this.filterDueDate = params['dueDate'] || '';
+      this.filterPriority = params['priority'] || '';
+      this.resetPage();
+    });
     this.loadTasks();
     this.timer.refresh();
   }
