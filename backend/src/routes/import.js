@@ -42,7 +42,8 @@ router.post('/import/:team_id/:project_id', async (req,res) =>{
 
             if(row.responsavel){
                 user = db.prepare(`SELECT * FROM users WHERE username = ?`).get(row.responsavel);
-                if(user){db.prepare(`INSERT INTO task_assignees (task_id, user_id) VALUES(?,?)`).run(task.lastInsertRowid, user.id)}
+                if(user)team_member = db.prepare(`SELECT * FROM team_members WHERE user_id = ? AND team_id = ?`).get(user.id, team_id)
+                if(user && team_member){db.prepare(`INSERT INTO task_assignees (task_id, user_id) VALUES(?,?)`).run(task.lastInsertRowid, user.id)}
             }
 
             if(row.recurrency == null){
