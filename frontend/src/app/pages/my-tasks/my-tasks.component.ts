@@ -83,6 +83,8 @@ export class MyTasksComponent implements OnInit {
     const search = this.search.trim().toLowerCase();
     const today = new Date();
     const startToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const startTomorrow = new Date(startToday);
+    startTomorrow.setDate(startToday.getDate() + 1);
     const startWeek = new Date(startToday);
     startWeek.setDate(startToday.getDate() - startToday.getDay());
     return this.tasks.filter(task => {
@@ -94,7 +96,7 @@ export class MyTasksComponent implements OnInit {
       const matchesDue = !this.filterDueDate || (!!due && (
         this.filterDueDate === 'today' ? due >= startToday && due < new Date(startToday.getTime() + 86400000) :
         this.filterDueDate === 'week' ? due >= startWeek && due < new Date(startWeek.getTime() + 7 * 86400000) :
-        due < startToday
+        due < startTomorrow
       ));
       return matchesSearch &&
         (!this.filterProject || String(task.project_id) === this.filterProject) &&
