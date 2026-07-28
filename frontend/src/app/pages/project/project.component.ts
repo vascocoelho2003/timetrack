@@ -405,7 +405,6 @@ export class ProjectComponent implements OnInit {
 
   submitExcel() {
     if (!this.selectedFile || !this.project) return;
-
     const reader: FileReader = new FileReader();
     reader.onload = (e: any) => {
       const binaryStr: string = e.target.result;
@@ -414,7 +413,7 @@ export class ProjectComponent implements OnInit {
       workbook.SheetNames.forEach(sheetName => {
         const worksheet = workbook.Sheets[sheetName];
         const data = XLSX.utils.sheet_to_json(worksheet);
-
+        
         this.http.post(
           `${environment.apiUrl}/import/${this.project?.team_id}/${this.project?.id}`,
           data

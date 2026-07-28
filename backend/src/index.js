@@ -44,6 +44,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/time', timeEntryRoutes);
 app.use('/api/', timeEntryRoutes);
 app.use('/api', dashboardRoutes);
+app.use('/api', importRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error(err);

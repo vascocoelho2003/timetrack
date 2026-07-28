@@ -24,7 +24,6 @@ export class ColaboratorReportComponent implements OnInit{
 
   constructor(private route: ActivatedRoute, private apiService: ApiService) {
     this.route.queryParamMap.subscribe(params => {
-      this.totalTime = Number(params.get('total_time')) || 0;
       this.username = params.get('username') || '';
     });
     this.colaboratorId = Number(this.route.snapshot.paramMap.get('id')) || 0;
@@ -48,8 +47,11 @@ export class ColaboratorReportComponent implements OnInit{
       dates.endDate
     ).subscribe(data => {
       this.colaboradores = data;
+      this.totalTime = data.reduce(
+        (total, entry) => total + Number(entry.duration || 0),
+        0
+      );
       this.groupedColaboradores = this.groupByProjectAndTaskList(data);
-      this.totalTime = data.reduce((total, entry) => total + (entry.duration || 0), 0);
     });
   }
 
@@ -103,12 +105,12 @@ export class ColaboratorReportComponent implements OnInit{
       if (group) {
         const existingTask = group.tasks.find(groupTask => groupTask.task_id === task.task_id);
         if (existingTask) {
-          existingTask.duration += task.duration || 0;
+          existingTask.duration += Number(task.duration || 0);
         } else {
-          group.tasks.push(task);
+          group.tasks.push({ ...task });
         }
       } else {
-        groups.set(key, { projectName, taskListName, tasks: [task] });
+        groups.set(key, { projectName, taskListName, tasks: [{ ...task }] });
       }
     });
 
