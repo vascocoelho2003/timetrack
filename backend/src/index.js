@@ -15,6 +15,8 @@ const importRoutes = require('./routes/import');
 const dashboardRoutes = require('./routes/dashboard');
 const { swaggerSpec } = require('./swagger');
 const dotenv = require('dotenv');
+const cron = require("node-cron");
+const { getNearDueDateTasks } = require("./controllers/email_notification");
 dotenv.config();
 
 const dataDir = path.join(__dirname, '..', 'data');
@@ -28,6 +30,11 @@ const URI = process.env.URI;
 
 app.use(cors({ origin: 'http://localhost:4200', credentials: true }));
 app.use(express.json());
+
+cron.schedule("30 10 * * *", async () => {
+  console.log("A verificar tarefas que vencem dentro de uma semana...");
+  await getNearDueDateTasks();
+});
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

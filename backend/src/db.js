@@ -73,7 +73,8 @@ function initDb() {
       priority TEXT NOT NULL DEFAULT 'medium' CHECK(priority IN ('low', 'medium', 'high')),
       due_date TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      completed_at TEXT
+      completed_at TEXT,
+      near_due_email_sent INTEGER DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS recurrence_rules(
