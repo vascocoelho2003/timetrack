@@ -107,7 +107,11 @@ export class ApiService {
   }
 
   createRecurrence(taskId: number, data: Record<string, unknown>) {
-    return this.http.post<{ message: string }>(`${API}/tasks/recurrence/${taskId}`, data);
+    return this.http.post<{ message: string; recurrence: unknown }>(`${API}/tasks/recurrence/${taskId}`, data);
+  }
+
+  updateRecurrence(taskId: number, data: Record<string, unknown>) {
+    return this.http.put<{ message: string; recurrence: unknown }>(`${API}/tasks/recurrence/${taskId}`, data);
   }
 
   // Time

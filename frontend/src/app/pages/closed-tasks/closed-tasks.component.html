@@ -51,7 +51,7 @@
 
     @if (viewMode === 'grid') {
       <div class="tasks-grid">
-        @for (task of displayedTasks; track task.id) {
+        @for (task of pagedTasks; track task.id) {
           <div class="task-card" (click)="openTask(task.id)">
             <div class="task-card-top">
               <div class="task-title">{{ task.title }}</div>
@@ -74,7 +74,7 @@
         <span>Estado</span>
         <span>Prazo</span>
       </div>
-      @for (task of displayedTasks; track task.id) {
+      @for (task of pagedTasks; track task.id) {
         <div class="list-table-row" (click)="openTask(task.id)">
           <span>{{ task.title }}</span>
           <span>{{ getTaskListName(task.task_list_id) }}</span>
@@ -82,6 +82,13 @@
           <span>{{ formatDateDMY(task.due_date) }}</span>
         </div>
       }
+    }
+    @if (totalPages > 1) {
+      <div class="inline-form" style="justify-content:center;margin-top:12px;gap:8px;">
+        <button class="btn btn-ghost" [disabled]="page === 1" (click)="page = page - 1">Anterior</button>
+        <span class="muted">Página {{ page }} de {{ totalPages }}</span>
+        <button class="btn btn-ghost" [disabled]="page === totalPages" (click)="page = page + 1">Seguinte</button>
+      </div>
     }
   </div>
 

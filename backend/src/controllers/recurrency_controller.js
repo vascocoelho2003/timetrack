@@ -59,12 +59,71 @@ function createRecurrency(taskId){
             cloneTask(task, date, taskId,users);
             break;
         case 'business_day':
-            const businessDate = calculateBusinessDay(recurrenceRule, task.due_date);
-            cloneTask(task, businessDate, taskId,users);
+            if(recurrenceRule.frequency!='monthly'){
+                const businessDate = calculateBusinessDay(recurrenceRule, task.due_date);
+                cloneTask(task, businessDate, taskId,users);    
+            }else{
+                const businessDate = verifyBusinessDate(recurrenceRule, task.due_date);
+                cloneTask(task, businessDate,taskId,users)
+            }
             break;
         default:
             throw new Error('Unknown recurrence type');
     }
+}
+
+function verifyBusinessDate(recurrenceRule, dueDate){
+    const currentDate = new Date(dueDate);
+    const businessDay = getBusinessDayNumber(dueDate);
+
+    const nextMonth = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() + 1,
+        1
+    );
+
+    return getNthBusinessDay(
+        nextMonth.getFullYear(),
+        nextMonth.getMonth(),
+        businessDay
+    );
+}
+
+function getNthBusinessDay(year, month, n) {
+    let businessDays = 0;
+
+    for (let day = 1; ; day++) {
+        const date = new Date(year, month, day);
+
+        if (date.getMonth() !== month) {
+            return null;
+        }
+
+        if (isBusinessDay(date)) {
+            businessDays++;
+
+            if (businessDays === n) {
+                return date;
+            }
+        }
+    }
+}
+
+function getBusinessDayNumber(date) {
+    const current = new Date(date);
+    const targetDay = current.getDate();
+
+    let businessDays = 0;
+
+    for (let day = 1; day <= targetDay; day++) {
+        const d = new Date(current.getFullYear(), current.getMonth(), day);
+
+        if (isBusinessDay(d)) {
+            businessDays++;
+        }
+    }
+
+    return businessDays;
 }
 
 function calculateFixedDay(rule, currentDate) {

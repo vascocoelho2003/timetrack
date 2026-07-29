@@ -194,6 +194,7 @@ router.get('/:taskId', (req, res) => {
   res.json({
     ...task,
     assigneeIds,
+    recurrence: getRecurrency(taskId) || null,
     subtasks: attachAssignees(subtasks),
     comments,
   });
@@ -279,8 +280,16 @@ router.put('/:taskId', (req, res) => {
       taskId
     );
     if (assigneeIds !== undefined) setAssignees(taskId, assigneeIds);
+    const recurrence = getRecurrency(taskId);
+    if (dueDate && (recurrence?.frequency === 'monthly' || recurrence?.frequency === 'yearly')) {
+      const [, month, day] = String(dueDate).slice(0, 10).split('-').map(Number);
+      db.prepare(`
+        UPDATE recurrence_rules
+        SET day_of_month = ?, month_of_year = CASE WHEN frequency = 'yearly' THEN ? ELSE month_of_year END
+        WHERE task_id = ?
+      `).run(day, month, taskId);
+    }
     if (status === 'done' && recurrenceRuleExists(taskId)) {
-      console.log("ola")
       createRecurrency(taskId);
     }
   } else {
@@ -289,7 +298,6 @@ router.put('/:taskId', (req, res) => {
     }
     db.prepare('UPDATE tasks SET status = ? WHERE id = ?').run(status, taskId);
     if (status === 'done' && recurrenceRuleExists(taskId)===true) {
-      console.log("ola")
       createRecurrency(taskId);
     }
   }
@@ -510,17 +518,81 @@ router.post('/recurrence/:taskId', (req,res)=>{
   const taskId = +req.params.taskId;
   const { frequency, interval, weekday, day_of_month, month_of_year, start_date, end_date, rule_type } = req.body;
 
-  exists = recurrenceRuleExists(taskId);
-  if(exists){
+  const task = getTaskWithContext(taskId);
+  if (!task) return res.status(404).json({ message: 'Tarefa não encontrada' });
+  if (!isTeamAdmin(req.user.id, task.team_id)) {
+    return res.status(403).json({ message: 'Apenas admins podem gerir recorrências' });
+  }
+
+  if (getRecurrency(taskId)) {
     return res.status(400).json({ message: 'Regra de recorrência já existe para esta tarefa' });
+  }
+
+  let calculatedDayOfMonth = day_of_month;
+  let calculatedMonthOfYear = month_of_year;
+  if (frequency === 'monthly' || frequency === 'yearly') {
+    if (!task.due_date) {
+      return res.status(400).json({ message: 'As frequências mensal e anual requerem um prazo na tarefa' });
+    }
+    const [, month, day] = String(task.due_date).slice(0, 10).split('-').map(Number);
+    calculatedDayOfMonth = day;
+    if (frequency === 'yearly') calculatedMonthOfYear = month;
   }
 
   db.prepare(`
     INSERT INTO recurrence_rules (task_id, frequency, interval, weekday, day_of_month, month_of_year, start_date, end_date, rule_type)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(taskId, frequency, interval, weekday, day_of_month, month_of_year, start_date, end_date, rule_type);
+  `).run(taskId, frequency, interval, weekday, calculatedDayOfMonth, calculatedMonthOfYear, start_date, end_date, rule_type);
 
-  res.status(201).json({ message: 'Regra de recorrência criada com sucesso' });
+  res.status(201).json({
+    message: 'Regra de recorrência criada com sucesso',
+    recurrence: getRecurrency(taskId),
+  });
+});
+
+router.put('/recurrence/:taskId', (req, res) => {
+  const taskId = +req.params.taskId;
+  const task = getTaskWithContext(taskId);
+  if (!task) return res.status(404).json({ message: 'Tarefa não encontrada' });
+  if (!isTeamAdmin(req.user.id, task.team_id)) {
+    return res.status(403).json({ message: 'Apenas admins podem gerir recorrências' });
+  }
+
+  const recurrence = getRecurrency(taskId);
+  if (!recurrence) {
+    return res.status(404).json({ message: 'Regra de recorrência não encontrada' });
+  }
+
+  const { frequency, interval, weekday, day_of_month, month_of_year, start_date, end_date, rule_type } = req.body;
+  let calculatedDayOfMonth = day_of_month;
+  let calculatedMonthOfYear = month_of_year;
+  if (frequency === 'monthly' || frequency === 'yearly') {
+    if (!task.due_date) {
+      return res.status(400).json({ message: 'As frequências mensal e anual requerem um prazo na tarefa' });
+    }
+    const [, month, day] = String(task.due_date).slice(0, 10).split('-').map(Number);
+    calculatedDayOfMonth = day;
+    if (frequency === 'yearly') calculatedMonthOfYear = month;
+  }
+
+  db.prepare(`
+    UPDATE recurrence_rules
+    SET frequency = ?, interval = ?, weekday = ?, day_of_month = ?,
+        month_of_year = ?, start_date = ?, end_date = ?, rule_type = ?
+    WHERE task_id = ?
+  `).run(
+    frequency,
+    interval,
+    weekday ?? null,
+    calculatedDayOfMonth ?? null,
+    calculatedMonthOfYear ?? null,
+    start_date,
+    end_date ?? null,
+    rule_type,
+    taskId
+  );
+
+  res.json({ message: 'Regra de recorrência atualizada com sucesso', recurrence: getRecurrency(taskId) });
 });
 
 router.put('/change_recurrence_status/:taskId', (req, res) => {

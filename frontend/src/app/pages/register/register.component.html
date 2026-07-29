@@ -4,8 +4,13 @@
       <p class="subtitle">Criar conta</p>
       @if (error) { <div class="alert">{{ error }}</div> }
       <form (ngSubmit)="submit()">
-        <label>Nome</label>
-        <input type="text" [(ngModel)]="username" name="username" required />
+        <label>Username</label>
+        <input type="text" [(ngModel)]="username" name="username" required pattern="^[a-zA-Z0-9._]+$" #usernameCtrl="ngModel"/>
+        @if (usernameCtrl.invalid && usernameCtrl.touched) {
+          <small class="error">
+            O username só pode conter letras, números e "_".
+          </small>
+        }
         <label>Email</label>
         <input type="email" [(ngModel)]="email" name="email" required />
         <label>Password</label>

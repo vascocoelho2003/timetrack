@@ -24,15 +24,15 @@
     <div class="stats-row bottom">
       <div routerLink="/my-tasks" class="stat-tile">
         <span class="stat-value">{{this.total_tasks}}</span>
-        <span class="stat-label">Assigned Tasks</span>
+        <span class="stat-label">As minhas Tarefas</span>
       </div>
       <div [routerLink]="['/my-tasks']" [queryParams]="{ status: 'todo' }" class="stat-tile">
         <span class="stat-value">{{this.todo_tasks}}</span>
-        <span class="stat-label">To Do Tasks</span>
+        <span class="stat-label">Tarefas por fazer</span>
       </div>
       <div [routerLink]="['/my-tasks']" [queryParams]="{ status: 'done' }" class="stat-tile">
         <span class="stat-value">{{this.closed_tasks}}</span>
-        <span class="stat-label">Closed Tasks</span>
+        <span class="stat-label">Tarefas Concluídas</span>
       </div>
       <div routerLink="/my-tasks" class="stat-tile">
         <span class="stat-value">{{ formatHours(total_hours) }}</span>
@@ -51,7 +51,7 @@
     <div class="lists-row">
 
       <div class="list-section">
-        <div routerLink="/my-tasks" class="list-title">My To Do Tasks</div>
+        <div routerLink="/my-tasks" class="list-title">As minhas tarefas por fazer</div>
         @for (task of todo_task.slice(0,5); track task.title) {
         <div routerLink="/my-tasks"  class="list-item">
           <span class="list-item-name">{{task.title}}</span>
@@ -63,7 +63,7 @@
       </div>
 
       <div class="list-section">
-        <div  routerLink="/my_projects" class="list-title">My Projects</div>
+        <div  routerLink="/my_projects" class="list-title">Os meus projetos</div>
         @for (proj of my_projects.slice(0,5); track proj.project_name){
           <div routerLink="/my_projects" class="list-item">
             <span class="list-item-name">{{proj.project_name}}</span>

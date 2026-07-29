@@ -122,6 +122,21 @@ export interface Task {
   subtasks?: Task[];
   comments?: Comment[];
   assignees: User[];
+  recurrence?: RecurrenceRule | null;
+}
+
+export interface RecurrenceRule {
+  id: number;
+  task_id: number;
+  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  interval: number;
+  weekday: string | null;
+  day_of_month: number | null;
+  month_of_year: number | null;
+  start_date: string;
+  end_date: string | null;
+  active: boolean | number | string;
+  rule_type: 'fixed_day' | 'business_day';
 }
 
 export interface Task_proj {

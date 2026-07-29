@@ -225,29 +225,12 @@
                 <label>Intervalo</label>
                 <input type="number" min="1" [(ngModel)]="recurrenceInterval" />
               </div>
-              @if (recurrenceFrequency === 'weekly') {
-                <label>Dia da semana</label>
-                <select [(ngModel)]="recurrenceWeekday">
-                  <option value="monday">Segunda</option>
-                  <option value="tuesday">Terça</option>
-                  <option value="wednesday">Quarta</option>
-                  <option value="thursday">Quinta</option>
-                  <option value="friday">Sexta</option>
-                  <option value="saturday">Sábado</option>
-                  <option value="sunday">Domingo</option>
-                </select>
-              }
               @if (recurrenceFrequency === 'monthly' || recurrenceFrequency === 'yearly') {
-                <div class="inline-form">
-                  <label>Dia do mês</label>
-                  <input type="number" min="1" max="31" [(ngModel)]="recurrenceDayOfMonth" />
-                  @if (recurrenceFrequency === 'yearly') {
-                    <label>Mês</label>
-                    <input type="number" min="1" max="12" [(ngModel)]="recurrenceMonthOfYear" />
-                  }
-                </div>
+                <p class="muted">O dia e o mês serão calculados automaticamente a partir do prazo da tarefa.</p>
               }
-              <button class="btn btn-primary" (click)="createRecurrence()">Criar recorrência</button>
+              <button class="btn btn-primary" (click)="createRecurrence()">
+                {{ recurrenceRule ? 'Atualizar recorrência' : 'Criar recorrência' }}
+              </button>
               @if (recurrenceMessage) {
                 <p class="muted">{{ recurrenceMessage }}</p>
               }

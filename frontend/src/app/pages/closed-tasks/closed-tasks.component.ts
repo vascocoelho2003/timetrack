@@ -24,6 +24,8 @@ export class ClosedTasksComponent {
   toDate = '';
   searchTitle = '';
   viewMode: 'grid' | 'list' = 'grid';
+  page = 1;
+  pageSize = 8;
   projectId: number = 0;
   isAdmin = false;
   selectedTask: (Task & { comments?: Comment[] }) | null = null;
@@ -172,6 +174,16 @@ export class ClosedTasksComponent {
 
       return taskDate >= rangeStart && taskDate <= today;
     });
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.displayedTasks.length / this.pageSize));
+  }
+
+  get pagedTasks(): Task[] {
+    this.page = Math.min(this.page, this.totalPages);
+    const start = (this.page - 1) * this.pageSize;
+    return this.displayedTasks.slice(start, start + this.pageSize);
   }
 
   loadTaskLists() {

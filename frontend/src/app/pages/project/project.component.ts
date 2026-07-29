@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { TimerService, formatDuration } from '../../core/timer.service';
-import { Project, TaskList, Task, TeamMember, TimeEntry, Comment } from '../../core/models';
+import { Project, TaskList, Task, TeamMember, TimeEntry, Comment, RecurrenceRule } from '../../core/models';
 import * as XLSX from 'xlsx';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environments';
@@ -64,6 +64,7 @@ export class ProjectComponent implements OnInit {
   recurrenceStartDate = '';
   recurrenceEndDate = '';
   recurrenceMessage = '';
+  recurrenceRule: RecurrenceRule | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -249,7 +250,7 @@ export class ProjectComponent implements OnInit {
       this.editPriority = task.priority;
       this.editDueDate = task.due_date?.slice(0, 10) || '';
       this.editAssignees = [...task.assigneeIds];
-      this.resetRecurrenceForm();
+      this.resetRecurrenceForm(task.recurrence);
       this.api.getTaskTimeEntries(taskId).subscribe(e => this.timeEntries = e);
     });
   }
@@ -284,15 +285,16 @@ export class ProjectComponent implements OnInit {
       .subscribe(updated => this.refreshTaskInBoard(updated));
   }
 
-  resetRecurrenceForm() {
-    this.recurrenceRuleType = 'fixed_day';
-    this.recurrenceFrequency = 'daily';
-    this.recurrenceInterval = 1;
-    this.recurrenceWeekday = 'monday';
-    this.recurrenceDayOfMonth = 1;
-    this.recurrenceMonthOfYear = 1;
+  resetRecurrenceForm(rule: RecurrenceRule | null = null) {
+    this.recurrenceRule = rule;
+    this.recurrenceRuleType = rule?.rule_type || 'fixed_day';
+    this.recurrenceFrequency = rule?.frequency || 'daily';
+    this.recurrenceInterval = rule?.interval || 1;
+    this.recurrenceWeekday = rule?.weekday || 'monday';
+    this.recurrenceDayOfMonth = rule?.day_of_month || 1;
+    this.recurrenceMonthOfYear = rule?.month_of_year || 1;
     this.recurrenceStartDate = this.editDueDate;
-    this.recurrenceEndDate = '';
+    this.recurrenceEndDate = rule?.end_date?.slice(0, 10) || '';
     this.recurrenceMessage = '';
   }
 
@@ -310,17 +312,18 @@ export class ProjectComponent implements OnInit {
     if (this.recurrenceFrequency === 'weekly') {
       payload['weekday'] = this.recurrenceWeekday;
     }
-    if (this.recurrenceFrequency === 'monthly') {
-      payload['day_of_month'] = this.recurrenceDayOfMonth;
-    }
-    if (this.recurrenceFrequency === 'yearly') {
-      payload['day_of_month'] = this.recurrenceDayOfMonth;
-      payload['month_of_year'] = this.recurrenceMonthOfYear;
-    }
-
-    this.api.createRecurrence(this.selectedTask.id, payload).subscribe({
-      next: () => {
-        this.recurrenceMessage = 'Recorrência criada com sucesso.';
+    const request = this.recurrenceRule
+      ? this.api.updateRecurrence(this.selectedTask.id, payload)
+      : this.api.createRecurrence(this.selectedTask.id, payload);
+    request.subscribe({
+      next: (response) => {
+        this.recurrenceRule = (response as { recurrence?: RecurrenceRule }).recurrence || this.recurrenceRule;
+        this.recurrenceMessage = this.recurrenceRule
+          ? 'Recorrência atualizada com sucesso.'
+          : 'Recorrência criada com sucesso.';
+        if (this.selectedTask) {
+          this.selectedTask = { ...this.selectedTask, recurrence: this.recurrenceRule };
+        }
       },
       error: (err) => {
         this.recurrenceMessage = err?.error?.message || 'Não foi possível criar a recorrência.';

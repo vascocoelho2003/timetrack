@@ -21,7 +21,16 @@ export class RegisterComponent {
 
   submit() {
     this.error = '';
+  
+    const usernameRegex = /^[a-zA-Z0-9._]+$/;
+  
+    if (!usernameRegex.test(this.username)) {
+      this.error = 'O username não pode conter espaços nem caracteres especiais.';
+      return;
+    }
+  
     this.loading = true;
+  
     this.auth.register(this.email, this.password, this.username).subscribe({
       next: () => this.router.navigate(['/teams']),
       error: (err) => {
