@@ -91,11 +91,16 @@ h1.page-title {
 .search input {
   width: 100%;
   padding: 10px 36px 10px 14px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--surface);
+  color: var(--text);
   font-size: 13px;
   outline: none;
+}
+
+.search input::placeholder {
+  color: var(--muted);
 }
 .search svg {
   position: absolute;

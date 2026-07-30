@@ -48,6 +48,12 @@ export class AppComponent implements OnInit {
     this.applyTheme();
   }
 
+  setDarkMode(enabled: boolean) {
+    this.darkMode = enabled;
+    localStorage.setItem('dark-mode', String(enabled));
+    this.applyTheme();
+  }
+
   toggleMenu() {
     this.menuOpen = !this.menuOpen;
   }

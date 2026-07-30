@@ -118,6 +118,7 @@ export interface Task {
   status: 'todo' | 'doing' | 'done';
   priority: 'low' | 'medium' | 'high';
   due_date: string | null;
+  total_time?: number;
   assigneeIds: number[];
   subtasks?: Task[];
   comments?: Comment[];

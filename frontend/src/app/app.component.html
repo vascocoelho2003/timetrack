@@ -68,6 +68,23 @@
   </header>
 }
 
+@if (!auth.isLoggedIn) {
+  <div class="public-theme-toggle" aria-label="Escolher tema">
+    <button
+      type="button"
+      [class.active]="!darkMode"
+      (click)="setDarkMode(false)">
+      ☀️ Light
+    </button>
+    <button
+      type="button"
+      [class.active]="darkMode"
+      (click)="setDarkMode(true)">
+      🌙 Dark
+    </button>
+  </div>
+}
+
 <main [class.with-header]="auth.isLoggedIn">
   <router-outlet/>
 </main>

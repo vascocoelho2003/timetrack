@@ -75,12 +75,19 @@ function attachAssignees(tasks) {
     JOIN task_assignees ta ON ta.user_id = u.id
     WHERE ta.task_id = ?
   `);
+  const totalTimeStmt = db.prepare(`
+    SELECT COALESCE(SUM(duration), 0) AS total_time
+    FROM time_entries
+    WHERE task_id = ? AND end IS NOT NULL
+  `);
 
   return tasks.map(t => {
     const assignees = assigneeStmt.all(t.id);
+    const totalTime = totalTimeStmt.get(t.id)?.total_time || 0;
 
     return {
       ...t,
+      total_time: totalTime,
       assigneeIds: assignees.map(a => a.id),
       assignees
     };
