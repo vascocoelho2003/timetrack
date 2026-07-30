@@ -151,7 +151,6 @@ router.get('/project_report/:projectId', authMiddleware, async(req, res) => {
 
         LEFT JOIN tasks t
             ON t.task_list_id = tl.id
-            ${hasDateRange ? "AND date(t.due_date) >= date(@startDate) AND date(t.due_date) < date(@endDate, '+1 day')" : ''}
 
         LEFT JOIN task_assignees ta
             ON ta.task_id = t.id

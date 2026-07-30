@@ -5,14 +5,20 @@ import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { TimerService, formatDuration } from '../../core/timer.service';
 import { Comment, Task, Task_proj, TeamMember, TimeEntry } from '../../core/models';
+import { FullCalendarModule } from '@fullcalendar/angular';
+import { CalendarOptions, EventInput } from '@fullcalendar/core';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import ptLocale from '@fullcalendar/core/locales/pt';
 
 @Component({
   selector: 'app-my-tasks',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule,FullCalendarModule],
   templateUrl: './my-tasks.component.html',
   styleUrl: './my-tasks.component.css'
 })
+
 export class MyTasksComponent implements OnInit {
   tasks: Task_proj[] = [];
   selectedTask: (Task & { project_id?: number; project_name?: string; task_list_name?: string; comments?: Comment[] }) | null = null;
@@ -25,6 +31,7 @@ export class MyTasksComponent implements OnInit {
   editDueDate = '';
   editAssignees: number[] = [];
   newComment = '';
+  viewMode: 'list' | 'calendar' = 'list';
   timeEntries: TimeEntry[] = [];
   fmt = formatDuration;
   recurrenceRuleType = 'fixed_day';
@@ -45,6 +52,23 @@ export class MyTasksComponent implements OnInit {
   filterDueDate = '';
   page = 1;
   pageSize = 10;
+
+  calendarOptions: CalendarOptions = {
+    initialView: 'dayGridMonth',
+    locale: ptLocale,
+    plugins: [dayGridPlugin, interactionPlugin],
+    height: 'auto',
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: ''
+    },
+    events: [],
+    eventClick: (info) => {
+      const task = info.event.extendedProps['task'] as Task_proj | undefined;
+      if (task) this.openTask(task);
+    }
+  };
 
   constructor(
     private api: ApiService,
@@ -68,7 +92,51 @@ export class MyTasksComponent implements OnInit {
     this.api.getUserTasks().subscribe(tasks => {
       this.tasks = tasks;
       this.page = 1;
+      this.syncCalendarEvents();
     });
+  }
+
+  setViewMode(mode: 'list' | 'calendar') {
+    this.viewMode = mode;
+    if (mode === 'calendar') this.syncCalendarEvents();
+  }
+
+  syncCalendarEvents() {
+    this.calendarOptions = {
+      ...this.calendarOptions,
+      events: this.buildCalendarEvents()
+    };
+  }
+
+  buildCalendarEvents(): EventInput[] {
+    return this.filteredTasks
+      .filter((task): task is Task_proj & { due_date: string } => !!task.due_date)
+      .map(task => {
+        const color = this.getTaskColor(task);
+        return {
+          id: String(task.id),
+          title: task.title,
+          start: task.due_date.slice(0, 10),
+          allDay: true,
+          backgroundColor: color,
+          borderColor: color,
+          extendedProps: { task }
+        };
+      });
+  }
+
+  getTaskColor(task: Task_proj) {
+
+    if (task.status === 'done')
+      return '#16a34a';
+  
+    if (task.priority === 'high')
+      return '#dc2626';
+  
+    if (task.priority === 'medium')
+      return '#f59e0b';
+  
+    return '#3b82f6';
   }
 
   get projects() {
@@ -119,6 +187,7 @@ export class MyTasksComponent implements OnInit {
 
   resetPage() {
     this.page = 1;
+    this.syncCalendarEvents();
   }
 
   statusLabel(status: string) {

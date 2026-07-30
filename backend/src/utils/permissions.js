@@ -59,9 +59,7 @@ function getTaskWithContext(taskId) {
 function canViewTask(userId, taskId) {
   const task = getTaskWithContext(taskId);
   if (!task) return false;
-  if (!isTeamMember(userId, task.team_id)) return false;
-  if (isTeamAdmin(userId, task.team_id)) return true;
-  return isTaskAssignee(userId, taskId);
+  return isTeamMember(userId, task.team_id);
 }
 
 function getAssigneeIds(taskId) {

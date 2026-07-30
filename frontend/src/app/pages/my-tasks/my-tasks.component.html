@@ -1,7 +1,12 @@
 <div class="page project-page">
   <div class="page-header">
     <h2 class="page-title">As minhas tarefas</h2>
+    <div class="view-switch">
+      <button class="btn" [class.btn-primary]="viewMode === 'list'" (click)="setViewMode('list')"> Lista </button>
+      <button class="btn" [class.btn-primary]="viewMode === 'calendar'" (click)="setViewMode('calendar')"> Calendário </button>
+    </div>
   </div>
+
   <div class="card">
     <div class="inline-form filters">
       <input [(ngModel)]="search" (ngModelChange)="resetPage()" placeholder="Pesquisa" />
@@ -36,25 +41,32 @@
         <option value="overdue">Atrasadas</option>
       </select>
     </div>
-    <div class="list-table-header">
-      <span>Tarefa</span><span>Projeto/Lista</span><span>Estado</span><span>Prazo</span><span>Prioridade</span>
-    </div>
-    @for (task of pagedTasks; track task.id) {
-      <div [class.list-table-row]="task.status === 'todo'" [class.list-table-row-doing]="task.status === 'doing'" [class.list-table-row-done]="task.status === 'done'" (click)="openTask(task)">
-        <span>{{ task.title }}</span>
-        <span>{{ task.project_name }}<br><small>{{ task.task_list_name }}</small></span>
-        <span class="status-pill" [attr.data-status]="task.status">{{ statusLabel(task.status) }}</span>
-        <span>{{ formatDate(task.due_date) }}</span>
-        <span class="priority-pill" [attr.data-priority]="task.priority">{{ task.priority }}</span>
+
+    @if (viewMode === 'list') {
+      <div class="list-table-header">
+        <span>Tarefa</span><span>Projeto/Lista</span><span>Estado</span><span>Prazo</span><span>Prioridade</span>
       </div>
-    } @empty {
-      <p class="muted empty-state">Não foram encontradas tarefas.</p>
-    }
-    @if (totalPages > 1) {
-      <div class="pagination">
-        <button class="btn btn-ghost" [disabled]="page === 1" (click)="page = page - 1">Anterior</button>
-        <span class="muted">Página {{ page }} de {{ totalPages }}</span>
-        <button class="btn btn-ghost" [disabled]="page === totalPages" (click)="page = page + 1">Seguinte</button>
+      @for (task of pagedTasks; track task.id) {
+        <div [class.list-table-row]="task.status === 'todo'" [class.list-table-row-doing]="task.status === 'doing'" [class.list-table-row-done]="task.status === 'done'" (click)="openTask(task)">
+          <span>{{ task.title }}</span>
+          <span>{{ task.project_name }}<br><small>{{ task.task_list_name }}</small></span>
+          <span class="status-pill" [attr.data-status]="task.status">{{ statusLabel(task.status) }}</span>
+          <span>{{ formatDate(task.due_date) }}</span>
+          <span class="priority-pill" [attr.data-priority]="task.priority">{{ task.priority }}</span>
+        </div>
+      } @empty {
+        <p class="muted empty-state">Não foram encontradas tarefas.</p>
+      }
+      @if (totalPages > 1) {
+        <div class="pagination">
+          <button class="btn btn-ghost" [disabled]="page === 1" (click)="page = page - 1">Anterior</button>
+          <span class="muted">Página {{ page }} de {{ totalPages }}</span>
+          <button class="btn btn-ghost" [disabled]="page === totalPages" (click)="page = page + 1">Seguinte</button>
+        </div>
+      }
+    } @else {
+      <div class="calendar-wrap">
+        <full-calendar [options]="calendarOptions"></full-calendar>
       </div>
     }
   </div>

@@ -257,7 +257,7 @@ router.put('/:taskId', (req, res) => {
   const assignee = isTaskAssignee(req.user.id, taskId);
 
   if (!admin && !assignee) {
-    return res.status(403).json({ error: 'Sem permissão para editar' });
+    return res.status(403).json({ error: 'Apenas o utilizador atribuído pode alterar o estado' });
   }
 
   const { title, description, status, priority, dueDate, assigneeIds } = req.body;
@@ -294,7 +294,7 @@ router.put('/:taskId', (req, res) => {
     }
   } else {
     if (status === undefined) {
-      return res.status(400).json({ error: 'Utilizadores só podem alterar o estado' });
+      return res.status(400).json({ error: 'Utilizadores atribuídos só podem alterar o estado' });
     }
     db.prepare('UPDATE tasks SET status = ? WHERE id = ?').run(status, taskId);
     if (status === 'done' && recurrenceRuleExists(taskId)===true) {

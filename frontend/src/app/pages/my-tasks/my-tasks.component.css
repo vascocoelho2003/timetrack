@@ -21,6 +21,19 @@
 .empty-state {
   margin: 0;
 }
+
+.calendar-wrap {
+  margin-top: 8px;
+  min-height: 520px;
+}
+
+.calendar-wrap ::ng-deep .fc {
+  font-size: 0.9rem;
+}
+
+.calendar-wrap ::ng-deep .fc-event {
+  cursor: pointer;
+}
   
   .list-table-header {
     display: grid;

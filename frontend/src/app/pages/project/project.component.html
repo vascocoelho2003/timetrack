@@ -176,24 +176,30 @@
           } @else {
             <h4>{{ selectedTask.title }}</h4>
             <p class="muted">{{ selectedTask.description || 'Sem descrição' }}</p>
-            <label>Estado</label>
-            <select [(ngModel)]="editStatus" (change)="saveStatusOnly()">
-              <option value="todo">A fazer</option>
-              <option value="doing">Em progresso</option>
-              <option value="done">Concluída</option>
-            </select>
+            @if (canChangeStatus) {
+              <label>Estado</label>
+              <select [(ngModel)]="editStatus" (change)="saveStatusOnly()">
+                <option value="todo">A fazer</option>
+                <option value="doing">Em progresso</option>
+                <option value="done">Concluída</option>
+              </select>
+            } @else {
+              <p><strong>Estado:</strong> {{ statusLabel(selectedTask.status) }}</p>
+            }
           }
 
-          @if (canTrackTime) {
+          @if (canTrackTime || timeEntries.length) {
             <div class="timer-section">
               <h4>Time tracking</h4>
-              @if (activeOnThisTask) {
-                <p class="timer-running">⏱ {{ fmt(timer.elapsedSeconds()) }}</p>
-                <button class="btn btn-danger" (click)="stopTimer()">Parar timer</button>
-              } @else {
-                <button class="btn btn-primary" (click)="startTimer()" [disabled]="!!timer.activeEntry()">
-                  Iniciar timer
-                </button>
+              @if (canTrackTime) {
+                @if (activeOnThisTask) {
+                  <p class="timer-running">⏱ {{ fmt(timer.elapsedSeconds()) }}</p>
+                  <button class="btn btn-danger" (click)="stopTimer()">Parar timer</button>
+                } @else {
+                  <button class="btn btn-primary" (click)="startTimer()" [disabled]="!!timer.activeEntry()">
+                    Iniciar timer
+                  </button>
+                }
               }
               @if (timeEntries.length) {
                 <ul class="time-list">
@@ -257,8 +263,8 @@
           </div>
             <br>
              <div class="modal-actions">
-              <button class="btn btn-primary" (click)="saveTask()">Guardar</button>
               @if (isAdmin) {
+                <button class="btn btn-primary" (click)="saveTask()">Guardar</button>
                 <button class="btn btn-danger" (click)="deleteTask()">Eliminar</button>
               }
             </div>

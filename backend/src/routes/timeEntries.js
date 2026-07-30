@@ -147,21 +147,16 @@ router.get('/task/:taskId', (req, res) => {
   const ctx = getTaskWithContext(taskId);
   if (!ctx) return res.status(404).json({ error: 'Tarefa não encontrada' });
 
-  const admin = isTeamAdmin(req.user.id, ctx.team_id);
-  const assignee = isTaskAssignee(req.user.id, taskId);
-  if (!admin && !assignee) {
+  if (!isTeamMember(req.user.id, ctx.team_id)) {
     return res.status(403).json({ error: 'Sem acesso' });
   }
 
-  let entries;
-  if (admin || assignee) {
-    entries = db.prepare(`
-      SELECT te.*, u.username as user_name FROM time_entries te
-      JOIN users u ON u.id = te.user_id
-      WHERE te.task_id = ? AND te.end IS NOT NULL
-      ORDER BY te.start DESC
-    `).all(taskId);
-  }
+  const entries = db.prepare(`
+    SELECT te.*, u.username as user_name FROM time_entries te
+    JOIN users u ON u.id = te.user_id
+    WHERE te.task_id = ? AND te.end IS NOT NULL
+    ORDER BY te.start DESC
+  `).all(taskId);
 
   res.json(entries);
 });

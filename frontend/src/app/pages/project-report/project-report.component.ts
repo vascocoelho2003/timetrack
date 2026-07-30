@@ -86,10 +86,16 @@ export class ProjectReportComponent implements OnInit {
   }
 
   formatDuration(seconds: number): string {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-  
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    const totalSeconds = Math.max(0, Number(seconds) || 0);
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+
+    return [
+      h.toString().padStart(2, '0'),
+      m.toString().padStart(2, '0'),
+      s.toString().padStart(2, '0')
+    ].join(':');
   }
 
   async exportPdf(): Promise<void> {

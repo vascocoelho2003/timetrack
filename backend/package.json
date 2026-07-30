@@ -8,6 +8,8 @@
     "dev": "node --watch src/index.js"
   },
   "dependencies": {
+    "@fullcalendar/angular": "^7.0.2",
+    "@fullcalendar/core": "^7.0.2",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^11.7.0",
     "cors": "^2.8.5",

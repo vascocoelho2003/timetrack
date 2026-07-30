@@ -108,6 +108,10 @@ export class ProjectComponent implements OnInit {
     return !!uid && this.selectedTask.assigneeIds.includes(uid);
   }
 
+  get canChangeStatus(): boolean {
+    return this.isAdmin || this.canTrackTime;
+  }
+
   get activeOnThisTask(): boolean {
     const active = this.timer.activeEntry();
     return !!active && active.task_id === this.selectedTask?.id;
