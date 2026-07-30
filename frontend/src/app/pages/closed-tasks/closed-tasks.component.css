@@ -179,3 +179,33 @@
   text-align: center;
   color: var(--muted);
 }
+
+:host-context(.dark-mode) .task-card {
+  background: #111827;
+  border-color: #334155;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+}
+
+:host-context(.dark-mode) .task-card:hover {
+  border-color: #60a5fa;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.4);
+}
+
+:host-context(.dark-mode) .meta-item {
+  background: #1e293b;
+}
+
+:host-context(.dark-mode) .task-card .status-pill[data-status="todo"] {
+  background: #334155;
+  color: #cbd5e1;
+}
+
+:host-context(.dark-mode) .task-card .status-pill[data-status="doing"] {
+  background: #164e63;
+  color: #bae6fd;
+}
+
+:host-context(.dark-mode) .task-card .status-pill[data-status="done"] {
+  background: #14532d;
+  color: #bbf7d0;
+}

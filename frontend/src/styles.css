@@ -17,12 +17,25 @@
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
+:root.dark-mode {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --border: #334155;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --primary: #60a5fa;
+  --primary-hover: #3b82f6;
+  --danger: #f87171;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
 body {
   margin: 0;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.5;
+  transition: background-color 0.2s, color 0.2s;
 }
 
 main.with-header {
@@ -197,6 +210,8 @@ input, textarea, select {
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--border);
   border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
   font-size: 0.95rem;
   font-family: inherit;
 }
@@ -728,3 +743,93 @@ input:focus, textarea:focus, select:focus {
 }
 
 html, body { height: 100%; }
+
+/* Component pages with their own legacy colour palettes. */
+:root.dark-mode .page,
+:root.dark-mode .main-container {
+  color: var(--text);
+}
+
+:root.dark-mode .dashboard-card,
+:root.dark-mode .table-wrap,
+:root.dark-mode .report-card,
+:root.dark-mode .card {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+:root.dark-mode .stat-tile,
+:root.dark-mode .list-section,
+:root.dark-mode .group-header,
+:root.dark-mode .task-row {
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+:root.dark-mode .stat-value,
+:root.dark-mode .stat-label,
+:root.dark-mode .list-title,
+:root.dark-mode .list-item,
+:root.dark-mode .list-item-meta,
+:root.dark-mode .team-members,
+:root.dark-mode .team-members span,
+:root.dark-mode .back,
+:root.dark-mode .back-link,
+:root.dark-mode .page-title,
+:root.dark-mode th,
+:root.dark-mode td,
+:root.dark-mode .project-title,
+:root.dark-mode .title,
+:root.dark-mode .username,
+:root.dark-mode .user-name {
+  color: var(--text);
+}
+
+:root.dark-mode .search input,
+:root.dark-mode .filter,
+:root.dark-mode .dropdown,
+:root.dark-mode .select-box,
+:root.dark-mode .date-input,
+:root.dark-mode .search input,
+:root.dark-mode .btn-outline,
+:root.dark-mode .btn-sair,
+:root.dark-mode .btn-export,
+:root.dark-mode .nav-right button,
+:root.dark-mode .pagination button {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+:root.dark-mode .list-item,
+:root.dark-mode tbody td,
+:root.dark-mode th,
+:root.dark-mode td,
+:root.dark-mode .group-header td,
+:root.dark-mode .task-row {
+  border-color: var(--border);
+  color: var(--text);
+}
+
+:root.dark-mode header,
+:root.dark-mode .header,
+:root.dark-mode .navbar {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+:root.dark-mode nav a,
+:root.dark-mode .nav-links a,
+:root.dark-mode .brand,
+:root.dark-mode .title,
+:root.dark-mode .project-title {
+  color: var(--text);
+}
+
+:root.dark-mode .select,
+:root.dark-mode .date-input {
+  background-color: var(--surface);
+  color: var(--text);
+}

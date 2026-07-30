@@ -51,7 +51,14 @@
       </div>
     }
     <div class="header-user">
-      <span routerLink="/my-profile" style="font-weight: 300; cursor: pointer;"><u style="color: rgb(100, 100, 100);">{{ auth.currentUser()?.username }}</u></span>
+      <span routerLink="/my-profile" class="header-username"><u>{{ auth.currentUser()?.username }}</u></span>
+      <button
+        class="btn btn-ghost btn-sm theme-toggle"
+        type="button"
+        (click)="toggleDarkMode()"
+        [attr.aria-label]="darkMode ? 'Ativar modo claro' : 'Ativar modo escuro'">
+        {{ darkMode ? '☀️ Claro' : '🌙 Escuro' }}
+      </button>
       <button
         class="btn btn-ghost btn-sm"
         (click)="auth.logout()">

@@ -187,10 +187,10 @@
   }
   th {
     font-weight: 700;
-    color: #1a1a1a;
+    color: var(--text);
   }
   td {
-    color: #333;
+    color: var(--text);
   }
   .group-header {
     background: #fafafa;
@@ -198,7 +198,7 @@
   }
   .group-header td {
     font-weight: 700;
-    color: #1a1a1a;
+    color: var(--text);
   }
   .task-row {
     border-top: 1px solid #eeeeee;

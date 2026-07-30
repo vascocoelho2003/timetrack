@@ -7,7 +7,8 @@ import { TimerService, formatDuration } from './core/timer.service';
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet, RouterLink],
-  templateUrl: './app.component.html'
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
 
@@ -15,6 +16,7 @@ export class AppComponent implements OnInit {
 
   menuOpen = false;
   showBurger = false;
+  darkMode = false;
 
   @HostListener('window:resize')
   checkMenu() {
@@ -32,9 +34,18 @@ export class AppComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.darkMode = localStorage.getItem('dark-mode') === 'true';
+    this.applyTheme();
+
     if (this.auth.isLoggedIn) {
       this.timer.refresh();
     }
+  }
+
+  toggleDarkMode() {
+    this.darkMode = !this.darkMode;
+    localStorage.setItem('dark-mode', String(this.darkMode));
+    this.applyTheme();
   }
 
   toggleMenu() {
@@ -47,5 +58,9 @@ export class AppComponent implements OnInit {
 
   isActive(path: string): boolean {
     return this.router.url.startsWith(path);
+  }
+
+  private applyTheme() {
+    document.documentElement.classList.toggle('dark-mode', this.darkMode);
   }
 }

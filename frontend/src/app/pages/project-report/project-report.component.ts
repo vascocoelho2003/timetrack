@@ -105,11 +105,11 @@ export class ProjectReportComponent implements OnInit {
 
     const document = new jsPDF({ unit: 'mm', format: 'a4' });
     const pageWidth = document.internal.pageSize.getWidth();
-    const margin = 12;
-    const logo = await this.loadImage('/logo.png');
+    const margin = 20;
+    const logo = await this.loadImage('/JCR_logotipo.png');
 
     if (logo) {
-      const logoWidth = 42;
+      const logoWidth = 15;
       const logoHeight = logoWidth * (logo.height / logo.width);
       document.addImage(logo, 'PNG', margin, 14, logoWidth, logoHeight);
     }
@@ -118,16 +118,17 @@ export class ProjectReportComponent implements OnInit {
     document.setFontSize(9);
     document.text('JC Ribeiro Task Management', pageWidth - margin, 20, { align: 'right' });
 
+    
     document.setFont('helvetica', 'bold');
     document.setFontSize(12);
-    document.text('Relatório de Registos de Tempo de Projeto', margin, 36);
+    document.text('Relatório de Registos de Tempo de Projeto', margin, 43);
 
     document.setFontSize(8);
-    document.text(`Equipa: ${this.dados.project.team_name || '—'}`, margin, 45);
-    document.text(`Projeto: ${this.dados.project.name}`, margin, 52);
-    document.text(`Período: ${this.getReportPeriodLabel()}`, margin, 59);
+    document.text(`Equipa: ${this.dados.project.team_name || '—'}`, margin, 52);
+    document.text(`Projeto: ${this.dados.project.name}`, margin, 59);
+    document.text(`Período: ${this.getReportPeriodLabel()}`, margin, 66);
 
-    let currentY = 72;
+    let currentY = 79;
     const lists = this.dados.task_lists.filter(list => list.tasks.length > 0);
 
     if (!lists.length) {

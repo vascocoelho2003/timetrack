@@ -136,11 +136,11 @@ export class ColaboratorReportComponent implements OnInit{
   async exportPdf(): Promise<void> {
     const document = new jsPDF({ unit: 'mm', format: 'a4' });
     const pageWidth = document.internal.pageSize.getWidth();
-    const margin = 12;
-    const logo = await this.loadImage('/logo.png');
+    const margin = 20;
+    const logo = await this.loadImage('/JCR_logotipo.png');
 
     if (logo) {
-      const logoWidth = 42;
+      const logoWidth = 15;
       const logoHeight = logoWidth * (logo.height / logo.width);
       document.addImage(logo, 'PNG', margin, 14, logoWidth, logoHeight);
     }
@@ -151,13 +151,13 @@ export class ColaboratorReportComponent implements OnInit{
 
     document.setFont('helvetica', 'bold');
     document.setFontSize(12);
-    document.text('Relatório de Registos de Tempo de Colaborador', margin, 36);
+    document.text('Relatório de Registos de Tempo de Colaborador', margin, 43);
     document.setFontSize(8);
-    document.text(`Colaborador: ${this.username || '—'}`, margin, 45);
-    document.text(`Total de Tempo Registado: ${this.formatDuration(this.totalTime)}`, margin, 52);
-    document.text(`Período: ${this.getReportPeriodLabel()}`, margin, 59);
+    document.text(`Colaborador: ${this.username || '—'}`, margin, 52);
+    document.text(`Total de Tempo Registado: ${this.formatDuration(this.totalTime)}`, margin, 59);
+    document.text(`Período: ${this.getReportPeriodLabel()}`, margin, 66);
 
-    let currentY = 74;
+    let currentY = 81;
     let currentProject = '';
 
     for (const group of this.groupedColaboradores) {

@@ -6,8 +6,8 @@
   gap: 20px;
   padding: 0 24px;
   height: 70px;
-  background: #fff;
-  border-bottom: 1px solid #ddd;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   z-index: 100;
 }
 
@@ -20,7 +20,7 @@
 
 .logo {
   text-decoration: none;
-  color: #222;
+  color: var(--text);
   font-size: 20px;
   font-weight: 700;
   white-space: nowrap;
@@ -34,7 +34,7 @@
 
 .nav-link {
   text-decoration: none;
-  color: #444;
+  color: var(--muted);
   font-weight: 500;
   white-space: nowrap;
 }
@@ -73,7 +73,7 @@
   border: none;
   cursor: pointer;
   padding: 4px 8px;
-  color: #222;
+  color: var(--text);
   line-height: 1;
   flex-shrink: 0;
   order: 2; /* aparece à direita do logo */
@@ -93,9 +93,9 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 0;
-    background: #fff;
-    border-bottom: 1px solid #ddd;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow);
     padding: 8px 0;
     z-index: 99;
   }
@@ -107,7 +107,7 @@
   .nav-link {
     width: 100%;
     padding: 14px 24px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border);
   }
 
   .nav-link:last-child {
