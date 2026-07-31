@@ -79,6 +79,33 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  :host-context(.dark-mode) .list-table-row-done {
+    background-color: #14532d;
+    border-bottom-color: #166534;
+    color: #dcfce7;
+  }
+
+  :host-context(.dark-mode) .list-table-row-doing {
+    background-color: #713f12;
+    border-bottom-color: #854d0e;
+    color: #fef3c7;
+  }
+
+  :host-context(.dark-mode) .list-table-row-done small,
+  :host-context(.dark-mode) .list-table-row-doing small {
+    color: inherit;
+  }
+
+  :host-context(.dark-mode) .status-pill[data-status="done"] {
+    background: #166534;
+    color: #dcfce7;
+  }
+
+  :host-context(.dark-mode) .status-pill[data-status="doing"] {
+    background: #854d0e;
+    color: #fef3c7;
+  }
   
   @media (max-width: 768px) {
     .list-table-header {

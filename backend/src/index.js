@@ -31,7 +31,7 @@ const URI = process.env.URI;
 app.use(cors({ origin: 'http://localhost:4200', credentials: true }));
 app.use(express.json());
 
-cron.schedule("12 14 * * *", async () => {
+cron.schedule("30 10 * * *", async () => {
   console.log("A verificar tarefas que vencem dentro de uma semana...");
   await getNearDueDateTasks();
 });
