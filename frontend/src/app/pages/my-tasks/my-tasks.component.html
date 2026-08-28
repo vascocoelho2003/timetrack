@@ -49,7 +49,7 @@
       @for (task of pagedTasks; track task.id) {
         <div [class.list-table-row]="task.status === 'todo'" [class.list-table-row-doing]="task.status === 'doing'" [class.list-table-row-done]="task.status === 'done'" (click)="openTask(task)">
           <span>{{ task.title }}</span>
-          <span>{{ task.project_name }}<br><small>{{ task.task_list_name }}</small></span>
+          <span>{{ task.project_name || 'Pessoal' }}<br><small>{{ task.task_list_name || 'Lista pessoal' }}</small></span>
           <span class="status-pill" [attr.data-status]="task.status">{{ statusLabel(task.status) }}</span>
           <span>{{ formatDate(task.due_date) }}</span>
           <span class="priority-pill" [attr.data-priority]="task.priority">{{ task.priority }}</span>

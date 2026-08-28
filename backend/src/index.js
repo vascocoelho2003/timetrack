@@ -11,6 +11,8 @@ const projectRoutes = require('./routes/projects');
 const taskListRoutes = require('./routes/taskLists');
 const taskRoutes = require('./routes/tasks');
 const timeEntryRoutes = require('./routes/timeEntries');
+const departmentsRoutes = require('./routes/department');
+const clientRoutes = require('./routes/client');
 const importRoutes = require('./routes/import');
 const dashboardRoutes = require('./routes/dashboard');
 const { swaggerSpec } = require('./swagger');
@@ -31,7 +33,7 @@ const URI = process.env.URI;
 app.use(cors({ origin: 'http://localhost:4200', credentials: true }));
 app.use(express.json());
 
-cron.schedule("30 10 * * *", async () => {
+cron.schedule("57 11 * * *", async () => {
   console.log("A verificar tarefas que vencem dentro de uma semana...");
   await getNearDueDateTasks();
 });
@@ -49,6 +51,8 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/task-lists', taskListRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/time', timeEntryRoutes);
+app.use('/api/departments', departmentsRoutes);
+app.use('/api/clients', clientRoutes);
 app.use('/api/', timeEntryRoutes);
 app.use('/api', dashboardRoutes);
 app.use('/api', importRoutes);

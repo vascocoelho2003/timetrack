@@ -51,6 +51,34 @@
   flex-shrink: 0;
 }
 
+.btn-start-timer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #22c55e;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: background 0.15s, transform 0.15s;
+}
+
+.btn-start-timer:hover {
+  background: #16a34a;
+  transform: scale(1.06);
+}
+
+.btn-start-timer svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+  margin-left: 2px;
+}
+
 .task-title {
   max-width: 220px;
   overflow: hidden;
@@ -64,6 +92,50 @@
   gap: 10px;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.timer-task-overlay {
+  z-index: 200;
+}
+
+.timer-task-duration {
+  margin: 0 0 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.timer-mode-switch {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  margin-bottom: 0.5rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.timer-mode-switch button {
+  flex: 1;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.timer-mode-switch button.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.timer-task-error {
+  margin-top: 0.75rem;
+  color: var(--danger);
+  font-size: 0.9rem;
 }
 
 .burger-btn {

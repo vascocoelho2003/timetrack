@@ -29,8 +29,8 @@ function recurrenceRuleExists(taskId) {
   return !!rec;
 }
 
-function cloneTask(task, date, sourceTaskId, users){
-    const result = db.prepare(`INSERT INTO tasks (task_list_id, parent_task_id, title, description, priority, due_date) VALUES (?, ?, ?, ?, ?, ?)`).run(task.task_list_id, task.id, task.title, task.description, task.priority, date.toISOString());
+function cloneTask(task, date, sourceTaskId, users, logged_user_id){
+    const result = db.prepare(`INSERT INTO tasks (task_list_id, parent_task_id, title, description, priority, due_date, created_by_user_id) VALUES (?, ?, ?, ?, ?, ?,?)`).run(task.task_list_id, task.id, task.title, task.description, task.priority, date.toISOString(), logged_user_id);
     db.prepare(`UPDATE recurrence_rules SET task_id = ? WHERE task_id = ?`).run(result.lastInsertRowid, sourceTaskId);
     users.forEach(user => {
         db.prepare(`INSERT INTO task_assignees (task_id, user_id) VALUES(?,?)`).run(result.lastInsertRowid, user.user_id)
@@ -46,7 +46,7 @@ function typeofRecurrency(taskId){
     return null;
 }
 
-function createRecurrency(taskId){
+function createRecurrency(taskId, userid){
     const task = getTaskWithContext(taskId);
     const recurrenceRule = getRecurrency(taskId);
     if(!recurrenceRule || !recurrenceRuleExists(taskId)){
@@ -56,15 +56,15 @@ function createRecurrency(taskId){
     switch(recurrenceRule.rule_type){
         case 'fixed_day':
             const date = calculateFixedDay(recurrenceRule, task.due_date);
-            cloneTask(task, date, taskId,users);
+            cloneTask(task, date, taskId,users,userid);
             break;
         case 'business_day':
             if(recurrenceRule.frequency!='monthly'){
                 const businessDate = calculateBusinessDay(recurrenceRule, task.due_date);
-                cloneTask(task, businessDate, taskId,users);    
+                cloneTask(task, businessDate, taskId,users,userid);    
             }else{
                 const businessDate = verifyBusinessDate(recurrenceRule, task.due_date);
-                cloneTask(task, businessDate,taskId,users)
+                cloneTask(task, businessDate,taskId,users,userid)
             }
             break;
         default:

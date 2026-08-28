@@ -162,6 +162,8 @@
             </select>
             <label>Prazo</label>
             <input type="date" [(ngModel)]="editDueDate" />
+            <label>Data de Alerta</label>
+            <input type="date" [(ngModel)]="editAlertDate" />
             <label>Atribuídos</label>
             <div class="assignee-checks">
               @for (m of members; track m.id) {
@@ -244,6 +246,16 @@
             </div>
           }
 
+          <div class="field">
+            <label>Cliente</label>
+            <select [(ngModel)]="clientId" name="clientId" required>
+              <option [ngValue]="null" disabled>Selecionar Cliente</option>
+              @for (client of clients; track client.id) {
+                <option [ngValue]="client.id">{{ client.name }}</option>
+              }
+            </select>
+          </div>
+
           <div class="comments-section">
             <h4>Comentários</h4>
             @for (c of selectedTask.comments || []; track c.id) {
@@ -260,6 +272,17 @@
             <div class="inline-form">
               <input [(ngModel)]="newComment" placeholder="Adicionar comentário..." />
               <button class="btn btn-primary" (click)="postComment()">Enviar</button>
+            </div>
+            <div>
+              <label>Docs (URL)</label>
+              <input
+                type="url"
+                [(ngModel)]="editDocsUrl"
+                placeholder="https://exemplo.com"
+                (ngModelChange)="onDocsUrlChange()" />
+              @if (docsUrlError) {
+                <p class="field-error">{{ docsUrlError }}</p>
+              }
             </div>
           </div>
             <br>
@@ -289,6 +312,8 @@
           </select>
           <label>Prazo</label>
           <input type="date" [(ngModel)]="newTaskDueDate" />
+          <label>Data de Alerta</label>
+          <input type="date" [(ngModel)]="alertDate" />
           <label>Atribuídos</label>
           <div class="assignee-checks">
             @for (m of members; track m.id) {

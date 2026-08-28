@@ -26,9 +26,9 @@ export class AuthService {
     return !!this.token;
   }
 
-  register(email: string, password: string, username: string) {
+  register(email: string, password: string, passwordConfirm: string, username: string, departmentId: number) {
     return this.http.post<{ user: User; token: string }>(`${API}/auth/register`, {
-      email, password, username,
+      email, password, passwordConfirm, username, department_id: departmentId,
     }).pipe(tap(res => this.setSession(res)));
   }
 
@@ -38,10 +38,11 @@ export class AuthService {
     }).pipe(tap(res => this.setSession(res)));
   }
 
-  updateProfile(username: string, email: string, password?: string) {
+  updateProfile(username: string, email: string, departmentId: number, password?: string) {
     return this.http.put<{ user: User; token: string }>(`${API}/auth/me`, {
       username,
       email,
+      department_id: departmentId,
       ...(password ? { password } : {}),
     }).pipe(tap(res => this.setSession(res)));
   }

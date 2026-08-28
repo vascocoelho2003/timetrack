@@ -2,13 +2,15 @@ const express = require('express');
 const { db } = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 const { createRecurrency, recurrenceRuleExists, getRecurrency } = require('../controllers/recurrency_controller');
-const {
-  isTeamAdmin,
-  canViewTask,
-  getTaskWithContext,
-  attachAssignees,
-  isTaskAssignee,
-} = require('../utils/permissions');
+const { parseDocsUrl } = require('../utils/url');
+  const {
+    isTeamAdmin,
+    canViewTask,
+    getTaskWithContext,
+    attachAssignees,
+    isTaskAssignee,
+    isPersonalTaskOwner,
+  } = require('../utils/permissions');
 
 const router = express.Router();
 router.use(authMiddleware);
@@ -26,11 +28,12 @@ router.get('/',(req,res)=>{
   tasks = db.prepare(`SELECT
     t.*, tl.name as task_list_name,
     p.id AS project_id,
-    p.name AS project_name
+    p.name AS project_name,
+    p.team_id AS team_id
     FROM tasks t
     JOIN task_assignees ta ON ta.task_id = t.id
-    JOIN task_lists tl ON tl.id = t.task_list_id
-    JOIN projects p ON p.id = tl.project_id
+    LEFT JOIN task_lists tl ON tl.id = t.task_list_id
+    LEFT JOIN projects p ON p.id = tl.project_id
     WHERE ta.user_id = ? ORDER BY t.due_date DESC`).all(user_id);
   return res.status(200).json(tasks);
 })
@@ -75,18 +78,27 @@ router.get('/',(req,res)=>{
  */
 router.post('/', (req, res) => {
   const {
-    taskListId,
+    taskListId = null,
     title,
     description = '',
     status = 'todo',
     priority = 'medium',
     dueDate = null,
+    alertDate = null,
     assigneeIds = [],
     parentTaskId = null,
+    docs_url = '',
   } = req.body;
 
-  if (!taskListId || !title?.trim()) {
+  created_by_user = req.user.id;
+
+  if (!title?.trim()) {
     return res.status(400).json({ error: 'taskListId e título são obrigatórios' });
+  }
+
+  const parsedDocsUrl = parseDocsUrl(docs_url);
+  if (!parsedDocsUrl.ok) {
+    return res.status(400).json({ error: 'O campo Docs tem de ser um URL válido (ex: https://exemplo.com)' });
   }
 
   const list = db.prepare('SELECT tl.*, p.team_id FROM task_lists tl JOIN projects p ON p.id = tl.project_id WHERE tl.id = ?')
@@ -97,9 +109,9 @@ router.post('/', (req, res) => {
   }
 
   const result = db.prepare(`
-    INSERT INTO tasks (task_list_id, title, description, status, priority, due_date)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(taskListId, title.trim(), description.trim(), status, priority, dueDate);
+    INSERT INTO tasks (task_list_id, title, description, status, priority, due_date, created_by_user_id, next_alert_date, docs_url)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(taskListId, title.trim(), description.trim(), status, priority, dueDate, created_by_user, alertDate, parsedDocsUrl.url);
 
   const taskId = result.lastInsertRowid;
   setAssignees(taskId, assigneeIds);
@@ -132,11 +144,11 @@ router.get('/my_tasks',(req,res)=> {
     FROM task_assignees ta
     JOIN tasks t
         ON t.id = ta.task_id
-    JOIN task_lists tl
+    LEFT JOIN task_lists tl
         ON tl.id = t.task_list_id
-    JOIN projects p
+    LEFT JOIN projects p
         ON p.id = tl.project_id
-    JOIN teams te
+    LEFT JOIN teams te
         ON te.id = p.team_id
     WHERE ta.user_id = ?
     ORDER BY
@@ -253,14 +265,23 @@ router.put('/:taskId', (req, res) => {
   const ctx = getTaskWithContext(taskId);
   if (!ctx) return res.status(404).json({ error: 'Tarefa não encontrada' });
 
-  const admin = isTeamAdmin(req.user.id, ctx.team_id);
+  const personalOwner = isPersonalTaskOwner(req.user.id, ctx);
+  const admin = ctx.team_id ? isTeamAdmin(req.user.id, ctx.team_id) : personalOwner;
   const assignee = isTaskAssignee(req.user.id, taskId);
 
   if (!admin && !assignee) {
     return res.status(403).json({ error: 'Apenas o utilizador atribuído pode alterar o estado' });
   }
 
-  const { title, description, status, priority, dueDate, assigneeIds } = req.body;
+  const { title, description, status, priority, dueDate, assigneeIds, clientId, next_alert_date, docs_url } = req.body;
+
+  let parsedDocsUrl = null;
+  if (docs_url !== undefined) {
+    parsedDocsUrl = parseDocsUrl(docs_url);
+    if (!parsedDocsUrl.ok) {
+      return res.status(400).json({ error: 'O campo Docs tem de ser um URL válido (ex: https://exemplo.com)' });
+    }
+  }
 
   if (admin) {
     db.prepare(`
@@ -269,7 +290,10 @@ router.put('/:taskId', (req, res) => {
         description = COALESCE(?, description),
         status = COALESCE(?, status),
         priority = COALESCE(?, priority),
-        due_date = COALESCE(?, due_date)
+        due_date = COALESCE(?, due_date),
+        next_alert_date = COALESCE(?, next_alert_date),
+        client_id = COALESCE(?, client_id),
+        docs_url = COALESCE(?, docs_url)
       WHERE id = ?
     `).run(
       title?.trim() ?? null,
@@ -277,6 +301,9 @@ router.put('/:taskId', (req, res) => {
       status ?? null,
       priority ?? null,
       dueDate !== undefined ? dueDate : null,
+      next_alert_date !== undefined ? next_alert_date: null,
+      clientId !== undefined ? clientId : null,
+      parsedDocsUrl ? (parsedDocsUrl.url ?? '') : null,
       taskId
     );
     if (assigneeIds !== undefined) setAssignees(taskId, assigneeIds);
@@ -290,7 +317,7 @@ router.put('/:taskId', (req, res) => {
       `).run(day, month, taskId);
     }
     if (status === 'done' && recurrenceRuleExists(taskId)) {
-      createRecurrency(taskId);
+      createRecurrency(taskId,req.user.id);
     }
   } else {
     if (status === undefined) {
@@ -298,7 +325,7 @@ router.put('/:taskId', (req, res) => {
     }
     db.prepare('UPDATE tasks SET status = ? WHERE id = ?').run(status, taskId);
     if (status === 'done' && recurrenceRuleExists(taskId)===true) {
-      createRecurrency(taskId);
+      createRecurrency(taskId,req.user.id);
     }
   }
 
@@ -331,7 +358,10 @@ router.delete('/:taskId', (req, res) => {
   const taskId = +req.params.taskId;
   const ctx = getTaskWithContext(taskId);
   if (!ctx) return res.status(404).json({ error: 'Tarefa não encontrada' });
-  if (!isTeamAdmin(req.user.id, ctx.team_id)) {
+  const canDelete = ctx.team_id
+    ? isTeamAdmin(req.user.id, ctx.team_id)
+    : isPersonalTaskOwner(req.user.id, ctx);
+  if (!canDelete) {
     return res.status(403).json({ error: 'Apenas admins podem eliminar tarefas' });
   }
 

@@ -21,7 +21,7 @@ import ptLocale from '@fullcalendar/core/locales/pt';
 
 export class MyTasksComponent implements OnInit {
   tasks: Task_proj[] = [];
-  selectedTask: (Task & { project_id?: number; project_name?: string; task_list_name?: string; comments?: Comment[] }) | null = null;
+  selectedTask: (Task & { project_id?: number | null; project_name?: string | null; task_list_name?: string | null; comments?: Comment[] }) | null = null;
   members: TeamMember[] = [];
   isAdmin = false;
   editTitle = '';
@@ -140,11 +140,17 @@ export class MyTasksComponent implements OnInit {
   }
 
   get projects() {
-    return [...new Map(this.tasks.map(task => [task.project_id, task.project_name])).entries()];
+    return [...new Map(this.tasks.map(task => [
+      task.project_id ?? 'personal',
+      task.project_name || 'Pessoal'
+    ])).entries()];
   }
 
   get lists() {
-    return [...new Map(this.tasks.map(task => [task.task_list_id, task.task_list_name])).entries()];
+    return [...new Map(this.tasks
+      .filter(task => task.task_list_id != null)
+      .map(task => [task.task_list_id, task.task_list_name])
+    ).entries()];
   }
 
   get filteredTasks(): Task_proj[] {
@@ -159,15 +165,15 @@ export class MyTasksComponent implements OnInit {
       const due = task.due_date ? new Date(task.due_date) : null;
       const matchesSearch = !search ||
         task.title.toLowerCase().includes(search) ||
-        task.project_name.toLowerCase().includes(search) ||
-        task.task_list_name.toLowerCase().includes(search);
+        (task.project_name || 'pessoal').toLowerCase().includes(search) ||
+        (task.task_list_name || '').toLowerCase().includes(search);
       const matchesDue = !this.filterDueDate || (!!due && (
         this.filterDueDate === 'today' ? due >= startToday && due < new Date(startToday.getTime() + 86400000) :
         this.filterDueDate === 'week' ? due >= startWeek && due < new Date(startWeek.getTime() + 7 * 86400000) :
         due < startTomorrow
       ));
       return matchesSearch &&
-        (!this.filterProject || String(task.project_id) === this.filterProject) &&
+        (!this.filterProject || String(task.project_id ?? 'personal') === this.filterProject) &&
         (!this.filterList || String(task.task_list_id) === this.filterList) &&
         (!this.filterStatus || task.status === this.filterStatus) &&
         (!this.filterPriority || task.priority === this.filterPriority) &&
@@ -220,8 +226,13 @@ export class MyTasksComponent implements OnInit {
       this.recurrenceStartDate = this.editDueDate;
       this.recurrenceEndDate = '';
       this.recurrenceMessage = '';
-      this.api.getTeamMembers(row.team_id).subscribe(members => this.members = members);
-      this.api.getTeams().subscribe(teams => this.isAdmin = teams.some(team => team.id === row.team_id && team.role === 'admin'));
+      if (row.team_id) {
+        this.api.getTeamMembers(row.team_id).subscribe(members => this.members = members);
+        this.api.getTeams().subscribe(teams => this.isAdmin = teams.some(team => team.id === row.team_id && team.role === 'admin'));
+      } else {
+        this.members = [];
+        this.isAdmin = true;
+      }
       this.api.getTaskTimeEntries(row.id).subscribe(entries => this.timeEntries = entries);
     });
   }
@@ -282,8 +293,11 @@ export class MyTasksComponent implements OnInit {
   }
 
   stopTimer() {
-    this.timer.stop();
-    if (this.selectedTask) this.api.getTaskTimeEntries(this.selectedTask.id).subscribe(entries => this.timeEntries = entries);
+    this.timer.stop().subscribe(() => {
+      if (this.selectedTask) {
+        this.api.getTaskTimeEntries(this.selectedTask.id).subscribe(entries => this.timeEntries = entries);
+      }
+    });
   }
 
   postComment() {

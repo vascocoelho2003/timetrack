@@ -1,9 +1,22 @@
 const express = require('express');
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const { db } = require('../db');
 const { signToken, authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
+
+function passwordsMatch(password, passwordConfirm) {
+  if (typeof password !== 'string' || typeof passwordConfirm !== 'string') {
+    return false;
+  }
+  const a = Buffer.from(password, 'utf8');
+  const b = Buffer.from(passwordConfirm, 'utf8');
+  if (a.length !== b.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(a, b);
+}
 
 /**
  * @openapi
@@ -18,14 +31,18 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             type: object
- *             required: [email, password, name]
+ *             required: [email, password, passwordConfirm, username, department_id]
  *             properties:
  *               email:
  *                 type: string
  *               password:
  *                 type: string
- *               name:
+ *               passwordConfirm:
  *                 type: string
+ *               username:
+ *                 type: string
+ *               department_id:
+ *                 type: number
  *     responses:
  *       201:
  *         description: Utilizador criado com sucesso
@@ -35,12 +52,24 @@ const router = express.Router();
  *         description: Email já registado
  */
 router.post('/register', (req, res) => {
-  const { email, password, username } = req.body;
-  if (!email?.trim() || !password || !username?.trim()) {
-    return res.status(400).json({ error: 'Email, password e nome são obrigatórios' });
+  const { email, password, passwordConfirm, username, department_id } = req.body;
+  if (!email?.trim() || !password || !passwordConfirm || !username?.trim()) {
+    return res.status(400).json({ error: 'Email, password, confirmação e nome são obrigatórios' });
   }
   if (password.length < 6) {
     return res.status(400).json({ error: 'Password deve ter pelo menos 6 caracteres' });
+  }
+  if (!passwordsMatch(password, passwordConfirm)) {
+    return res.status(400).json({ error: 'As passwords não coincidem' });
+  }
+
+  const departmentId = Number(department_id);
+  if (!department_id || Number.isNaN(departmentId)) {
+    return res.status(400).json({ error: 'Departamento é obrigatório' });
+  }
+  const department = db.prepare('SELECT id FROM departments WHERE id = ?').get(departmentId);
+  if (!department) {
+    return res.status(400).json({ error: 'Departamento inválido' });
   }
 
   const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email.trim().toLowerCase());
@@ -50,10 +79,12 @@ router.post('/register', (req, res) => {
 
   const hash = bcrypt.hashSync(password, 10);
   const result = db.prepare(
-    'INSERT INTO users (email, password_hash, username) VALUES (?, ?, ?)'
-  ).run(email.trim().toLowerCase(), hash, username.trim());
+    'INSERT INTO users (email, password_hash, username, department_id) VALUES (?, ?, ?, ?)'
+  ).run(email.trim().toLowerCase(), hash, username.trim(), departmentId);
 
-  const user = { id: result.lastInsertRowid, email: email.trim().toLowerCase(), username: username.trim() };
+  const client = db.prepare(`INSERT INTO clients (client_type, user_id) VALUES (?, ?)`).run('person',result.lastInsertRowid)
+
+  const user = { id: result.lastInsertRowid, email: email.trim().toLowerCase(), username: username.trim(), department_id: departmentId };
   const token = signToken(user);
   res.status(201).json({ user, token });
 });
@@ -98,7 +129,7 @@ router.post('/login', (req, res) => {
 
   const token = signToken(user);
   res.json({
-    user: { id: user.id, email: user.email, username: user.username, profile: user.profile },
+    user: { id: user.id, username: user.username, email: user.email, department_id: user.department_id },
     token,
   });
 });
@@ -119,13 +150,13 @@ router.post('/login', (req, res) => {
  *         description: Token inválido ou ausente
  */
 router.get('/me', authMiddleware, (req, res) => {
-  const user = db.prepare('SELECT id, email, username, profile, created_at FROM users WHERE id = ?').get(req.user.id);
+  const user = db.prepare('SELECT id, email, username, profile, created_at, department_id FROM users WHERE id = ?').get(req.user.id);
   if (!user) return res.status(404).json({ error: 'Utilizador não encontrado' });
   res.json(user);
 });
 
 router.put('/me', authMiddleware, (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, password, department_id } = req.body;
   const normalizedEmail = email?.trim().toLowerCase();
   const normalizedUsername = username?.trim();
 
@@ -139,6 +170,15 @@ router.put('/me', authMiddleware, (req, res) => {
     return res.status(400).json({ error: 'Password deve ter pelo menos 6 caracteres' });
   }
 
+  const departmentId = Number(department_id);
+  if (!department_id || Number.isNaN(departmentId)) {
+    return res.status(400).json({ error: 'Departamento é obrigatório' });
+  }
+  const department = db.prepare('SELECT id FROM departments WHERE id = ?').get(departmentId);
+  if (!department) {
+    return res.status(400).json({ error: 'Departamento inválido' });
+  }
+
   const existing = db.prepare('SELECT id FROM users WHERE email = ? AND id != ?')
     .get(normalizedEmail, req.user.id);
   if (existing) {
@@ -148,16 +188,16 @@ router.put('/me', authMiddleware, (req, res) => {
   if (password) {
     const passwordHash = bcrypt.hashSync(password, 10);
     db.prepare(
-      'UPDATE users SET username = ?, email = ?, password_hash = ? WHERE id = ?'
-    ).run(normalizedUsername, normalizedEmail, passwordHash, req.user.id);
+      'UPDATE users SET username = ?, email = ?, password_hash = ?, department_id = ? WHERE id = ?'
+    ).run(normalizedUsername, normalizedEmail, passwordHash, departmentId, req.user.id);
   } else {
     db.prepare(
-      'UPDATE users SET username = ?, email = ? WHERE id = ?'
-    ).run(normalizedUsername, normalizedEmail, req.user.id);
+      'UPDATE users SET username = ?, email = ?, department_id = ? WHERE id = ?'
+    ).run(normalizedUsername, normalizedEmail, departmentId, req.user.id);
   }
 
   const user = db.prepare(
-    'SELECT id, email, username, profile FROM users WHERE id = ?'
+    'SELECT id, email, username, profile, department_id FROM users WHERE id = ?'
   ).get(req.user.id);
   const token = signToken(user);
   res.json({ user, token });

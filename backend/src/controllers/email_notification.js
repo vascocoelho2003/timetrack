@@ -24,8 +24,7 @@ async function getNearDueDateTasks() {
         const tasks = db.prepare(`
             SELECT id, title, due_date
             FROM tasks
-            WHERE date(due_date) > date('now')
-            AND date(due_date) <= date('now', '+7 days')
+            WHERE date(next_alert_date) = date('now')
             AND status != 'done'
             AND (near_due_email_sent = 0 OR near_due_email_sent IS NULL);
         `).all();
@@ -83,15 +82,15 @@ async function sendEmailNotifications(tasks) {
                     user.email,
                     "A sua tarefa vence dentro de uma semana",
                     `
-Olá,
+                        Olá,
 
-A tarefa "${task.title}" vence no dia ${task.due_date}.
+                        A tarefa "${task.title}" vence no dia ${task.due_date}.
 
-Por favor, verifique se consegue concluí-la antes da data limite.
+                        Por favor, verifique se consegue concluí-la antes da data limite.
 
-Cumprimentos,
-Task Manager
-`
+                        Cumprimentos,
+                        Task Manager
+                        `
                 );
 
                 console.log(

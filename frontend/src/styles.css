@@ -355,6 +355,13 @@ input:focus, textarea:focus, select:focus {
   color: var(--muted);
 }
 
+.auth-card .error {
+  display: block;
+  color: #b91c1c;
+  font-size: 0.8rem;
+  margin: 0.15rem 0 0.5rem;
+}
+
 .alert {
   background: #fef2f2;
   color: #b91c1c;

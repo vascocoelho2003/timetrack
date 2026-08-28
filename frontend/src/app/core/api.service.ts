@@ -6,7 +6,8 @@ import {
   DashboardData,project_report,
   todo_tasks,
   my_projects, userProjectsDetails,
-  ColaboratorReportDetails,
+  ColaboratorReportDetails, Department,
+  Client
 } from './models';
 import {environment} from '../../environments/environments';
 
@@ -80,6 +81,7 @@ export class ApiService {
     status?: string;
     priority?: string;
     dueDate?: string | null;
+    alertDate?: string | null;
     assigneeIds?: number[];
     parentTaskId?: number | null;
   }) {
@@ -115,12 +117,31 @@ export class ApiService {
   }
 
   // Time
-  startTimer(taskId: number) {
-    return this.http.post<TimeEntry>(`${API}/time/start`, { taskId });
+  startTimer(taskId?: number) {
+    return this.http.post<TimeEntry>(`${API}/time/start`, taskId ? { taskId } : {});
   }
   stopTimer() { return this.http.post<TimeEntry>(`${API}/time/stop`, {}); }
 
   getActiveTimer() { return this.http.get<TimeEntry | null>(`${API}/time/active`); }
+
+  getPendingUnassignedTimer() {
+    return this.http.get<TimeEntry | null>(`${API}/time/unassigned/pending`);
+  }
+
+  assignUnassignedTimer(entryId: number, data: {
+    existingTaskId?: number;
+    title?: string;
+    description?: string;
+    taskListId?: number | null;
+    priority?: string;
+    dueDate?: string | null;
+  }) {
+    return this.http.post<Task>(`${API}/time/unassigned/${entryId}/assign`, data);
+  }
+
+  discardUnassignedTimer(entryId: number) {
+    return this.http.delete(`${API}/time/unassigned/${entryId}`);
+  }
 
   getTaskTimeEntries(taskId: number) {
     return this.http.get<TimeEntry[]>(`${API}/time/task/${taskId}`);
@@ -175,6 +196,20 @@ export class ApiService {
     if (endDate) params['endDate'] = endDate;
 
     return this.http.get<ColaboratorReportDetails[]>(`${API}/colaborator_report/${id}`, { params });
+  }
+
+  // Carregar Departments
+  getDepartments(){
+    return this.http.get<Department []>(`${API}/departments/getDepartments`);
+  }
+
+  getMyDepartment(){
+    return this.http.get<Department | null>(`${API}/departments/getMyDepartment`);
+  }
+
+  // Carregar Clientes
+  getClients(){
+    return this.http.get<Client[]>(`${API}/clients/getAllClients`);
   }
 
 }

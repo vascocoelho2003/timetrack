@@ -2,6 +2,14 @@ export interface User {
   id: number;
   email: string;
   username: string;
+  department_id?: number;
+}
+
+export interface Client {
+  id: number;
+  user_id : number;
+  client_type: string;
+  name: string;
 }
 
 export interface DashboardData {
@@ -15,6 +23,11 @@ export interface DashboardData {
   total_hours: number;
   overdue_tasks: number;
   high_priority_tasks: number;
+}
+
+export interface Department{
+  id: number;
+  name: string;
 }
 
 export interface colaboratorReport{
@@ -118,12 +131,15 @@ export interface Task {
   status: 'todo' | 'doing' | 'done';
   priority: 'low' | 'medium' | 'high';
   due_date: string | null;
+  next_alert_date: string | null;
   total_time?: number;
   assigneeIds: number[];
   subtasks?: Task[];
   comments?: Comment[];
   assignees: User[];
   recurrence?: RecurrenceRule | null;
+  client_id?: number | null;
+  docs_url?: string | null;
 }
 
 export interface RecurrenceRule {
@@ -142,11 +158,11 @@ export interface RecurrenceRule {
 
 export interface Task_proj {
   id: number;
-  team_id: number;
-  project_id: number;
-  task_list_name: string,
-  project_name: string;
-  task_list_id: number;
+  team_id: number | null;
+  project_id: number | null;
+  task_list_name: string | null,
+  project_name: string | null;
+  task_list_id: number | null;
   parent_task_id: number | null;
   title: string;
   description: string;
@@ -171,7 +187,7 @@ export interface Comment {
 export interface TimeEntry {
   id: number;
   user_id: number;
-  task_id: number;
+  task_id: number | null;
   start: string;
   end: string | null;
   duration: number | null;

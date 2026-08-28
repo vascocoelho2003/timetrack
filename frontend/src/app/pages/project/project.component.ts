@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { TimerService, formatDuration } from '../../core/timer.service';
-import { Project, TaskList, Task, TeamMember, TimeEntry, Comment, RecurrenceRule } from '../../core/models';
+import { Project, TaskList, Task, TeamMember, TimeEntry, Comment, RecurrenceRule, Client } from '../../core/models';
 import * as XLSX from 'xlsx';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environments';
@@ -22,6 +22,8 @@ import { MatCheckboxChange } from '@angular/material/checkbox';
 export class ProjectComponent implements OnInit {
   project: Project | null = null;
   lists: TaskList[] = [];
+  clients: Client[] = [];
+  clientId: number | null = null;
   tasksByList: Record<number, Task[]> = {};
   members: TeamMember[] = [];
   isAdmin = false;
@@ -42,6 +44,7 @@ export class ProjectComponent implements OnInit {
   newTaskDescription = '';
   newTaskPriority = 'medium';
   newTaskDueDate = '';
+  alertDate = '';
   newTaskAssignees: number[] = [];
   selectedTask: (Task & { comments?: Comment[] }) | null = null;
   editTitle = '';
@@ -49,6 +52,7 @@ export class ProjectComponent implements OnInit {
   editStatus = 'todo';
   editPriority = 'medium';
   editDueDate = '';
+  editAlertDate = '';
   editAssignees: number[] = [];
   newComment = '';
   timeEntries: TimeEntry[] = [];
@@ -64,6 +68,8 @@ export class ProjectComponent implements OnInit {
   recurrenceStartDate = '';
   recurrenceEndDate = '';
   recurrenceMessage = '';
+  editDocsUrl='';
+  docsUrlError = '';
   recurrenceRule: RecurrenceRule | null = null;
 
   constructor(
@@ -129,6 +135,9 @@ export class ProjectComponent implements OnInit {
     });
     this.loadBoard(projectId);
     this.timer.refresh();
+    this.api.getClients().subscribe(data=>{
+      this.clients=data
+    })
   }
 
   loadBoard(projectId: number) {
@@ -233,6 +242,7 @@ export class ProjectComponent implements OnInit {
       description: this.newTaskDescription,
       priority: this.newTaskPriority as Task['priority'],
       dueDate: this.newTaskDueDate || null,
+      alertDate: this.alertDate || null,
       assigneeIds: this.newTaskAssignees,
     }).subscribe(task => {
       const listId = this.newTaskListId;
@@ -241,6 +251,7 @@ export class ProjectComponent implements OnInit {
       this.newTaskTitle = '';
       this.newTaskDescription = '';
       this.newTaskDueDate = '';
+      this.alertDate = '';
       this.newTaskAssignees = [];
     });
   }
@@ -253,13 +264,20 @@ export class ProjectComponent implements OnInit {
       this.editStatus = task.status;
       this.editPriority = task.priority;
       this.editDueDate = task.due_date?.slice(0, 10) || '';
+      this.editAlertDate = task.next_alert_date?.slice(0,10) || '';
+      this.editDocsUrl = task.docs_url || '';
+      this.docsUrlError = '';
       this.editAssignees = [...task.assigneeIds];
+      this.clientId = task.client_id ?? null;
       this.resetRecurrenceForm(task.recurrence);
       this.api.getTaskTimeEntries(taskId).subscribe(e => this.timeEntries = e);
     });
   }
 
-  closeTask() { this.selectedTask = null; }
+  closeTask() {
+    this.selectedTask = null;
+    this.clientId = null;
+  }
 
   toggleAssignee(id: number, ev: Event) {
     const checked = (ev.target as HTMLInputElement).checked;
@@ -269,18 +287,46 @@ export class ProjectComponent implements OnInit {
 
   saveTask() {
     if (!this.selectedTask) return;
+    const docsUrl = this.normalizeDocsUrl(this.editDocsUrl);
+    if (docsUrl === false) {
+      this.docsUrlError = 'Indique um URL válido, por exemplo https://exemplo.com';
+      return;
+    }
+    this.docsUrlError = '';
+    this.editDocsUrl = docsUrl;
     this.api.updateTask(this.selectedTask.id, {
       title: this.editTitle,
       description: this.editDescription,
       status: this.editStatus as Task['status'],
       priority: this.editPriority as Task['priority'],
       dueDate: this.editDueDate || null,
+      next_alert_date: this.editAlertDate || null,
       assigneeIds: this.editAssignees,
+      clientId: this.clientId,
+      docs_url: docsUrl,
     }).subscribe(updated => {
       this.refreshTaskInBoard(updated);
       this.selectedTask = { ...this.selectedTask!, ...updated, assigneeIds: this.editAssignees };
       this.closeTask();
     });
+  }
+
+  onDocsUrlChange() {
+    this.docsUrlError = '';
+  }
+
+  private normalizeDocsUrl(value: string): string | false {
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    try {
+      const url = new URL(withProtocol);
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+      if (url.hostname !== 'localhost' && !url.hostname.includes('.')) return false;
+      return url.toString();
+    } catch {
+      return false;
+    }
   }
 
   saveStatusOnly() {
@@ -361,10 +407,11 @@ export class ProjectComponent implements OnInit {
   }
 
   stopTimer() {
-    this.timer.stop();
-    if (this.selectedTask) {
-      this.api.getTaskTimeEntries(this.selectedTask.id).subscribe(e => this.timeEntries = e);
-    }
+    this.timer.stop().subscribe(() => {
+      if (this.selectedTask) {
+        this.api.getTaskTimeEntries(this.selectedTask.id).subscribe(e => this.timeEntries = e);
+      }
+    });
   }
 
   postComment() {
