@@ -12,6 +12,7 @@ const { parseDocsUrl } = require('../utils/url');
     isPersonalTaskOwner,
   } = require('../utils/permissions');
 
+const { getDaysBetweenAlertAndDue } = require('../utils/diffDates');
 const router = express.Router();
 router.use(authMiddleware);
 
@@ -83,12 +84,13 @@ router.post('/', (req, res) => {
     description = '',
     status = 'todo',
     priority = 'medium',
-    dueDate = null,
-    alertDate = null,
     assigneeIds = [],
     parentTaskId = null,
     docs_url = '',
   } = req.body;
+
+  let { dueDate = null, alertDate = null } = req.body;
+  let alert_offset_days = null;
 
   created_by_user = req.user.id;
 
@@ -107,11 +109,20 @@ router.post('/', (req, res) => {
   if (!isTeamAdmin(req.user.id, list.team_id)) {
     return res.status(403).json({ error: 'Apenas admins podem criar tarefas' });
   }
+  if (alertDate && dueDate) {
+    alert_offset_days = getDaysBetweenAlertAndDue(alertDate, dueDate);
+  }
+  if (alert_offset_days != null && alert_offset_days <= 0) {
+    alert_offset_days = 0;
+    alertDate = null;
+    dueDate = null;
+  }
+  
 
   const result = db.prepare(`
-    INSERT INTO tasks (task_list_id, title, description, status, priority, due_date, created_by_user_id, next_alert_date, docs_url)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(taskListId, title.trim(), description.trim(), status, priority, dueDate, created_by_user, alertDate, parsedDocsUrl.url);
+    INSERT INTO tasks (task_list_id, title, description, status, priority, due_date, created_by_user_id, next_alert_date, docs_url,alert_offset_days)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?)
+  `).run(taskListId, title.trim(), description.trim(), status, priority, dueDate, created_by_user, alertDate, parsedDocsUrl.url, alert_offset_days);
 
   const taskId = result.lastInsertRowid;
   setAssignees(taskId, assigneeIds);

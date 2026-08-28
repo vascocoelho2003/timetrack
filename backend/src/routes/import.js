@@ -2,6 +2,7 @@ const express = require('express');
 const { db } = require('../db');
 const {authMiddleware}=require('../middleware/auth');
 const router = express.Router();
+const { getDaysBetweenAlertAndDue } = require('../utils/diffDates');
 
 
 router.post('/import/:team_id/:project_id', async (req,res) =>{
@@ -23,6 +24,11 @@ router.post('/import/:team_id/:project_id', async (req,res) =>{
             }else{
                 dueDate = row.data_limite;
             }
+
+            const hojeStr = new Date().toISOString().split('T')[0];
+            if(dueDate<=hojeStr){
+                continue;
+            }
             tasklist = db.prepare("SELECT * FROM task_lists Where project_id=? AND name=? ").get(project,row.tasklist);
             if(tasklist==null){
                 db.prepare(`INSERT INTO task_lists (project_id, name) VALUES(?,?)`).run(project, row.tasklist);
@@ -34,14 +40,24 @@ router.post('/import/:team_id/:project_id', async (req,res) =>{
             if(task){continue;}
 
             // Cria a tarefa na BD
-            insertTaskStmt = db.prepare(`INSERT INTO tasks(task_list_id,title,description,priority,due_date,created_by_user_id,next_alert_date) VALUES(?,?,?,?,?,?,?)`);
+            insertTaskStmt = db.prepare(`INSERT INTO tasks(task_list_id,title,description,priority,due_date,created_by_user_id,next_alert_date, alert_offset_days) VALUES(?,?,?,?,?,?,?, ?)`);
             const priority = row.priority ?? 'medium';
             if(row.alert_date){
                 alert_date = new Date((row.alert_date-25569)*86400*1000).toISOString().split("T")[0];
             }else{
                 alert_date=null;
             }
+            let alert_offset_days
+            if (alert_date && dueDate) {
+                alert_offset_days = getDaysBetweenAlertAndDue(alert_date, dueDate);
+            }
+            if (alert_offset_days != null && alert_offset_days <= 0) {
+                alert_offset_days = 0;
+                alert_date = null;
+                dueDate = null;
+            }
             
+            const diffInDays = getDaysBetweenAlertAndDue(alert_date, dueDate);
 
             task = insertTaskStmt.run(
                 tasklist.id,
@@ -50,7 +66,8 @@ router.post('/import/:team_id/:project_id', async (req,res) =>{
                 priority,
                 dueDate,
                 req.user.id,
-                alert_date 
+                alert_date,
+                alert_offset_days = diffInDays || 0
             )
 
             // Atribui a tarefa a um utilizador
