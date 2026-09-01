@@ -4,7 +4,8 @@ import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { TimerService, formatDuration } from '../../core/timer.service';
-import { Comment, Task, Task_proj, TeamMember, TimeEntry, RecurrenceRule, Client } from '../../core/models';
+import { Comment, Task, Task_proj, TeamMember, TimeEntry, RecurrenceRule, Client, TaskDependency, DependencyType } from '../../core/models';
+import { forkJoin } from 'rxjs';
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { CalendarOptions, EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -49,6 +50,14 @@ export class MyTasksComponent implements OnInit {
   recurrenceEndDate = '';
   recurrenceMessage = '';
   recurrenceRule: RecurrenceRule | null = null;
+  saveError = '';
+  taskDependencies: TaskDependency[] = [];
+  predecessorCandidates: Task[] = [];
+  dependencySearch = '';
+  selectedPredecessor: Task | null = null;
+  dependencyType: DependencyType = 'FF';
+  dependencyError = '';
+  blockingPredecessorId: number | null = null;
 
   search = '';
   filterProject = '';
@@ -221,11 +230,18 @@ export class MyTasksComponent implements OnInit {
     return !!this.selectedTask?.assigneeIds.includes(this.auth.currentUser()?.id || 0);
   }
 
+  get canChangeStatus() {
+    return this.isAdmin || this.canTrackTime;
+  }
+
   get activeOnThisTask() {
     return this.timer.activeEntry()?.task_id === this.selectedTask?.id;
   }
 
   openTask(row: Task_proj) {
+    this.saveError = '';
+    this.blockingPredecessorId = null;
+    this.resetDependencyPicker();
     this.api.getTask(row.id).subscribe(task => {
       this.selectedTask = { ...task, project_id: row.project_id, project_name: row.project_name, task_list_name: row.task_list_name };
       this.editTitle = task.title;
@@ -238,7 +254,9 @@ export class MyTasksComponent implements OnInit {
       this.docsUrlError = '';
       this.editAssignees = [...task.assigneeIds];
       this.clientId = task.client_id ?? null;
+      this.taskDependencies = task.dependencies || [];
       this.resetRecurrenceForm(task.recurrence);
+      this.loadPredecessorCandidates(row);
       if (row.team_id) {
         this.api.getTeamMembers(row.team_id).subscribe(members => this.members = members);
         this.api.getTeams().subscribe(teams => this.isAdmin = teams.some(team => team.id === row.team_id && team.role === 'admin'));
@@ -256,6 +274,11 @@ export class MyTasksComponent implements OnInit {
     this.clientId = null;
     this.editDocsUrl = '';
     this.docsUrlError = '';
+    this.saveError = '';
+    this.taskDependencies = [];
+    this.predecessorCandidates = [];
+    this.blockingPredecessorId = null;
+    this.resetDependencyPicker();
   }
 
   toggleAssignee(id: number, event: Event) {
@@ -272,6 +295,8 @@ export class MyTasksComponent implements OnInit {
     }
     this.docsUrlError = '';
     this.editDocsUrl = docsUrl;
+    this.saveError = '';
+    this.blockingPredecessorId = null;
     this.api.updateTask(this.selectedTask.id, {
       title: this.editTitle,
       description: this.editDescription,
@@ -282,9 +307,16 @@ export class MyTasksComponent implements OnInit {
       assigneeIds: this.editAssignees,
       clientId: this.clientId,
       docs_url: docsUrl,
-    }).subscribe(() => {
-      this.loadTasks();
-      this.closeTask();
+    }).subscribe({
+      next: () => {
+        this.loadTasks();
+        this.closeTask();
+      },
+      error: err => {
+        this.saveError = err.error?.error || 'Não foi possível guardar a tarefa';
+        this.blockingPredecessorId = err.error?.blockingDependency?.predecessor ?? null;
+        this.revealSaveError();
+      }
     });
   }
 
@@ -308,7 +340,107 @@ export class MyTasksComponent implements OnInit {
 
   saveStatusOnly() {
     if (!this.selectedTask) return;
-    this.api.updateTask(this.selectedTask.id, { status: this.editStatus }).subscribe(() => this.loadTasks());
+    this.saveError = '';
+    this.blockingPredecessorId = null;
+    this.api.updateTask(this.selectedTask.id, { status: this.editStatus }).subscribe({
+      next: () => this.loadTasks(),
+      error: err => {
+        this.saveError = err.error?.error || 'Não foi possível alterar o estado';
+        this.blockingPredecessorId = err.error?.blockingDependency?.predecessor ?? null;
+        this.editStatus = this.selectedTask?.status || this.editStatus;
+        this.revealSaveError();
+      }
+    });
+  }
+
+  private loadPredecessorCandidates(row: Task_proj) {
+    this.predecessorCandidates = [];
+    if (!row.project_id) {
+      this.predecessorCandidates = this.tasks
+        .filter(task => task.id !== row.id)
+        .map(task => ({ id: task.id, title: task.title } as Task));
+      return;
+    }
+    this.api.getTaskLists(row.project_id).subscribe(lists => {
+      if (!lists.length) return;
+      forkJoin(lists.map(list => this.api.getTasks(list.id))).subscribe(groups => {
+        this.predecessorCandidates = groups.flat();
+      });
+    });
+  }
+
+  get filteredPredecessorTasks(): Task[] {
+    const search = this.dependencySearch.trim().toLowerCase();
+    if (!search || this.selectedPredecessor) return [];
+    const currentId = this.selectedTask?.id;
+    return this.predecessorCandidates
+      .filter(task => task.id !== currentId && task.title.toLowerCase().includes(search))
+      .slice(0, 8);
+  }
+
+  dependencyTypeLabel(type: string) {
+    return {
+      FS: 'FS — Finish to Start',
+      SS: 'SS — Start to Start',
+      FF: 'FF — Finish to Finish',
+      SF: 'SF — Start to Finish',
+    }[type] || type;
+  }
+
+  selectPredecessor(task: Task) {
+    this.selectedPredecessor = task;
+    this.dependencySearch = task.title;
+    this.dependencyError = '';
+  }
+
+  onDependencySearchChange() {
+    if (this.selectedPredecessor && this.dependencySearch !== this.selectedPredecessor.title) {
+      this.selectedPredecessor = null;
+    }
+    this.dependencyError = '';
+  }
+
+  resetDependencyPicker() {
+    this.dependencySearch = '';
+    this.selectedPredecessor = null;
+    this.dependencyType = 'FF';
+    this.dependencyError = '';
+  }
+
+  addDependency() {
+    if (!this.selectedTask || !this.selectedPredecessor) {
+      this.dependencyError = 'Pesquise e selecione uma tarefa predecessora';
+      return;
+    }
+    const predecessor = this.selectedPredecessor;
+    const type = this.dependencyType;
+    const existing = this.taskDependencies.find(d => d.predecessor === predecessor.id);
+    const request = existing
+      ? this.api.updateDependency(this.selectedTask.id, predecessor.id, type)
+      : this.api.createDependency(this.selectedTask.id, predecessor.id, type);
+
+    request.subscribe({
+      next: dep => {
+        if (existing) {
+          this.taskDependencies = this.taskDependencies.map(d =>
+            d.predecessor === dep.predecessor ? { ...d, ...dep } : d
+          );
+        } else {
+          this.taskDependencies = [...this.taskDependencies, dep];
+        }
+        this.resetDependencyPicker();
+      },
+      error: err => {
+        this.dependencyError = err.error?.error || 'Não foi possível guardar a dependência';
+      }
+    });
+  }
+
+  private revealSaveError() {
+    setTimeout(() => {
+      const target = document.querySelector('.error-banner-actions');
+      target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
   }
 
   resetRecurrenceForm(rule: RecurrenceRule | null = null) {

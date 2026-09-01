@@ -89,144 +89,221 @@
         @if (isAdmin) {
           <label>Título</label>
           <input [(ngModel)]="editTitle" />
-          <label>Descrição</label>
-          <textarea [(ngModel)]="editDescription" rows="3"></textarea>
-          <label>Estado</label>
-          <select [(ngModel)]="editStatus">
-            <option value="todo">Por fazer</option>
-            <option value="doing">Em progresso</option>
-            <option value="done">Concluída</option>
-          </select>
-          <label>Prioridade</label>
-          <select [(ngModel)]="editPriority">
-            <option value="low">Baixa</option>
-            <option value="medium">Média</option>
-            <option value="high">Alta</option>
-          </select>
-          <label>Prazo</label>
-          <input type="date" [(ngModel)]="editDueDate" />
-          <label>Data de Alerta</label>
-          <input type="date" [(ngModel)]="editAlertDate" />
-          <label>Atribuídos</label>
-          <div class="assignee-checks">
-            @for (member of members; track member.id) {
-              <label class="checkbox-label">
-                <input type="checkbox"
-                  [checked]="editAssignees.includes(member.id)"
-                  (change)="toggleAssignee(member.id, $event)" />
-                {{ member.username }}
-              </label>
-            }
-          </div>
+
+          <details class="form-section" open>
+            <summary>Detalhes</summary>
+            <div class="form-section-body">
+              <label>Descrição</label>
+              <textarea [(ngModel)]="editDescription" rows="3"></textarea>
+              <label>Estado</label>
+              <select [(ngModel)]="editStatus">
+                <option value="todo">Por fazer</option>
+                <option value="doing">Em progresso</option>
+                <option value="done">Concluída</option>
+              </select>
+              <label>Prioridade</label>
+              <select [(ngModel)]="editPriority">
+                <option value="low">Baixa</option>
+                <option value="medium">Média</option>
+                <option value="high">Alta</option>
+              </select>
+              <label>Prazo</label>
+              <input type="date" [(ngModel)]="editDueDate" />
+              <label>Data de Alerta</label>
+              <input type="date" [(ngModel)]="editAlertDate" />
+              <label>Atribuídos</label>
+              <div class="assignee-checks">
+                @for (m of members; track m.id) {
+                  <label class="checkbox-label">
+                    <input type="checkbox"
+                      [checked]="editAssignees.includes(m.id)"
+                      (change)="toggleAssignee(m.id, $event)" />
+                    {{ m.username }}
+                  </label>
+                }
+              </div>
+            </div>
+          </details>
         } @else {
           <h4>{{ selectedTask.title }}</h4>
           <p class="muted">{{ selectedTask.description || 'Sem descrição' }}</p>
-          <label>Estado</label>
-          <select [(ngModel)]="editStatus" (change)="saveStatusOnly()">
-            <option value="todo">Por fazer</option>
-            <option value="doing">Em progresso</option>
-            <option value="done">Concluída</option>
-          </select>
+          @if (canChangeStatus) {
+            <label>Estado</label>
+            <select [(ngModel)]="editStatus" (change)="saveStatusOnly()">
+              <option value="todo">A fazer</option>
+              <option value="doing">Em progresso</option>
+              <option value="done">Concluída</option>
+            </select>
+          } @else {
+            <p><strong>Estado:</strong> {{ statusLabel(selectedTask.status) }}</p>
+          }
         }
 
         @if (canTrackTime || timeEntries.length) {
-          <div class="timer-section">
-            <h4>Time tracking</h4>
-            @if (canTrackTime) {
-              @if (activeOnThisTask) {
-                <p class="timer-running">⏱ {{ fmt(timer.elapsedSeconds()) }}</p>
-                <button class="btn btn-danger" (click)="stopTimer()">Parar timer</button>
-              } @else {
-                <button class="btn btn-primary" (click)="startTimer()" [disabled]="!!timer.activeEntry()">
-                  Iniciar timer
-                </button>
-              }
-            }
-            @if (timeEntries.length) {
-              <ul class="time-list">
-                @for (entry of timeEntries; track entry.id) {
-                  <li>{{ entry.user_name }} — {{ fmt(entry.duration || 0) }}</li>
+          <details class="form-section">
+            <summary>Time tracking</summary>
+            <div class="form-section-body">
+              @if (canTrackTime) {
+                @if (activeOnThisTask) {
+                  <p class="timer-running">⏱ {{ fmt(timer.elapsedSeconds()) }}</p>
+                  <button class="btn btn-danger" (click)="stopTimer()">Parar timer</button>
+                } @else {
+                  <button class="btn btn-primary" (click)="startTimer()" [disabled]="!!timer.activeEntry()">
+                    Iniciar timer
+                  </button>
                 }
-              </ul>
-            }
-          </div>
+              }
+              @if (timeEntries.length) {
+                <ul class="time-list">
+                  @for (entry of timeEntries; track entry.id) {
+                    <li>{{ entry.user_name }} — {{ fmt(entry.duration || 0) }}</li>
+                  }
+                </ul>
+              }
+            </div>
+          </details>
         }
 
         @if (isAdmin) {
-          <div class="comments-section">
-            <h4>Recorrência</h4>
-            <div class="inline-form">
-              <label>Tipo</label>
-              <select [(ngModel)]="recurrenceRuleType">
-                <option value="fixed_day">Dia fixo</option>
-                <option value="business_day">Dia útil</option>
-              </select>
-              <label>Frequência</label>
-              <select [(ngModel)]="recurrenceFrequency">
-                <option value="daily">Diária</option>
-                <option value="weekly">Semanal</option>
-                <option value="monthly">Mensal</option>
-                <option value="yearly">Anual</option>
-              </select>
-              <br>
-              <label>Intervalo</label>
-              <input type="number" min="1" [(ngModel)]="recurrenceInterval" />
+          <details class="form-section">
+            <summary>Recorrência</summary>
+            <div class="form-section-body">
+              <div class="inline-form">
+                <label>Tipo</label>
+                <select [(ngModel)]="recurrenceRuleType">
+                  <option value="fixed_day">Dia fixo</option>
+                  <option value="business_day">Dia útil</option>
+                </select>
+                <label>Frequência</label>
+                <select [(ngModel)]="recurrenceFrequency">
+                  <option value="daily">Diária</option>
+                  <option value="weekly">Semanal</option>
+                  <option value="monthly">Mensal</option>
+                  <option value="yearly">Anual</option>
+                </select>
+                <br>
+                <label>Intervalo</label>
+                <input type="number" min="1" [(ngModel)]="recurrenceInterval" />
+              </div>
+              @if (recurrenceFrequency === 'monthly' || recurrenceFrequency === 'yearly') {
+                <p class="muted">O dia e o mês serão calculados automaticamente a partir do prazo da tarefa.</p>
+              }
+              <button class="btn btn-primary" (click)="createRecurrence()">
+                {{ recurrenceRule ? 'Atualizar recorrência' : 'Criar recorrência' }}
+              </button>
+              @if (recurrenceMessage) {
+                <p class="muted">{{ recurrenceMessage }}</p>
+              }
             </div>
-            @if (recurrenceFrequency === 'monthly' || recurrenceFrequency === 'yearly') {
-              <p class="muted">O dia e o mês serão calculados automaticamente a partir do prazo da tarefa.</p>
-            }
-            <button class="btn btn-primary" (click)="createRecurrence()">
-              {{ recurrenceRule ? 'Atualizar recorrência' : 'Criar recorrência' }}
-            </button>
-            @if (recurrenceMessage) {
-              <p class="muted">{{ recurrenceMessage }}</p>
-            }
-          </div>
+          </details>
         }
 
-        <div class="field">
-          <label>Cliente</label>
-          <select [(ngModel)]="clientId" name="clientId">
-            <option [ngValue]="null">Selecionar Cliente</option>
-            @for (client of clients; track client.id) {
-              <option [ngValue]="client.id">{{ client.name }}</option>
+        <details class="form-section">
+          <summary>Dependências</summary>
+          <div class="form-section-body">
+            @if (taskDependencies.length) {
+              <ul class="dependency-list">
+                @for (dep of taskDependencies; track dep.predecessor) {
+                  <li class="dependency-item" [class.dependency-blocked]="dep.predecessor === blockingPredecessorId">
+                    <span>{{ dep.predecessor_title || ('Tarefa #' + dep.predecessor) }}</span>
+                    <span class="dependency-type-pill">{{ dependencyTypeLabel(dep.dependency_type) }}</span>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="muted">Sem predecessoras.</p>
             }
-          </select>
-        </div>
-
-        <div class="comments-section">
-          <h4>Comentários</h4>
-          @for (comment of selectedTask.comments || []; track comment.id) {
-            <div class="comment">
-              <div class="comment-header">
-                <strong>{{ comment.user_name }}</strong>
-                @if (comment.user_id === auth.currentUser()?.id) {
-                  <a href="#" class="delete-link" (click)="deleteComment(comment.id); $event.preventDefault()" title="Eliminar comentário">x</a>
+            @if (isAdmin) {
+              <label>Predecessora</label>
+              <div class="dependency-search">
+                <input
+                  [(ngModel)]="dependencySearch"
+                  (ngModelChange)="onDependencySearchChange()"
+                  placeholder="Pesquisar tarefa..." />
+                @if (filteredPredecessorTasks.length) {
+                  <div class="dependency-results">
+                    @for (task of filteredPredecessorTasks; track task.id) {
+                      <button type="button" (click)="selectPredecessor(task)">{{ task.title }}</button>
+                    }
+                  </div>
                 }
               </div>
-              <p>{{ comment.content }}</p>
-            </div>
-          }
-          <div class="inline-form">
-            <input [(ngModel)]="newComment" placeholder="Adicionar comentário..." />
-            <button class="btn btn-primary" (click)="postComment()">Enviar</button>
-          </div>
-          <div>
-            <label>Docs (URL)</label>
-            <input
-              type="url"
-              [(ngModel)]="editDocsUrl"
-              placeholder="https://exemplo.com"
-              (ngModelChange)="onDocsUrlChange()" />
-            @if (docsUrlError) {
-              <p class="field-error">{{ docsUrlError }}</p>
+              @if (selectedPredecessor) {
+                <p class="muted">Selecionada: {{ selectedPredecessor.title }}</p>
+              }
+              <label>Tipo de dependência</label>
+              <select [(ngModel)]="dependencyType">
+                <option value="FS">FS — Finish to Start</option>
+                <option value="SS">SS — Start to Start</option>
+                <option value="FF">FF — Finish to Finish</option>
+                <option value="SF">SF — Start to Finish</option>
+              </select>
+              <br><br>
+              <button class="btn btn-primary" type="button" (click)="addDependency()">Adicionar dependência</button>
+              @if (dependencyError) {
+                <p class="field-error">{{ dependencyError }}</p>
+              }
             }
           </div>
-        </div>
+        </details>
+
+        <details class="form-section">
+          <summary>Cliente</summary>
+          <div class="form-section-body">
+            <label>Cliente</label>
+            <select [(ngModel)]="clientId" name="clientId" required>
+              <option [ngValue]="null" disabled>Selecionar Cliente</option>
+              @for (client of clients; track client.id) {
+                <option [ngValue]="client.id">{{ client.name }}</option>
+              }
+            </select>
+          </div>
+        </details>
+
+        <details class="form-section">
+          <summary>Comentários</summary>
+          <div class="form-section-body">
+            @for (comment of selectedTask.comments || []; track comment.id) {
+              <div class="comment">
+                <div class="comment-header">
+                  <strong>{{ comment.user_name }}</strong>
+                  @if (comment.user_id === auth.currentUser()?.id) {
+                    <a href="#" class="delete-link" (click)="deleteComment(comment.id); $event.preventDefault()" title="Eliminar comentário">x</a>
+                  }
+                </div>
+                <p>{{ comment.content }}</p>
+              </div>
+            }
+            <div class="inline-form">
+              <input [(ngModel)]="newComment" placeholder="Adicionar comentário..." />
+              <button class="btn btn-primary" (click)="postComment()">Enviar</button>
+            </div>
+            <div>
+              <label>Docs (URL)</label>
+              <input
+                type="url"
+                [(ngModel)]="editDocsUrl"
+                placeholder="https://exemplo.com"
+                (ngModelChange)="onDocsUrlChange()" />
+              @if (docsUrlError) {
+                <p class="field-error">{{ docsUrlError }}</p>
+              }
+            </div>
+          </div>
+        </details>
         <br>
+        @if (saveError) {
+          <div class="error-banner error-banner-actions" role="alert">
+            <span class="error-banner-icon" aria-hidden="true">!</span>
+            <div class="error-banner-body">
+              <strong>Não foi possível alterar o estado</strong>
+              <p>{{ saveError }}</p>
+            </div>
+          </div>
+        }
         <div class="modal-actions">
-          <button class="btn btn-primary" (click)="saveTask()">Guardar</button>
           @if (isAdmin) {
+            <button class="btn btn-primary" (click)="saveTask()">Guardar</button>
             <button class="btn btn-danger" (click)="deleteTask()">Eliminar</button>
           }
         </div>

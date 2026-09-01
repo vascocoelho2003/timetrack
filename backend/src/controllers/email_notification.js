@@ -38,7 +38,6 @@ async function getNearDueDateTasks() {
     }
 }
 
-
 async function sendEmailNotifications(tasks) {
 
     const getUsers = db.prepare(`
@@ -118,7 +117,6 @@ async function sendEmailNotifications(tasks) {
     }
 }
 
-
 async function sendEmail(to, subject, text) {
 
     await transporter.sendMail({
@@ -129,7 +127,6 @@ async function sendEmail(to, subject, text) {
     });
 
 }
-
 
 module.exports = {
     getNearDueDateTasks

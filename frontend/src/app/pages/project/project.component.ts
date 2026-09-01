@@ -4,7 +4,9 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { TimerService, formatDuration } from '../../core/timer.service';
-import { Project, TaskList, Task, TeamMember, TimeEntry, Comment, RecurrenceRule, Client } from '../../core/models';
+import { Project, TaskList, Task, TeamMember, TimeEntry, Comment, RecurrenceRule, Client, TaskDependency, DependencyType } from '../../core/models';
+import { forkJoin, of } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import * as XLSX from 'xlsx';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environments';
@@ -72,6 +74,14 @@ export class ProjectComponent implements OnInit {
   editDocsUrl='';
   docsUrlError = '';
   recurrenceRule: RecurrenceRule | null = null;
+  taskDependencies: TaskDependency[] = [];
+  newTaskDependencies: TaskDependency[] = [];
+  dependencySearch = '';
+  selectedPredecessor: Task | null = null;
+  dependencyType: DependencyType = 'FF';
+  dependencyError = '';
+  saveError = '';
+  blockingPredecessorId: number | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -229,6 +239,8 @@ export class ProjectComponent implements OnInit {
   openNewTask(listId: number) {
     this.newTaskListId = listId;
     this.showNewTaskForm = true;
+    this.newTaskDependencies = [];
+    this.resetDependencyPicker();
   }
 
   toggleNewAssignee(id: number, ev: Event) {
@@ -239,6 +251,8 @@ export class ProjectComponent implements OnInit {
 
   createTask() {
     if (!this.newTaskTitle.trim()) return;
+    this.dependencyError = '';
+    const pendingDeps = [...this.newTaskDependencies];
     this.api.createTask({
       taskListId: this.newTaskListId,
       title: this.newTaskTitle,
@@ -247,19 +261,38 @@ export class ProjectComponent implements OnInit {
       dueDate: this.newTaskDueDate || null,
       alertDate: this.alertDate || null,
       assigneeIds: this.newTaskAssignees,
-    }).subscribe(task => {
-      const listId = this.newTaskListId;
-      this.tasksByList[listId] = [task, ...(this.tasksByList[listId] || [])];
-      this.showNewTaskForm = false;
-      this.newTaskTitle = '';
-      this.newTaskDescription = '';
-      this.newTaskDueDate = '';
-      this.alertDate = '';
-      this.newTaskAssignees = [];
+    }).pipe(
+      switchMap(task => {
+        if (!pendingDeps.length) return of(task);
+        return forkJoin(
+          pendingDeps.map(dep =>
+            this.api.createDependency(task.id, dep.predecessor, dep.dependency_type)
+          )
+        ).pipe(switchMap(() => of(task)));
+      })
+    ).subscribe({
+      next: task => {
+        const listId = this.newTaskListId;
+        this.tasksByList[listId] = [task, ...(this.tasksByList[listId] || [])];
+        this.showNewTaskForm = false;
+        this.newTaskTitle = '';
+        this.newTaskDescription = '';
+        this.newTaskDueDate = '';
+        this.alertDate = '';
+        this.newTaskAssignees = [];
+        this.newTaskDependencies = [];
+        this.resetDependencyPicker();
+      },
+      error: err => {
+        this.dependencyError = err.error?.error || 'Não foi possível criar a tarefa ou as dependências';
+      }
     });
   }
 
   openTask(taskId: number) {
+    this.saveError = '';
+    this.blockingPredecessorId = null;
+    this.resetDependencyPicker();
     this.api.getTask(taskId).subscribe(task => {
       this.selectedTask = task;
       this.editTitle = task.title;
@@ -272,6 +305,7 @@ export class ProjectComponent implements OnInit {
       this.docsUrlError = '';
       this.editAssignees = [...task.assigneeIds];
       this.clientId = task.client_id ?? null;
+      this.taskDependencies = task.dependencies || [];
       this.resetRecurrenceForm(task.recurrence);
       this.api.getTaskTimeEntries(taskId).subscribe(e => this.timeEntries = e);
     });
@@ -280,6 +314,10 @@ export class ProjectComponent implements OnInit {
   closeTask() {
     this.selectedTask = null;
     this.clientId = null;
+    this.taskDependencies = [];
+    this.saveError = '';
+    this.blockingPredecessorId = null;
+    this.resetDependencyPicker();
   }
 
   toggleAssignee(id: number, ev: Event) {
@@ -297,6 +335,8 @@ export class ProjectComponent implements OnInit {
     }
     this.docsUrlError = '';
     this.editDocsUrl = docsUrl;
+    this.saveError = '';
+    this.blockingPredecessorId = null;
     this.api.updateTask(this.selectedTask.id, {
       title: this.editTitle,
       description: this.editDescription,
@@ -307,10 +347,17 @@ export class ProjectComponent implements OnInit {
       assigneeIds: this.editAssignees,
       clientId: this.clientId,
       docs_url: docsUrl,
-    }).subscribe(updated => {
-      this.refreshTaskInBoard(updated);
-      this.selectedTask = { ...this.selectedTask!, ...updated, assigneeIds: this.editAssignees };
-      this.closeTask();
+    }).subscribe({
+      next: updated => {
+        this.refreshTaskInBoard(updated);
+        this.selectedTask = { ...this.selectedTask!, ...updated, assigneeIds: this.editAssignees };
+        this.closeTask();
+      },
+      error: err => {
+        this.saveError = err.error?.error || 'Não foi possível guardar a tarefa';
+        this.blockingPredecessorId = err.error?.blockingDependency?.predecessor ?? null;
+        this.revealSaveError();
+      }
     });
   }
 
@@ -334,8 +381,119 @@ export class ProjectComponent implements OnInit {
 
   saveStatusOnly() {
     if (!this.selectedTask) return;
+    this.saveError = '';
+    this.blockingPredecessorId = null;
     this.api.updateTask(this.selectedTask.id, { status: this.editStatus as Task['status'] })
-      .subscribe(updated => this.refreshTaskInBoard(updated));
+      .subscribe({
+        next: updated => this.refreshTaskInBoard(updated),
+        error: err => {
+          this.saveError = err.error?.error || 'Não foi possível alterar o estado';
+          this.blockingPredecessorId = err.error?.blockingDependency?.predecessor ?? null;
+          this.editStatus = this.selectedTask?.status || this.editStatus;
+          this.revealSaveError();
+        }
+      });
+  }
+
+  private revealSaveError() {
+    setTimeout(() => {
+      const target = document.querySelector('.error-banner-actions');
+      target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+
+  get currentDependencies(): TaskDependency[] {
+    return this.selectedTask ? this.taskDependencies : this.newTaskDependencies;
+  }
+
+  get filteredPredecessorTasks(): Task[] {
+    const search = this.dependencySearch.trim().toLowerCase();
+    if (!search || this.selectedPredecessor) return [];
+    const currentId = this.selectedTask?.id;
+    const results: Task[] = [];
+    for (const list of this.lists) {
+      for (const task of this.tasksByList[list.id] || []) {
+        if (task.id === currentId) continue;
+        if (!task.title.toLowerCase().includes(search)) continue;
+        results.push(task);
+        if (results.length >= 8) return results;
+      }
+    }
+    return results;
+  }
+
+  dependencyTypeLabel(type: string) {
+    return {
+      FS: 'FS — Finish to Start',
+      SS: 'SS — Start to Start',
+      FF: 'FF — Finish to Finish',
+      SF: 'SF — Start to Finish',
+    }[type] || type;
+  }
+
+  selectPredecessor(task: Task) {
+    this.selectedPredecessor = task;
+    this.dependencySearch = task.title;
+    this.dependencyError = '';
+  }
+
+  onDependencySearchChange() {
+    if (this.selectedPredecessor && this.dependencySearch !== this.selectedPredecessor.title) {
+      this.selectedPredecessor = null;
+    }
+    this.dependencyError = '';
+  }
+
+  resetDependencyPicker() {
+    this.dependencySearch = '';
+    this.selectedPredecessor = null;
+    this.dependencyType = 'FF';
+    this.dependencyError = '';
+  }
+
+  addDependency() {
+    if (!this.selectedPredecessor) {
+      this.dependencyError = 'Pesquise e selecione uma tarefa predecessora';
+      return;
+    }
+    const predecessor = this.selectedPredecessor;
+    const type = this.dependencyType;
+
+    if (this.selectedTask) {
+      const existing = this.taskDependencies.find(d => d.predecessor === predecessor.id);
+      const request = existing
+        ? this.api.updateDependency(this.selectedTask.id, predecessor.id, type)
+        : this.api.createDependency(this.selectedTask.id, predecessor.id, type);
+
+      request.subscribe({
+        next: dep => {
+          if (existing) {
+            this.taskDependencies = this.taskDependencies.map(d =>
+              d.predecessor === dep.predecessor ? { ...d, ...dep } : d
+            );
+          } else {
+            this.taskDependencies = [...this.taskDependencies, dep];
+          }
+          this.resetDependencyPicker();
+        },
+        error: err => {
+          this.dependencyError = err.error?.error || 'Não foi possível guardar a dependência';
+        }
+      });
+      return;
+    }
+
+    const item: TaskDependency = {
+      predecessor: predecessor.id,
+      successor: 0,
+      dependency_type: type,
+      predecessor_title: predecessor.title,
+    };
+    const existing = this.newTaskDependencies.find(d => d.predecessor === predecessor.id);
+    this.newTaskDependencies = existing
+      ? this.newTaskDependencies.map(d => d.predecessor === item.predecessor ? item : d)
+      : [...this.newTaskDependencies, item];
+    this.resetDependencyPicker();
   }
 
   resetRecurrenceForm(rule: RecurrenceRule | null = null) {

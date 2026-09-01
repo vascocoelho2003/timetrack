@@ -7,7 +7,7 @@ import {
   todo_tasks,
   my_projects, userProjectsDetails,
   ColaboratorReportDetails, Department,
-  Client
+    Client, TaskDependency, DependencyType
 } from './models';
 import {environment} from '../../environments/environments';
 
@@ -116,7 +116,24 @@ export class ApiService {
     return this.http.put<{ message: string; recurrence: unknown }>(`${API}/tasks/recurrence/${taskId}`, data);
   }
 
-  // Time
+  getTaskDependencies(taskId: number) {
+    return this.http.get<TaskDependency[]>(`${API}/tasks/${taskId}/dependencies`);
+  }
+
+  createDependency(taskId: number, predecessor: number, dependency_type: DependencyType) {
+    return this.http.post<TaskDependency>(`${API}/tasks/create_dependency/${taskId}`, {
+      predecessor,
+      dependency_type,
+    });
+  }
+
+  updateDependency(taskId: number, predecessor: number, dependency_type: DependencyType) {
+    return this.http.put<TaskDependency>(`${API}/tasks/update_dependency/${taskId}`, {
+      predecessor,
+      dependency_type,
+    });
+  }
+
   startTimer(taskId?: number) {
     return this.http.post<TimeEntry>(`${API}/time/start`, taskId ? { taskId } : {});
   }

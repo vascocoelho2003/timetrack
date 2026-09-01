@@ -140,6 +140,17 @@ export interface Task {
   recurrence?: RecurrenceRule | null;
   client_id?: number | null;
   docs_url?: string | null;
+  dependencies?: TaskDependency[];
+}
+
+export type DependencyType = 'SS' | 'FS' | 'FF' | 'SF';
+
+export interface TaskDependency {
+  predecessor: number;
+  successor: number;
+  dependency_type: DependencyType;
+  predecessor_title?: string;
+  predecessor_status?: Task['status'];
 }
 
 export interface RecurrenceRule {

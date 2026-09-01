@@ -377,6 +377,59 @@ input:focus, textarea:focus, select:focus {
   font-size: 0.9rem;
 }
 
+.error-banner {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  background: #b91c1c;
+  color: #fff;
+  padding: 1rem 1.1rem;
+  border-radius: 8px;
+  margin: 0.5rem 0 1rem;
+  border: 3px solid #7f1d1d;
+  box-shadow: 0 0 0 4px rgba(185, 28, 28, 0.28), 0 10px 24px rgba(0, 0, 0, 0.2);
+  font-size: 1rem;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+.error-banner-icon {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: #fff;
+  color: #b91c1c;
+  font-weight: 800;
+  font-size: 1.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.error-banner-body strong {
+  display: block;
+  font-size: 1.15rem;
+  margin-bottom: 0.35rem;
+}
+
+.error-banner-body p {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.98rem;
+}
+
+:root.dark-mode .error-banner {
+  background: #ef4444;
+  color: #fff;
+  border-color: #fecaca;
+}
+
+:root.dark-mode .error-banner-icon {
+  color: #b91c1c;
+}
+
 /* Badges */
 .badge {
   display: inline-block;

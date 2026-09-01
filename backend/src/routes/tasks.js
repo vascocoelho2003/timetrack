@@ -25,6 +25,18 @@ function setAssignees(taskId, assigneeIds) {
   }
 }
 
+const DEPENDENCY_TYPES = ['SS', 'FS', 'FF', 'SF'];
+
+function getTaskDependencies(taskId) {
+  return db.prepare(`
+    SELECT d.predecessor, d.successor, d.dependency_type,
+           t.title AS predecessor_title, t.status AS predecessor_status
+    FROM dependencies d
+    JOIN tasks t ON t.id = d.predecessor
+    WHERE d.successor = ?
+  `).all(taskId);
+}
+
 router.get('/',(req,res)=>{
   const user_id = req.user.id;
   tasks = db.prepare(`SELECT
@@ -221,6 +233,7 @@ router.get('/:taskId', (req, res) => {
     recurrence: getRecurrency(taskId) || null,
     subtasks: attachAssignees(subtasks),
     comments,
+    dependencies: getTaskDependencies(taskId),
   });
 });
 
@@ -295,8 +308,15 @@ router.put('/:taskId', (req, res) => {
     }
   }
 
-  dependenciesStatus = checkDependencies(taskId, status);
-  if(dependenciesStatus==false) return res.status(400).json({error:'Esta tarefa tem dependências que não permitem alterar o estado'})
+  if (status && status !== ctx.status) {
+    const dependenciesStatus = checkDependencies(taskId, status);
+    if (!dependenciesStatus.ok) {
+      return res.status(400).json({
+        error: dependenciesStatus.error,
+        blockingDependency: dependenciesStatus.blocking,
+      });
+    }
+  }
 
   if (admin) {
     db.prepare(`
@@ -358,12 +378,85 @@ router.put('/:taskId', (req, res) => {
   res.json({ ...task, assigneeIds: ids });
 });
 
-router.post('/create_dependency/:taskId', (req,res)=> {
-  const taskId = req.params.taskId;
-  const {predecessor, dependency_type} = req.body;
-  dependency = db.prepare(`INSERT INTO dependencies (predecessor, successor, dependency_type) VALUES (?, ?, ?)`).run(predecessor, taskId, dependency_type);
-  return res.status(200).json(dependency);
-})
+router.get('/:taskId/dependencies', (req, res) => {
+  const taskId = +req.params.taskId;
+  if (!canViewTask(req.user.id, taskId)) {
+    return res.status(403).json({ error: 'Sem acesso à tarefa' });
+  }
+  res.json(getTaskDependencies(taskId));
+});
+
+router.post('/create_dependency/:taskId', (req, res) => {
+  const taskId = +req.params.taskId;
+  const predecessor = +req.body.predecessor;
+  const dependency_type = String(req.body.dependency_type || 'FF').toUpperCase();
+
+  const ctx = getTaskWithContext(taskId);
+  if (!ctx) return res.status(404).json({ error: 'Tarefa não encontrada' });
+  const personalOwner = isPersonalTaskOwner(req.user.id, ctx);
+  const admin = ctx.team_id ? isTeamAdmin(req.user.id, ctx.team_id) : personalOwner;
+  if (!admin) {
+    return res.status(403).json({ error: 'Apenas administradores podem gerir dependências' });
+  }
+  if (!predecessor || !DEPENDENCY_TYPES.includes(dependency_type)) {
+    return res.status(400).json({ error: 'Predecessora e tipo de dependência são obrigatórios' });
+  }
+  if (predecessor === taskId) {
+    return res.status(400).json({ error: 'Uma tarefa não pode depender de si própria' });
+  }
+
+  const pred = db.prepare('SELECT id, title, status FROM tasks WHERE id = ?').get(predecessor);
+  if (!pred) return res.status(404).json({ error: 'Tarefa predecessora não encontrada' });
+
+  try {
+    db.prepare(
+      `INSERT INTO dependencies (predecessor, successor, dependency_type) VALUES (?, ?, ?)`
+    ).run(predecessor, taskId, dependency_type);
+  } catch {
+    return res.status(409).json({ error: 'Esta dependência já existe' });
+  }
+
+  return res.status(200).json({
+    predecessor,
+    successor: taskId,
+    dependency_type,
+    predecessor_title: pred.title,
+    predecessor_status: pred.status,
+  });
+});
+
+router.put('/update_dependency/:taskId', (req, res) => {
+  const taskId = +req.params.taskId;
+  const predecessor = +req.body.predecessor;
+  const dependency_type = req.body.dependency_type
+    ? String(req.body.dependency_type).toUpperCase()
+    : null;
+
+  const ctx = getTaskWithContext(taskId);
+  if (!ctx) return res.status(404).json({ error: 'Tarefa não encontrada' });
+  const personalOwner = isPersonalTaskOwner(req.user.id, ctx);
+  const admin = ctx.team_id ? isTeamAdmin(req.user.id, ctx.team_id) : personalOwner;
+  if (!admin) {
+    return res.status(403).json({ error: 'Apenas administradores podem gerir dependências' });
+  }
+  if (!predecessor) {
+    return res.status(400).json({ error: 'Predecessora é obrigatória' });
+  }
+  if (dependency_type && !DEPENDENCY_TYPES.includes(dependency_type)) {
+    return res.status(400).json({ error: 'Tipo de dependência inválido' });
+  }
+
+  const result = db.prepare(
+    `UPDATE dependencies SET dependency_type = COALESCE(?, dependency_type) WHERE predecessor = ? AND successor = ?`
+  ).run(dependency_type, predecessor, taskId);
+
+  if (result.changes === 0) {
+    return res.status(404).json({ error: 'Dependência não encontrada' });
+  }
+
+  const dep = getTaskDependencies(taskId).find(d => d.predecessor === predecessor);
+  return res.status(200).json(dep);
+});
 
 /**
  * @openapi
