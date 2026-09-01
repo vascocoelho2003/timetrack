@@ -30,6 +30,7 @@ export class ProjectComponent implements OnInit {
   showNewList = false;
   viewMode: 'board' | 'list' = 'board';
   showOnlyMyTasks = false;
+  showOpenTasksOnly = true;
   listSearch = '';
   listFilterList = '';
   listFilterStatus = '';
@@ -90,18 +91,19 @@ export class ProjectComponent implements OnInit {
     }
   }
   
+  toggleOpenTasksFilter(event: MatCheckboxChange) {
+    this.showOpenTasksOnly = event.checked;
+  }
+  
   getTasksForList(listId: number): Task[] {
     const tasks = this.tasksByList[listId] || [];
-
-    if (!this.showOnlyMyTasks) {
-      return tasks;
-    }
-
     const userId = this.currentUserId;
 
-    return tasks.filter(task =>
-      task.assigneeIds?.includes(userId!)
-    );
+    return tasks.filter(task => {
+      if (this.showOnlyMyTasks && !task.assigneeIds?.includes(userId!)) return false;
+      if (this.showOpenTasksOnly && task.status === 'done') return false;
+      return true;
+    });
   }
 
   get currentUserId(): number | undefined{
@@ -172,6 +174,7 @@ export class ProjectComponent implements OnInit {
       
       const userId = this.currentUserId;
       const matchesMyTasks =!this.showOnlyMyTasks ||task.assigneeIds?.includes(userId!);
+      const matchesOpenTasks = !this.showOpenTasksOnly || task.status !== 'done';
       const matchesList = !this.listFilterList || this.listFilterList === String(task.task_list_id);
       const matchesStatus = !this.listFilterStatus || task.status === this.listFilterStatus;
       const matchesPriority = !this.listFilterPriority || task.priority === this.listFilterPriority;
@@ -193,7 +196,7 @@ export class ProjectComponent implements OnInit {
       }else if (this.listFilterDueDate && !task.due_date) {
         matchesDueDate = false;
       }
-      return matchesMyTasks && matchesList && matchesStatus && matchesPriority && matchesSearch && matchesDueDate;
+      return matchesMyTasks && matchesOpenTasks && matchesList && matchesStatus && matchesPriority && matchesSearch && matchesDueDate;
     });
   }
 
@@ -394,11 +397,10 @@ export class ProjectComponent implements OnInit {
   refreshTaskInBoard(task: Task) {
     const listId = task.task_list_id;
     const arr = this.tasksByList[listId] || [];
-    if (task.status === 'done') {
-      this.tasksByList[listId] = arr.filter(t => t.id !== task.id);
-    } else {
-      this.tasksByList[listId] = arr.map(t => t.id === task.id ? { ...t, ...task } : t);
-    }
+    const exists = arr.some(t => t.id === task.id);
+    this.tasksByList[listId] = exists
+      ? arr.map(t => t.id === task.id ? { ...t, ...task } : t)
+      : [{ ...task }, ...arr];
   }
 
   startTimer() {

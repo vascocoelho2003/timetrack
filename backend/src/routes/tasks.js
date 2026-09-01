@@ -3,6 +3,7 @@ const { db } = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 const { createRecurrency, recurrenceRuleExists, getRecurrency } = require('../controllers/recurrency_controller');
 const { parseDocsUrl } = require('../utils/url');
+const { checkDependencies } = require('../utils/dependenciesRules');
   const {
     isTeamAdmin,
     canViewTask,
@@ -294,6 +295,9 @@ router.put('/:taskId', (req, res) => {
     }
   }
 
+  dependenciesStatus = checkDependencies(taskId, status);
+  if(dependenciesStatus==false) return res.status(400).json({error:'Esta tarefa tem dependências que não permitem alterar o estado'})
+
   if (admin) {
     db.prepare(`
       UPDATE tasks SET
@@ -331,10 +335,18 @@ router.put('/:taskId', (req, res) => {
       createRecurrency(taskId,req.user.id);
     }
   } else {
-    if (status === undefined) {
-      return res.status(400).json({ error: 'Utilizadores atribuídos só podem alterar o estado' });
-    }
-    db.prepare('UPDATE tasks SET status = ? WHERE id = ?').run(status, taskId);
+    db.prepare(`
+      UPDATE tasks SET
+        status = COALESCE(?, status),
+        client_id = COALESCE(?, client_id),
+        docs_url = COALESCE(?, docs_url)
+      WHERE id = ?
+    `).run(
+      status ?? null,
+      clientId !== undefined ? clientId : null,
+      parsedDocsUrl ? (parsedDocsUrl.url ?? '') : null,
+      taskId
+    );
     if (status === 'done' && recurrenceRuleExists(taskId)===true) {
       createRecurrency(taskId,req.user.id);
     }
@@ -345,6 +357,13 @@ router.put('/:taskId', (req, res) => {
     .all(taskId).map(r => r.user_id);
   res.json({ ...task, assigneeIds: ids });
 });
+
+router.post('/create_dependency/:taskId', (req,res)=> {
+  const taskId = req.params.taskId;
+  const {predecessor, dependency_type} = req.body;
+  dependency = db.prepare(`INSERT INTO dependencies (predecessor, successor, dependency_type) VALUES (?, ?, ?)`).run(predecessor, taskId, dependency_type);
+  return res.status(200).json(dependency);
+})
 
 /**
  * @openapi

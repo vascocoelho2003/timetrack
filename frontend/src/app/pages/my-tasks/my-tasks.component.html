@@ -40,6 +40,13 @@
         <option value="week">Esta semana</option>
         <option value="overdue">Atrasadas</option>
       </select>
+      <select [(ngModel)]="filterClient" (ngModelChange)="resetPage()">
+        <option value="">Todos os clientes</option>
+        <option value="none">Sem cliente</option>
+        @for (client of clients; track client.id) {
+          <option [value]="client.id">{{ client.name }}</option>
+        }
+      </select>
     </div>
 
     @if (viewMode === 'list') {
@@ -76,24 +83,39 @@
       <div class="modal card" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h3>{{ isAdmin ? 'Editar tarefa' : 'Tarefa' }}</h3>
-          <button class="btn-icon" (click)="closeTask()">X</button>
+          <button class="btn-icon" (click)="closeTask()">×</button>
         </div>
+
         @if (isAdmin) {
-          <label>Título</label><input [(ngModel)]="editTitle" />
-          <label>Descrição</label><textarea [(ngModel)]="editDescription" rows="3"></textarea>
+          <label>Título</label>
+          <input [(ngModel)]="editTitle" />
+          <label>Descrição</label>
+          <textarea [(ngModel)]="editDescription" rows="3"></textarea>
           <label>Estado</label>
           <select [(ngModel)]="editStatus">
-            <option value="todo">Por fazer</option><option value="doing">Em progresso</option><option value="done">Concluída</option>
+            <option value="todo">Por fazer</option>
+            <option value="doing">Em progresso</option>
+            <option value="done">Concluída</option>
           </select>
           <label>Prioridade</label>
           <select [(ngModel)]="editPriority">
-            <option value="low">Baixa</option><option value="medium">Média</option><option value="high">Alta</option>
+            <option value="low">Baixa</option>
+            <option value="medium">Média</option>
+            <option value="high">Alta</option>
           </select>
-          <label>Prazo</label><input type="date" [(ngModel)]="editDueDate" />
+          <label>Prazo</label>
+          <input type="date" [(ngModel)]="editDueDate" />
+          <label>Data de Alerta</label>
+          <input type="date" [(ngModel)]="editAlertDate" />
           <label>Atribuídos</label>
           <div class="assignee-checks">
             @for (member of members; track member.id) {
-              <label class="checkbox-label"><input type="checkbox" [checked]="editAssignees.includes(member.id)" (change)="toggleAssignee(member.id, $event)" /> {{ member.username }}</label>
+              <label class="checkbox-label">
+                <input type="checkbox"
+                  [checked]="editAssignees.includes(member.id)"
+                  (change)="toggleAssignee(member.id, $event)" />
+                {{ member.username }}
+              </label>
             }
           </div>
         } @else {
@@ -101,69 +123,112 @@
           <p class="muted">{{ selectedTask.description || 'Sem descrição' }}</p>
           <label>Estado</label>
           <select [(ngModel)]="editStatus" (change)="saveStatusOnly()">
-            <option value="todo">Por fazer</option><option value="doing">Em progresso</option><option value="done">Concluída</option>
+            <option value="todo">Por fazer</option>
+            <option value="doing">Em progresso</option>
+            <option value="done">Concluída</option>
           </select>
         }
-        @if (canTrackTime) {
+
+        @if (canTrackTime || timeEntries.length) {
           <div class="timer-section">
             <h4>Time tracking</h4>
-            @if (activeOnThisTask) {
-              <p class="timer-running">⏱ {{ fmt(timer.elapsedSeconds()) }}</p>
-              <button class="btn btn-danger" (click)="stopTimer()">Parar timer</button>
-            } @else {
-              <button class="btn btn-primary" (click)="startTimer()" [disabled]="!!timer.activeEntry()">Iniciar timer</button>
+            @if (canTrackTime) {
+              @if (activeOnThisTask) {
+                <p class="timer-running">⏱ {{ fmt(timer.elapsedSeconds()) }}</p>
+                <button class="btn btn-danger" (click)="stopTimer()">Parar timer</button>
+              } @else {
+                <button class="btn btn-primary" (click)="startTimer()" [disabled]="!!timer.activeEntry()">
+                  Iniciar timer
+                </button>
+              }
             }
-            @for (entry of timeEntries; track entry.id) {
-              <div class="muted">{{ entry.user_name }} — {{ fmt(entry.duration || 0) }}</div>
+            @if (timeEntries.length) {
+              <ul class="time-list">
+                @for (entry of timeEntries; track entry.id) {
+                  <li>{{ entry.user_name }} — {{ fmt(entry.duration || 0) }}</li>
+                }
+              </ul>
             }
           </div>
         }
+
         @if (isAdmin) {
           <div class="comments-section">
             <h4>Recorrência</h4>
             <div class="inline-form">
               <label>Tipo</label>
-              <select [(ngModel)]="recurrenceRuleType"><option value="fixed_day">Dia fixo</option><option value="business_day">Dia útil</option></select>
+              <select [(ngModel)]="recurrenceRuleType">
+                <option value="fixed_day">Dia fixo</option>
+                <option value="business_day">Dia útil</option>
+              </select>
               <label>Frequência</label>
               <select [(ngModel)]="recurrenceFrequency">
-                <option value="daily">Diária</option><option value="weekly">Semanal</option><option value="monthly">Mensal</option><option value="yearly">Anual</option>
+                <option value="daily">Diária</option>
+                <option value="weekly">Semanal</option>
+                <option value="monthly">Mensal</option>
+                <option value="yearly">Anual</option>
               </select>
-              <label>Intervalo</label><input type="number" min="1" [(ngModel)]="recurrenceInterval" />
+              <br>
+              <label>Intervalo</label>
+              <input type="number" min="1" [(ngModel)]="recurrenceInterval" />
             </div>
-            @if (recurrenceFrequency === 'weekly') {
-              <label>Dia da semana</label>
-              <select [(ngModel)]="recurrenceWeekday">
-                <option value="monday">Segunda</option><option value="tuesday">Terça</option><option value="wednesday">Quarta</option>
-                <option value="thursday">Quinta</option><option value="friday">Sexta</option><option value="saturday">Sábado</option><option value="sunday">Domingo</option>
-              </select>
-            }
             @if (recurrenceFrequency === 'monthly' || recurrenceFrequency === 'yearly') {
-              <label>Dia do mês</label><input type="number" min="1" max="31" [(ngModel)]="recurrenceDayOfMonth" />
-              @if (recurrenceFrequency === 'yearly') {
-                <label>Mês</label><input type="number" min="1" max="12" [(ngModel)]="recurrenceMonthOfYear" />
-              }
+              <p class="muted">O dia e o mês serão calculados automaticamente a partir do prazo da tarefa.</p>
             }
-            <button class="btn btn-primary" (click)="createRecurrence()">Criar recorrência</button>
-            @if (recurrenceMessage) { <p class="muted">{{ recurrenceMessage }}</p> }
+            <button class="btn btn-primary" (click)="createRecurrence()">
+              {{ recurrenceRule ? 'Atualizar recorrência' : 'Criar recorrência' }}
+            </button>
+            @if (recurrenceMessage) {
+              <p class="muted">{{ recurrenceMessage }}</p>
+            }
           </div>
         }
+
+        <div class="field">
+          <label>Cliente</label>
+          <select [(ngModel)]="clientId" name="clientId">
+            <option [ngValue]="null">Selecionar Cliente</option>
+            @for (client of clients; track client.id) {
+              <option [ngValue]="client.id">{{ client.name }}</option>
+            }
+          </select>
+        </div>
+
         <div class="comments-section">
           <h4>Comentários</h4>
           @for (comment of selectedTask.comments || []; track comment.id) {
             <div class="comment">
-              <div class="comment-header"><strong>{{ comment.user_name }}</strong>
+              <div class="comment-header">
+                <strong>{{ comment.user_name }}</strong>
                 @if (comment.user_id === auth.currentUser()?.id) {
-                  <a href="#" class="delete-link" (click)="deleteComment(comment.id); $event.preventDefault()">x</a>
+                  <a href="#" class="delete-link" (click)="deleteComment(comment.id); $event.preventDefault()" title="Eliminar comentário">x</a>
                 }
               </div>
               <p>{{ comment.content }}</p>
             </div>
           }
-          <div class="inline-form"><input [(ngModel)]="newComment" placeholder="Adicionar comentário..." /><button class="btn btn-primary" (click)="postComment()">Enviar</button></div>
+          <div class="inline-form">
+            <input [(ngModel)]="newComment" placeholder="Adicionar comentário..." />
+            <button class="btn btn-primary" (click)="postComment()">Enviar</button>
+          </div>
+          <div>
+            <label>Docs (URL)</label>
+            <input
+              type="url"
+              [(ngModel)]="editDocsUrl"
+              placeholder="https://exemplo.com"
+              (ngModelChange)="onDocsUrlChange()" />
+            @if (docsUrlError) {
+              <p class="field-error">{{ docsUrlError }}</p>
+            }
+          </div>
         </div>
+        <br>
         <div class="modal-actions">
           <button class="btn btn-primary" (click)="saveTask()">Guardar</button>
-          @if (isAdmin) { <button class="btn btn-danger" (click)="deleteTask()">Eliminar</button> }
+          @if (isAdmin) {
+            <button class="btn btn-danger" (click)="deleteTask()">Eliminar</button>
+          }
         </div>
       </div>
     </div>

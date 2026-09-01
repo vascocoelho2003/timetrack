@@ -169,6 +169,7 @@ export interface Task_proj {
   status: 'todo' | 'doing' | 'done';
   priority: 'low' | 'medium' | 'high';
   due_date: string | null;
+  client_id?: number | null;
   assigneeIds: number[];
   subtasks?: Task[];
   comments?: Comment[];

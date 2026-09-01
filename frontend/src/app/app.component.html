@@ -4,6 +4,14 @@
       <a routerLink="/reports" class="logo">
         <span style="font-weight: 300;">JC Ribeiro - Task Management</span>
       </a>
+      <button
+        class="burger-btn"
+        type="button"
+        (click)="toggleMenu()"
+        [attr.aria-expanded]="menuOpen"
+        aria-label="Abrir menu">
+        ☰
+      </button>
     </div>
     <nav
       class="header-nav"
@@ -37,23 +45,54 @@
         Tarefas
       </a>
       @if (!timer.activeEntry()) {
-        <div class="header-timer">
+        <div class="nav-start-timer">
           <button
-            class="btn-start-timer"
+            class="btn-start-timer-menu"
             type="button"
-            aria-label="Start Timer"
-            title="Start Timer"
-            (click)="startQuickTimer()">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M8 5.14v13.72L19.25 12 8 5.14z"/>
-            </svg>
+            (click)="startQuickTimer(); closeMenu()">
+            Start Timer
           </button>
         </div>
       }
+      <div class="nav-account">
+        <a
+          routerLink="/my-profile"
+          class="nav-link"
+          [class.active]="isActive('/my-profile')"
+          (click)="closeMenu()">
+          {{ auth.currentUser()?.username }}
+        </a>
+        <button
+          class="nav-link nav-link-btn"
+          type="button"
+          (click)="toggleDarkMode(); closeMenu()">
+          {{ darkMode ? '☀️ Claro' : '🌙 Escuro' }}
+        </button>
+        <button
+          class="nav-link nav-link-btn"
+          type="button"
+          (click)="auth.logout(); closeMenu()">
+          Sair
+        </button>
+      </div>
     </nav>
+    @if (!timer.activeEntry()) {
+      <div class="header-timer header-timer-start">
+        <button
+          class="btn-start-timer"
+          type="button"
+          aria-label="Start Timer"
+          title="Start Timer"
+          (click)="startQuickTimer()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 5.14v13.72L19.25 12 8 5.14z"/>
+          </svg>
+        </button>
+      </div>
+    }
     @if (timer.activeEntry(); as active) {
-      <div class="header-timer">
-        <span>
+      <div class="header-timer header-timer-running">
+        <span class="header-elapsed">
           ⏱ {{ fmt(timer.elapsedSeconds()) }}
         </span>
         <span class="task-title">

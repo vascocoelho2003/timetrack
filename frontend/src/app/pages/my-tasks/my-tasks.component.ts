@@ -4,7 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { TimerService, formatDuration } from '../../core/timer.service';
-import { Comment, Task, Task_proj, TeamMember, TimeEntry } from '../../core/models';
+import { Comment, Task, Task_proj, TeamMember, TimeEntry, RecurrenceRule, Client } from '../../core/models';
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { CalendarOptions, EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -23,13 +23,18 @@ export class MyTasksComponent implements OnInit {
   tasks: Task_proj[] = [];
   selectedTask: (Task & { project_id?: number | null; project_name?: string | null; task_list_name?: string | null; comments?: Comment[] }) | null = null;
   members: TeamMember[] = [];
+  clients: Client[] = [];
+  clientId: number | null = null;
   isAdmin = false;
   editTitle = '';
   editDescription = '';
   editStatus: Task['status'] = 'todo';
   editPriority: Task['priority'] = 'medium';
   editDueDate = '';
+  editAlertDate = '';
   editAssignees: number[] = [];
+  editDocsUrl = '';
+  docsUrlError = '';
   newComment = '';
   viewMode: 'list' | 'calendar' = 'list';
   timeEntries: TimeEntry[] = [];
@@ -43,6 +48,7 @@ export class MyTasksComponent implements OnInit {
   recurrenceStartDate = '';
   recurrenceEndDate = '';
   recurrenceMessage = '';
+  recurrenceRule: RecurrenceRule | null = null;
 
   search = '';
   filterProject = '';
@@ -50,6 +56,7 @@ export class MyTasksComponent implements OnInit {
   filterStatus = '';
   filterPriority = '';
   filterDueDate = '';
+  filterClient = '';
   page = 1;
   pageSize = 10;
 
@@ -86,6 +93,9 @@ export class MyTasksComponent implements OnInit {
     });
     this.loadTasks();
     this.timer.refresh();
+    this.api.getClients().subscribe(clients => {
+      this.clients = clients;
+    });
   }
 
   loadTasks() {
@@ -177,6 +187,7 @@ export class MyTasksComponent implements OnInit {
         (!this.filterList || String(task.task_list_id) === this.filterList) &&
         (!this.filterStatus || task.status === this.filterStatus) &&
         (!this.filterPriority || task.priority === this.filterPriority) &&
+        (!this.filterClient || (this.filterClient === 'none' ? !task.client_id : String(task.client_id) === this.filterClient)) &&
         matchesDue;
     });
   }
@@ -222,10 +233,12 @@ export class MyTasksComponent implements OnInit {
       this.editStatus = task.status;
       this.editPriority = task.priority;
       this.editDueDate = task.due_date?.slice(0, 10) || '';
+      this.editAlertDate = task.next_alert_date?.slice(0, 10) || '';
+      this.editDocsUrl = task.docs_url || '';
+      this.docsUrlError = '';
       this.editAssignees = [...task.assigneeIds];
-      this.recurrenceStartDate = this.editDueDate;
-      this.recurrenceEndDate = '';
-      this.recurrenceMessage = '';
+      this.clientId = task.client_id ?? null;
+      this.resetRecurrenceForm(task.recurrence);
       if (row.team_id) {
         this.api.getTeamMembers(row.team_id).subscribe(members => this.members = members);
         this.api.getTeams().subscribe(teams => this.isAdmin = teams.some(team => team.id === row.team_id && team.role === 'admin'));
@@ -240,6 +253,9 @@ export class MyTasksComponent implements OnInit {
   closeTask() {
     this.selectedTask = null;
     this.isAdmin = false;
+    this.clientId = null;
+    this.editDocsUrl = '';
+    this.docsUrlError = '';
   }
 
   toggleAssignee(id: number, event: Event) {
@@ -249,22 +265,63 @@ export class MyTasksComponent implements OnInit {
 
   saveTask() {
     if (!this.selectedTask) return;
+    const docsUrl = this.normalizeDocsUrl(this.editDocsUrl);
+    if (docsUrl === false) {
+      this.docsUrlError = 'Indique um URL válido, por exemplo https://exemplo.com';
+      return;
+    }
+    this.docsUrlError = '';
+    this.editDocsUrl = docsUrl;
     this.api.updateTask(this.selectedTask.id, {
       title: this.editTitle,
       description: this.editDescription,
       status: this.editStatus,
       priority: this.editPriority,
       dueDate: this.editDueDate || null,
-      assigneeIds: this.editAssignees
+      next_alert_date: this.editAlertDate || null,
+      assigneeIds: this.editAssignees,
+      clientId: this.clientId,
+      docs_url: docsUrl,
     }).subscribe(() => {
       this.loadTasks();
       this.closeTask();
     });
   }
 
+  onDocsUrlChange() {
+    this.docsUrlError = '';
+  }
+
+  private normalizeDocsUrl(value: string): string | false {
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    try {
+      const url = new URL(withProtocol);
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+      if (url.hostname !== 'localhost' && !url.hostname.includes('.')) return false;
+      return url.toString();
+    } catch {
+      return false;
+    }
+  }
+
   saveStatusOnly() {
     if (!this.selectedTask) return;
     this.api.updateTask(this.selectedTask.id, { status: this.editStatus }).subscribe(() => this.loadTasks());
+  }
+
+  resetRecurrenceForm(rule: RecurrenceRule | null = null) {
+    this.recurrenceRule = rule;
+    this.recurrenceRuleType = rule?.rule_type || 'fixed_day';
+    this.recurrenceFrequency = rule?.frequency || 'daily';
+    this.recurrenceInterval = rule?.interval || 1;
+    this.recurrenceWeekday = rule?.weekday || 'monday';
+    this.recurrenceDayOfMonth = rule?.day_of_month || 1;
+    this.recurrenceMonthOfYear = rule?.month_of_year || 1;
+    this.recurrenceStartDate = this.editDueDate;
+    this.recurrenceEndDate = rule?.end_date?.slice(0, 10) || '';
+    this.recurrenceMessage = '';
   }
 
   createRecurrence() {
@@ -277,13 +334,19 @@ export class MyTasksComponent implements OnInit {
       rule_type: this.recurrenceRuleType
     };
     if (this.recurrenceFrequency === 'weekly') payload['weekday'] = this.recurrenceWeekday;
-    if (this.recurrenceFrequency === 'monthly') payload['day_of_month'] = this.recurrenceDayOfMonth;
-    if (this.recurrenceFrequency === 'yearly') {
-      payload['day_of_month'] = this.recurrenceDayOfMonth;
-      payload['month_of_year'] = this.recurrenceMonthOfYear;
-    }
-    this.api.createRecurrence(this.selectedTask.id, payload).subscribe({
-      next: () => this.recurrenceMessage = 'Recorrência criada com sucesso.',
+    const request = this.recurrenceRule
+      ? this.api.updateRecurrence(this.selectedTask.id, payload)
+      : this.api.createRecurrence(this.selectedTask.id, payload);
+    request.subscribe({
+      next: (response) => {
+        this.recurrenceRule = (response as { recurrence?: RecurrenceRule }).recurrence || this.recurrenceRule;
+        this.recurrenceMessage = this.recurrenceRule
+          ? 'Recorrência atualizada com sucesso.'
+          : 'Recorrência criada com sucesso.';
+        if (this.selectedTask) {
+          this.selectedTask = { ...this.selectedTask, recurrence: this.recurrenceRule };
+        }
+      },
       error: error => this.recurrenceMessage = error?.error?.message || 'Não foi possível criar a recorrência.'
     });
   }

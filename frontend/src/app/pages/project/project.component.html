@@ -24,25 +24,26 @@
       <button class="btn btn-primary" (click)="submitExcel()" [disabled]="!selectedFile">Submeter</button>
       }
     </div>
-    @if (isAdmin) {
-      <section class="example-section">
+    <section class="task-filters">
+      @if (isAdmin) {
         <mat-checkbox
           [checked]="showOnlyMyTasks"
           (change)="toggleTaskFilter($event)">
           My Tasks
         </mat-checkbox>
-      </section>
-    }
-
-    @if (!isAdmin) {
-      <section class="example-section">
+      } @else {
         <mat-checkbox
           [checked]="!showOnlyMyTasks"
           (change)="toggleTaskFilter($event)">
           All Tasks
         </mat-checkbox>
-      </section>
-    }
+      }
+      <mat-checkbox
+        [checked]="showOpenTasksOnly"
+        (change)="toggleOpenTasksFilter($event)">
+        Por Concluir
+      </mat-checkbox>
+    </section>
     @if (showNewList && isAdmin) {
       <div class="card inline-form">
         <input [(ngModel)]="newListName" placeholder="Nome da lista"/>
@@ -95,6 +96,7 @@
             <option value="">Todos os estados</option>
             <option value="todo">Por fazer</option>
             <option value="doing">Em progresso</option>
+            <option value="done">Concluída</option>
           </select>
           <select [(ngModel)]="listFilterPriority">
             <option value="">Todas as prioridades</option>

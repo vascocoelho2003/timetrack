@@ -3,12 +3,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: nowrap;
   gap: 20px;
   padding: 0 24px;
   height: 70px;
+  width: 100%;
+  max-width: 100%;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   z-index: 100;
+  overflow: visible;
 }
 
 .header-left {
@@ -48,7 +52,13 @@
   align-items: center;
   gap: 10px;
   white-space: nowrap;
-  flex-shrink: 0;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.header-elapsed {
+  min-width: 7ch;
+  font-variant-numeric: tabular-nums;
 }
 
 .btn-start-timer {
@@ -92,6 +102,7 @@
   gap: 10px;
   white-space: nowrap;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .timer-task-overlay {
@@ -151,6 +162,39 @@
   order: 2; /* aparece à direita do logo */
 }
 
+.nav-start-timer {
+  display: none;
+}
+
+.nav-account {
+  display: none;
+}
+
+.btn-start-timer-menu {
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 16px;
+  background: #22c55e;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-start-timer-menu:hover {
+  background: #16a34a;
+}
+
+.nav-link-btn {
+  background: none;
+  border: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
 @media (max-width: 1100px) {
   .burger-btn {
     display: block;
@@ -185,6 +229,46 @@
   .nav-link:last-child {
     border-bottom: none;
   }
+
+  .header-left {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .logo {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .header-timer {
+    display: flex;
+    flex: 0 0 auto;
+    width: auto;
+    margin-left: auto;
+  }
+
+  .header-timer-start {
+    display: none;
+  }
+
+  .nav-start-timer {
+    display: block;
+    width: 100%;
+    padding: 12px 24px;
+    box-sizing: border-box;
+  }
+
+  .header-user {
+    display: none;
+    width: auto;
+  }
+
+  .nav-account {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
 }
 
 @media (max-width: 600px) {
@@ -201,7 +285,16 @@
     display: none;
   }
 
-  .header-timer {
-    display: none; 
+  .task-title {
+    display: none;
+  }
+
+  .header-timer-running {
+    display: flex;
+    width: auto;
+  }
+
+  .header-timer-start {
+    display: none;
   }
 }

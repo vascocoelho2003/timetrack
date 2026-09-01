@@ -153,4 +153,11 @@
       grid-column: 1;
     }
   }
+
+.field-error {
+  margin: 0.35rem 0 0;
+  color: var(--danger);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
   

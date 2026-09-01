@@ -36,6 +36,12 @@ body {
   color: var(--text);
   line-height: 1.5;
   transition: background-color 0.2s, color 0.2s;
+  overflow-x: hidden;
+}
+
+html {
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 .public-theme-toggle {
@@ -91,8 +97,8 @@ a:hover {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   box-shadow: var(--shadow);
-  flex-wrap: wrap;
-  overflow-x: auto;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 .logo {
@@ -694,13 +700,13 @@ input:focus, textarea:focus, select:focus {
   }
 
   .header-timer {
-    width: 100%;
-    flex-wrap: wrap;
+    width: auto;
+    flex-wrap: nowrap;
     font-size: 0.8rem;
   }
 
   .header-user {
-    width: 100%;
+    width: auto;
     font-size: 0.8rem;
   }
 

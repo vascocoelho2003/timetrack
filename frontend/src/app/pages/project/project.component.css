@@ -36,6 +36,14 @@
   font-weight: 600;
 }
 
+.task-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.5rem;
+  margin: 0.5rem 0 1rem;
+}
+
 
 @media (max-width: 1024px) {
   .list-table-header {
