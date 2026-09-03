@@ -1,0 +1,63 @@
+<div class="page">
+  <a class="back" href="/reports">← Equipa</a>
+
+  <div class="title-row">
+    <h2 class="page-heading">Relatório Geral de Cliente</h2>
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <div class="search">
+        <input type="text" placeholder="Pesquisar Projeto" />
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </div>
+      <button class="btn-export" type="button">
+        Exportar PDF
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="period">
+      <span class="period-label">Período:</span>
+      <input type="date" class="date-input" [(ngModel)]="startDate" (ngModelChange)="onCustomDateChange()" />
+      <input type="date" class="date-input" [(ngModel)]="endDate" (ngModelChange)="onCustomDateChange()" />
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Colaborador</th>
+          <th>Nrº de Tarefas</th>
+          <th>Tempo Despendido</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (report of pagedReports; track report.user_id){
+        <tr>
+          <td>{{report.username}}</td>
+          <td>{{report.total_tarefas}} tarefas</td>
+          <td>{{formatDuration(report.tempo_total)}}</td>
+        </tr>
+        } @empty {
+        <tr><td colspan="3">Não foram encontrados registos.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (totalPages > 1) {
+  <div class="pagination">
+    <button [disabled]="page === 1" (click)="page = page - 1">Anterior</button>
+    <span>Página {{page}} de {{totalPages}}</span>
+    <button [disabled]="page === totalPages" (click)="page = page + 1">Seguinte</button>
+  </div>
+  }
+</div>

@@ -12,6 +12,14 @@ export interface Client {
   name: string;
 }
 
+export interface ClientReport{
+  user_id: number;
+  username: string;
+  total_tarefas: number;
+  tempo_total: number;
+  ultima_atualizacao: string;
+}
+
 export interface DashboardData {
   id: number;
   username: string;

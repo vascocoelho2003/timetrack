@@ -7,7 +7,8 @@ import {
   todo_tasks,
   my_projects, userProjectsDetails,
   ColaboratorReportDetails, Department,
-    Client, TaskDependency, DependencyType
+    Client, TaskDependency, DependencyType,
+    ClientReport
 } from './models';
 import {environment} from '../../environments/environments';
 
@@ -227,6 +228,14 @@ export class ApiService {
   // Carregar Clientes
   getClients(){
     return this.http.get<Client[]>(`${API}/clients/getAllClients`);
+  }
+
+  getGeneralClientReport(startDate?: string, endDate?: string){
+    const params: Record<string, string> = {};
+    if (startDate) params['startDate'] = startDate;
+    if (endDate) params['endDate'] = endDate;
+
+    return this.http.get<ClientReport[]>(`${API}/reports/generalClientReport`, { params });
   }
 
 }
