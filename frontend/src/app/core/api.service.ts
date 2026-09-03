@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import {
   Team, TeamMember, Project, TaskList, Task, TimeEntry, ReportData, Comment,Task_proj,
   User, colaboratorReport,
-  DashboardData,project_report,
+  DashboardData,project_report,IndividualClientReport,
   todo_tasks,
   my_projects, userProjectsDetails,
   ColaboratorReportDetails, Department,
@@ -11,11 +11,13 @@ import {
     ClientReport
 } from './models';
 import {environment} from '../../environments/environments';
+import { IndividualClientReportComponent } from '../pages/individual-client-report/individual-client-report.component';
 
 const API = environment.apiUrl;
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
+  
   constructor(private http: HttpClient) {}
 
   // Teams
@@ -236,6 +238,13 @@ export class ApiService {
     if (endDate) params['endDate'] = endDate;
 
     return this.http.get<ClientReport[]>(`${API}/reports/generalClientReport`, { params });
+  }
+
+  getIndividualClientReport(startDate?: string, endDate?: string, user_id?: number){
+    const params: Record<string, string> = {};
+    if (startDate) params['startDate'] = startDate;
+    if (endDate) params['endDate'] = endDate;
+    return this.http.get<IndividualClientReport[]>(`${API}/reports/ClientReport/${user_id}`, { params });
   }
 
 }

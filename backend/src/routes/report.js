@@ -59,6 +59,11 @@ router.get('/generalClientReport', authMiddleware, async (req, res) => {
 router.get('/ClientReport/:user_id', authMiddleware, async(req,res)=>{
     const user_logged = req.user.id;
     const user_id = Number(req.params.user_id);
+
+    const currentYear = new Date().getFullYear();
+    const startDate = toStartOfDay(req.query.startDate || `${currentYear}-01-01`);
+    const endDate = toEndOfDay(req.query.endDate || new Date().toISOString().slice(0, 10));
+
     const client = db.prepare('SELECT * FROM clients WHERE user_id = ?').get(user_logged);
     if (!client) {
         return res.status(404).json({ error: 'Cliente não encontrado.' });
@@ -72,8 +77,10 @@ router.get('/ClientReport/:user_id', authMiddleware, async(req,res)=>{
         JOIN time_entries te ON ta.task_id = te.task_id AND ta.user_id = te.user_id
         WHERE t.client_id = ?
           AND ta.user_id = ?
+          AND te.start >= ?
+          AND te.end <= ?
         GROUP BY t.id, ta.user_id
-    `).all(client.id, user_id);
+    `).all(client.id, user_id, startDate, endDate);
 
     res.status(200).json(tasks);
 })

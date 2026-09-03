@@ -20,6 +20,16 @@ export interface ClientReport{
   ultima_atualizacao: string;
 }
 
+export interface IndividualClientReport{
+  title: string;
+  status: string;
+  due_date: string;
+  task_id: number;
+  user_id: number;
+  duration: number;
+  ultima_atualizacao: string;
+}
+
 export interface DashboardData {
   id: number;
   username: string;

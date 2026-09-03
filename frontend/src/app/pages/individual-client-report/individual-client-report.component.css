@@ -25,18 +25,38 @@
   text-decoration: none;
 }
 
-.title-row {
+.header-row {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
-.page-title {
-  font-size: 22px;
+.report-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.collaborator-name {
+  font-size: 28px;
   font-weight: 700;
   color: var(--text);
+  line-height: 1.2;
+}
+
+.client-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.report-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
 }
 
 .page-heading {
@@ -45,52 +65,6 @@
   color: var(--text);
   text-align: right;
   line-height: 1.2;
-}
-
-.toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-}
-
-.toolbar-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.search {
-  position: relative;
-  width: 280px;
-}
-
-.search input {
-  width: 100%;
-  padding: 10px 36px 10px 14px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--text);
-  font-size: 13px;
-  outline: none;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-}
-
-.search input::placeholder {
-  color: var(--muted);
-}
-
-.search svg {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #999;
-  pointer-events: none;
 }
 
 .btn-export {
@@ -118,6 +92,7 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .period-label {
@@ -147,7 +122,7 @@
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 640px;
+  min-width: 720px;
 }
 
 thead th {
@@ -160,24 +135,12 @@ thead th {
   white-space: nowrap;
 }
 
-thead th:nth-child(2) {
+thead th:not(:first-child) {
   text-align: center;
 }
 
 thead th:last-child {
   text-align: right;
-}
-
-tbody tr {
-  cursor: pointer;
-}
-
-tbody tr:hover {
-  background: rgba(0, 0, 0, 0.03);
-}
-
-tbody tr.selected {
-  background: rgba(37, 99, 235, 0.08);
 }
 
 tbody td {
@@ -188,7 +151,7 @@ tbody td {
   white-space: nowrap;
 }
 
-tbody td:nth-child(2) {
+tbody td:not(:first-child) {
   text-align: center;
 }
 
@@ -198,6 +161,53 @@ tbody td:last-child {
 
 tbody tr:last-child td {
   border-bottom: none;
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 20px 16px 40px;
+  }
+
+  .header-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .page-heading {
+    text-align: left;
+    font-size: 22px;
+  }
+
+  .collaborator-name {
+    font-size: 22px;
+  }
+
+  .report-actions {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .btn-export {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .period {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .date-input {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
+
+  thead th,
+  tbody td {
+    padding: 16px 14px;
+    font-size: 13px;
+  }
 }
 
 .pagination {
@@ -220,55 +230,4 @@ tbody tr:last-child td {
 .pagination button:disabled {
   cursor: default;
   opacity: 0.5;
-}
-
-@media (max-width: 768px) {
-  .page {
-    padding: 20px 16px 40px;
-  }
-
-  .title-row {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .page-heading {
-    text-align: left;
-    font-size: 22px;
-  }
-
-  .toolbar {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .toolbar-left {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .search {
-    width: 100%;
-  }
-
-  .btn-export {
-    justify-content: center;
-    width: 100%;
-  }
-
-  .period {
-    width: 100%;
-  }
-
-  .date-input {
-    flex: 1;
-    width: auto;
-    min-width: 0;
-  }
-
-  thead th,
-  tbody td {
-    padding: 16px 14px;
-    font-size: 13px;
-  }
 }
