@@ -3,10 +3,14 @@ import { HttpClient } from '@angular/common/http';
 import {
   Team, TeamMember, Project, TaskList, Task, TimeEntry, ReportData, Comment,Task_proj,
   User, colaboratorReport,
-  DashboardData,project_report,
+  DashboardData,project_report,IndividualClientReport,
   todo_tasks,
   my_projects, userProjectsDetails,
-  ColaboratorReportDetails,
+  ColaboratorReportDetails, Department,
+  Client, TaskDependency, DependencyType,personal_report,
+  ClientReport,
+  getDepartment,
+  ColaboratorClientReport
 } from './models';
 import {environment} from '../../environments/environments';
 
@@ -14,6 +18,7 @@ const API = environment.apiUrl;
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
+  
   constructor(private http: HttpClient) {}
 
   // Teams
@@ -80,6 +85,7 @@ export class ApiService {
     status?: string;
     priority?: string;
     dueDate?: string | null;
+    alertDate?: string | null;
     assigneeIds?: number[];
     parentTaskId?: number | null;
   }) {
@@ -114,13 +120,49 @@ export class ApiService {
     return this.http.put<{ message: string; recurrence: unknown }>(`${API}/tasks/recurrence/${taskId}`, data);
   }
 
-  // Time
-  startTimer(taskId: number) {
-    return this.http.post<TimeEntry>(`${API}/time/start`, { taskId });
+  getTaskDependencies(taskId: number) {
+    return this.http.get<TaskDependency[]>(`${API}/tasks/${taskId}/dependencies`);
+  }
+
+  createDependency(taskId: number, predecessor: number, dependency_type: DependencyType) {
+    return this.http.post<TaskDependency>(`${API}/tasks/create_dependency/${taskId}`, {
+      predecessor,
+      dependency_type,
+    });
+  }
+
+  updateDependency(taskId: number, predecessor: number, dependency_type: DependencyType) {
+    return this.http.put<TaskDependency>(`${API}/tasks/update_dependency/${taskId}`, {
+      predecessor,
+      dependency_type,
+    });
+  }
+
+  startTimer(taskId?: number) {
+    return this.http.post<TimeEntry>(`${API}/time/start`, taskId ? { taskId } : {});
   }
   stopTimer() { return this.http.post<TimeEntry>(`${API}/time/stop`, {}); }
 
   getActiveTimer() { return this.http.get<TimeEntry | null>(`${API}/time/active`); }
+
+  getPendingUnassignedTimer() {
+    return this.http.get<TimeEntry | null>(`${API}/time/unassigned/pending`);
+  }
+
+  assignUnassignedTimer(entryId: number, data: {
+    existingTaskId?: number;
+    title?: string;
+    description?: string;
+    taskListId?: number | null;
+    priority?: string;
+    dueDate?: string | null;
+  }) {
+    return this.http.post<Task>(`${API}/time/unassigned/${entryId}/assign`, data);
+  }
+
+  discardUnassignedTimer(entryId: number) {
+    return this.http.delete(`${API}/time/unassigned/${entryId}`);
+  }
 
   getTaskTimeEntries(taskId: number) {
     return this.http.get<TimeEntry[]>(`${API}/time/task/${taskId}`);
@@ -175,6 +217,54 @@ export class ApiService {
     if (endDate) params['endDate'] = endDate;
 
     return this.http.get<ColaboratorReportDetails[]>(`${API}/colaborator_report/${id}`, { params });
+  }
+
+  // Carregar Departments
+  getDepartments(){
+    return this.http.get<Department []>(`${API}/departments/getDepartments`);
+  }
+
+  getMyDepartment(){
+    return this.http.get<Department | null>(`${API}/departments/getMyDepartment`);
+  }
+
+  // Carregar Clientes
+  getClients(){
+    return this.http.get<Client[]>(`${API}/clients/getAllClients`);
+  }
+
+  getGeneralClientReport(startDate?: string, endDate?: string, department?: boolean){
+    const params: Record<string, string> = {};
+    if (startDate) params['startDate'] = startDate;
+    if (endDate) params['endDate'] = endDate;
+    params['department'] = department ? 'true' : 'false';
+    return this.http.get<ClientReport[]>(`${API}/reports/generalClientReport`, { params });
+  }
+
+  getIndividualClientReport(startDate?: string, endDate?: string, user_id?: number, department?: boolean){
+    const params: Record<string, string> = {};
+    if (startDate) params['startDate'] = startDate;
+    if (endDate) params['endDate'] = endDate;
+    if(department) params['department']=department?'true':'false';
+    return this.http.get<IndividualClientReport[]>(`${API}/reports/ClientReport/${user_id}`, { params });
+  }
+
+  getClientDepartment(user_id: number){
+    return this.http.get<getDepartment>(`${API}/auth/getDepartment`);
+  }
+
+  getPersonalReport(startDate?: string, endDate?: string){
+    const params: Record<string, string> = {};
+    if (startDate) params['startDate'] = startDate;
+    if (endDate) params['endDate'] = endDate;
+    return this.http.get<personal_report[]>(`${API}/reports/ColaboratorReport`, { params });
+  }
+
+  getColaboratorClientReport(startDate?: string, endDate?: string, client_id?: number){
+    const params: Record<string, string> = {};
+    if (startDate) params['startDate'] = startDate;
+    if (endDate) params['endDate'] = endDate;
+    return this.http.get<ColaboratorClientReport[]>(`${API}/reports/ColaboratorClientReport/${client_id}`,{params});
   }
 
 }

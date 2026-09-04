@@ -32,8 +32,8 @@ function getTeamIdForTaskList(taskListId) {
 function getTeamIdForTask(taskId) {
   const row = db.prepare(`
     SELECT p.team_id FROM tasks t
-    JOIN task_lists tl ON tl.id = t.task_list_id
-    JOIN projects p ON p.id = tl.project_id
+    LEFT JOIN task_lists tl ON tl.id = t.task_list_id
+    LEFT JOIN projects p ON p.id = tl.project_id
     WHERE t.id = ?
   `).get(taskId);
   return row?.team_id;
@@ -49,17 +49,23 @@ function getTaskWithContext(taskId) {
   return db.prepare(`
     SELECT t.*, tl.project_id, p.team_id
     FROM tasks t
-    JOIN task_lists tl ON tl.id = t.task_list_id
-    JOIN projects p ON p.id = tl.project_id
+    LEFT JOIN task_lists tl ON tl.id = t.task_list_id
+    LEFT JOIN projects p ON p.id = tl.project_id
     WHERE t.id = ?
   `).get(taskId);
 }
 
+function isPersonalTaskOwner(userId, task) {
+  if (!task || task.team_id) return false;
+  return isTaskAssignee(userId, task.id)
+    || Number(task.created_by_user_id) === Number(userId);
+}
 
 function canViewTask(userId, taskId) {
   const task = getTaskWithContext(taskId);
   if (!task) return false;
-  return isTeamMember(userId, task.team_id);
+  if (task.team_id) return isTeamMember(userId, task.team_id);
+  return isPersonalTaskOwner(userId, task);
 }
 
 function getAssigneeIds(taskId) {
@@ -103,6 +109,7 @@ module.exports = {
   getTeamIdForTask,
   isTaskAssignee,
   getTaskWithContext,
+  isPersonalTaskOwner,
   canViewTask,
   getAssigneeIds,
   attachAssignees

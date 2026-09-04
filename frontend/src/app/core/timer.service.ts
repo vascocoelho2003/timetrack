@@ -1,24 +1,32 @@
 import { Injectable, signal } from '@angular/core';
+import { forkJoin, of } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { TimeEntry } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class TimerService {
   activeEntry = signal<TimeEntry | null>(null);
+  pendingUnassigned = signal<TimeEntry | null>(null);
   elapsedSeconds = signal(0);
   private intervalId: ReturnType<typeof setInterval> | null = null;
 
   constructor(private api: ApiService) {}
 
-  refresh() {
-    this.api.getActiveTimer().subscribe(entry => {
-      this.activeEntry.set(entry);
-      if (entry) this.startTicking(entry.start);
+  refresh(done?: () => void) {
+    forkJoin({
+      active: this.api.getActiveTimer().pipe(catchError(() => of(null))),
+      pending: this.api.getPendingUnassignedTimer().pipe(catchError(() => of(null))),
+    }).subscribe(({ active, pending }) => {
+      this.activeEntry.set(active);
+      this.pendingUnassigned.set(pending);
+      if (active) this.startTicking(active.start);
       else this.stopTicking();
+      done?.();
     });
   }
 
-  start(taskId: number) {
+  start(taskId?: number) {
     return this.api.startTimer(taskId).subscribe({
       next: entry => {
         this.activeEntry.set(entry);
@@ -28,13 +36,20 @@ export class TimerService {
   }
 
   stop() {
-    return this.api.stopTimer().subscribe({
-      next: () => {
+    return this.api.stopTimer().pipe(
+      tap(entry => {
         this.activeEntry.set(null);
         this.stopTicking();
         this.elapsedSeconds.set(0);
-      },
-    });
+        if (entry && !entry.task_id) {
+          this.pendingUnassigned.set(entry);
+        }
+      })
+    );
+  }
+
+  clearPendingUnassigned() {
+    this.pendingUnassigned.set(null);
   }
 
   private startTicking(startIso: string) {

@@ -13,10 +13,43 @@
         }
         <label>Email</label>
         <input type="email" [(ngModel)]="email" name="email" required />
+        <label>Departamento</label>
+        <select [(ngModel)]="departmentId" name="departmentId" required>
+          <option [ngValue]="null" disabled>Selecionar departamento</option>
+          @for (dept of departments; track dept.id) {
+            <option [ngValue]="dept.id">{{ dept.name }}</option>
+          }
+        </select>
         <label>Password</label>
-        <input type="password" [(ngModel)]="password" name="password" required minlength="6" />
-         <br> <br>
-        <button type="submit" class="btn btn-primary" [disabled]="loading">
+        <input
+          type="password"
+          [(ngModel)]="password"
+          name="password"
+          required
+          minlength="6"
+          autocomplete="new-password"
+          spellcheck="false"
+          #passwordCtrl="ngModel"
+        />
+        @if (passwordCtrl.invalid && passwordCtrl.touched) {
+          <small class="error">A password deve ter pelo menos 6 caracteres.</small>
+        }
+        <label>Confirmar password</label>
+        <input
+          type="password"
+          [(ngModel)]="passwordConfirm"
+          name="passwordConfirm"
+          required
+          minlength="6"
+          autocomplete="new-password"
+          spellcheck="false"
+          #passwordConfirmCtrl="ngModel"
+        />
+        @if (passwordConfirmCtrl.touched && password !== passwordConfirm) {
+          <small class="error">As passwords não coincidem.</small>
+        }
+        <br><br>
+        <button type="submit" class="btn btn-primary" [disabled]="loading || !passwordsMatch">
           {{ loading ? 'A criar...' : 'Registar' }}
         </button>
       </form>

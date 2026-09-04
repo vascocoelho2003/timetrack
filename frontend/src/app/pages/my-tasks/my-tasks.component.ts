@@ -4,7 +4,8 @@ import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { TimerService, formatDuration } from '../../core/timer.service';
-import { Comment, Task, Task_proj, TeamMember, TimeEntry } from '../../core/models';
+import { Comment, Task, Task_proj, TeamMember, TimeEntry, RecurrenceRule, Client, TaskDependency, DependencyType } from '../../core/models';
+import { forkJoin } from 'rxjs';
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { CalendarOptions, EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -21,15 +22,20 @@ import ptLocale from '@fullcalendar/core/locales/pt';
 
 export class MyTasksComponent implements OnInit {
   tasks: Task_proj[] = [];
-  selectedTask: (Task & { project_id?: number; project_name?: string; task_list_name?: string; comments?: Comment[] }) | null = null;
+  selectedTask: (Task & { project_id?: number | null; project_name?: string | null; task_list_name?: string | null; comments?: Comment[] }) | null = null;
   members: TeamMember[] = [];
+  clients: Client[] = [];
+  clientId: number | null = null;
   isAdmin = false;
   editTitle = '';
   editDescription = '';
   editStatus: Task['status'] = 'todo';
   editPriority: Task['priority'] = 'medium';
   editDueDate = '';
+  editAlertDate = '';
   editAssignees: number[] = [];
+  editDocsUrl = '';
+  docsUrlError = '';
   newComment = '';
   viewMode: 'list' | 'calendar' = 'list';
   timeEntries: TimeEntry[] = [];
@@ -43,6 +49,15 @@ export class MyTasksComponent implements OnInit {
   recurrenceStartDate = '';
   recurrenceEndDate = '';
   recurrenceMessage = '';
+  recurrenceRule: RecurrenceRule | null = null;
+  saveError = '';
+  taskDependencies: TaskDependency[] = [];
+  predecessorCandidates: Task[] = [];
+  dependencySearch = '';
+  selectedPredecessor: Task | null = null;
+  dependencyType: DependencyType = 'FF';
+  dependencyError = '';
+  blockingPredecessorId: number | null = null;
 
   search = '';
   filterProject = '';
@@ -50,6 +65,7 @@ export class MyTasksComponent implements OnInit {
   filterStatus = '';
   filterPriority = '';
   filterDueDate = '';
+  filterClient = '';
   page = 1;
   pageSize = 10;
 
@@ -86,6 +102,9 @@ export class MyTasksComponent implements OnInit {
     });
     this.loadTasks();
     this.timer.refresh();
+    this.api.getClients().subscribe(clients => {
+      this.clients = clients;
+    });
   }
 
   loadTasks() {
@@ -140,11 +159,17 @@ export class MyTasksComponent implements OnInit {
   }
 
   get projects() {
-    return [...new Map(this.tasks.map(task => [task.project_id, task.project_name])).entries()];
+    return [...new Map(this.tasks.map(task => [
+      task.project_id ?? 'personal',
+      task.project_name || 'Pessoal'
+    ])).entries()];
   }
 
   get lists() {
-    return [...new Map(this.tasks.map(task => [task.task_list_id, task.task_list_name])).entries()];
+    return [...new Map(this.tasks
+      .filter(task => task.task_list_id != null)
+      .map(task => [task.task_list_id, task.task_list_name])
+    ).entries()];
   }
 
   get filteredTasks(): Task_proj[] {
@@ -159,18 +184,19 @@ export class MyTasksComponent implements OnInit {
       const due = task.due_date ? new Date(task.due_date) : null;
       const matchesSearch = !search ||
         task.title.toLowerCase().includes(search) ||
-        task.project_name.toLowerCase().includes(search) ||
-        task.task_list_name.toLowerCase().includes(search);
+        (task.project_name || 'pessoal').toLowerCase().includes(search) ||
+        (task.task_list_name || '').toLowerCase().includes(search);
       const matchesDue = !this.filterDueDate || (!!due && (
         this.filterDueDate === 'today' ? due >= startToday && due < new Date(startToday.getTime() + 86400000) :
         this.filterDueDate === 'week' ? due >= startWeek && due < new Date(startWeek.getTime() + 7 * 86400000) :
         due < startTomorrow
       ));
       return matchesSearch &&
-        (!this.filterProject || String(task.project_id) === this.filterProject) &&
+        (!this.filterProject || String(task.project_id ?? 'personal') === this.filterProject) &&
         (!this.filterList || String(task.task_list_id) === this.filterList) &&
         (!this.filterStatus || task.status === this.filterStatus) &&
         (!this.filterPriority || task.priority === this.filterPriority) &&
+        (!this.filterClient || (this.filterClient === 'none' ? !task.client_id : String(task.client_id) === this.filterClient)) &&
         matchesDue;
     });
   }
@@ -204,11 +230,18 @@ export class MyTasksComponent implements OnInit {
     return !!this.selectedTask?.assigneeIds.includes(this.auth.currentUser()?.id || 0);
   }
 
+  get canChangeStatus() {
+    return this.isAdmin || this.canTrackTime;
+  }
+
   get activeOnThisTask() {
     return this.timer.activeEntry()?.task_id === this.selectedTask?.id;
   }
 
   openTask(row: Task_proj) {
+    this.saveError = '';
+    this.blockingPredecessorId = null;
+    this.resetDependencyPicker();
     this.api.getTask(row.id).subscribe(task => {
       this.selectedTask = { ...task, project_id: row.project_id, project_name: row.project_name, task_list_name: row.task_list_name };
       this.editTitle = task.title;
@@ -216,12 +249,21 @@ export class MyTasksComponent implements OnInit {
       this.editStatus = task.status;
       this.editPriority = task.priority;
       this.editDueDate = task.due_date?.slice(0, 10) || '';
+      this.editAlertDate = task.next_alert_date?.slice(0, 10) || '';
+      this.editDocsUrl = task.docs_url || '';
+      this.docsUrlError = '';
       this.editAssignees = [...task.assigneeIds];
-      this.recurrenceStartDate = this.editDueDate;
-      this.recurrenceEndDate = '';
-      this.recurrenceMessage = '';
-      this.api.getTeamMembers(row.team_id).subscribe(members => this.members = members);
-      this.api.getTeams().subscribe(teams => this.isAdmin = teams.some(team => team.id === row.team_id && team.role === 'admin'));
+      this.clientId = task.client_id ?? null;
+      this.taskDependencies = task.dependencies || [];
+      this.resetRecurrenceForm(task.recurrence);
+      this.loadPredecessorCandidates(row);
+      if (row.team_id) {
+        this.api.getTeamMembers(row.team_id).subscribe(members => this.members = members);
+        this.api.getTeams().subscribe(teams => this.isAdmin = teams.some(team => team.id === row.team_id && team.role === 'admin'));
+      } else {
+        this.members = [];
+        this.isAdmin = true;
+      }
       this.api.getTaskTimeEntries(row.id).subscribe(entries => this.timeEntries = entries);
     });
   }
@@ -229,6 +271,14 @@ export class MyTasksComponent implements OnInit {
   closeTask() {
     this.selectedTask = null;
     this.isAdmin = false;
+    this.clientId = null;
+    this.editDocsUrl = '';
+    this.docsUrlError = '';
+    this.saveError = '';
+    this.taskDependencies = [];
+    this.predecessorCandidates = [];
+    this.blockingPredecessorId = null;
+    this.resetDependencyPicker();
   }
 
   toggleAssignee(id: number, event: Event) {
@@ -238,22 +288,172 @@ export class MyTasksComponent implements OnInit {
 
   saveTask() {
     if (!this.selectedTask) return;
+    const docsUrl = this.normalizeDocsUrl(this.editDocsUrl);
+    if (docsUrl === false) {
+      this.docsUrlError = 'Indique um URL válido, por exemplo https://exemplo.com';
+      return;
+    }
+    this.docsUrlError = '';
+    this.editDocsUrl = docsUrl;
+    this.saveError = '';
+    this.blockingPredecessorId = null;
     this.api.updateTask(this.selectedTask.id, {
       title: this.editTitle,
       description: this.editDescription,
       status: this.editStatus,
       priority: this.editPriority,
       dueDate: this.editDueDate || null,
-      assigneeIds: this.editAssignees
-    }).subscribe(() => {
-      this.loadTasks();
-      this.closeTask();
+      next_alert_date: this.editAlertDate || null,
+      assigneeIds: this.editAssignees,
+      clientId: this.clientId,
+      docs_url: docsUrl,
+    }).subscribe({
+      next: () => {
+        this.loadTasks();
+        this.closeTask();
+      },
+      error: err => {
+        this.saveError = err.error?.error || 'Não foi possível guardar a tarefa';
+        this.blockingPredecessorId = err.error?.blockingDependency?.predecessor ?? null;
+        this.revealSaveError();
+      }
     });
+  }
+
+  onDocsUrlChange() {
+    this.docsUrlError = '';
+  }
+
+  private normalizeDocsUrl(value: string): string | false {
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    try {
+      const url = new URL(withProtocol);
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+      if (url.hostname !== 'localhost' && !url.hostname.includes('.')) return false;
+      return url.toString();
+    } catch {
+      return false;
+    }
   }
 
   saveStatusOnly() {
     if (!this.selectedTask) return;
-    this.api.updateTask(this.selectedTask.id, { status: this.editStatus }).subscribe(() => this.loadTasks());
+    this.saveError = '';
+    this.blockingPredecessorId = null;
+    this.api.updateTask(this.selectedTask.id, { status: this.editStatus }).subscribe({
+      next: () => this.loadTasks(),
+      error: err => {
+        this.saveError = err.error?.error || 'Não foi possível alterar o estado';
+        this.blockingPredecessorId = err.error?.blockingDependency?.predecessor ?? null;
+        this.editStatus = this.selectedTask?.status || this.editStatus;
+        this.revealSaveError();
+      }
+    });
+  }
+
+  private loadPredecessorCandidates(row: Task_proj) {
+    this.predecessorCandidates = [];
+    if (!row.project_id) {
+      this.predecessorCandidates = this.tasks
+        .filter(task => task.id !== row.id)
+        .map(task => ({ id: task.id, title: task.title } as Task));
+      return;
+    }
+    this.api.getTaskLists(row.project_id).subscribe(lists => {
+      if (!lists.length) return;
+      forkJoin(lists.map(list => this.api.getTasks(list.id))).subscribe(groups => {
+        this.predecessorCandidates = groups.flat();
+      });
+    });
+  }
+
+  get filteredPredecessorTasks(): Task[] {
+    const search = this.dependencySearch.trim().toLowerCase();
+    if (!search || this.selectedPredecessor) return [];
+    const currentId = this.selectedTask?.id;
+    return this.predecessorCandidates
+      .filter(task => task.id !== currentId && task.title.toLowerCase().includes(search))
+      .slice(0, 8);
+  }
+
+  dependencyTypeLabel(type: string) {
+    return {
+      FS: 'FS — Finish to Start',
+      SS: 'SS — Start to Start',
+      FF: 'FF — Finish to Finish',
+      SF: 'SF — Start to Finish',
+    }[type] || type;
+  }
+
+  selectPredecessor(task: Task) {
+    this.selectedPredecessor = task;
+    this.dependencySearch = task.title;
+    this.dependencyError = '';
+  }
+
+  onDependencySearchChange() {
+    if (this.selectedPredecessor && this.dependencySearch !== this.selectedPredecessor.title) {
+      this.selectedPredecessor = null;
+    }
+    this.dependencyError = '';
+  }
+
+  resetDependencyPicker() {
+    this.dependencySearch = '';
+    this.selectedPredecessor = null;
+    this.dependencyType = 'FF';
+    this.dependencyError = '';
+  }
+
+  addDependency() {
+    if (!this.selectedTask || !this.selectedPredecessor) {
+      this.dependencyError = 'Pesquise e selecione uma tarefa predecessora';
+      return;
+    }
+    const predecessor = this.selectedPredecessor;
+    const type = this.dependencyType;
+    const existing = this.taskDependencies.find(d => d.predecessor === predecessor.id);
+    const request = existing
+      ? this.api.updateDependency(this.selectedTask.id, predecessor.id, type)
+      : this.api.createDependency(this.selectedTask.id, predecessor.id, type);
+
+    request.subscribe({
+      next: dep => {
+        if (existing) {
+          this.taskDependencies = this.taskDependencies.map(d =>
+            d.predecessor === dep.predecessor ? { ...d, ...dep } : d
+          );
+        } else {
+          this.taskDependencies = [...this.taskDependencies, dep];
+        }
+        this.resetDependencyPicker();
+      },
+      error: err => {
+        this.dependencyError = err.error?.error || 'Não foi possível guardar a dependência';
+      }
+    });
+  }
+
+  private revealSaveError() {
+    setTimeout(() => {
+      const target = document.querySelector('.error-banner-actions');
+      target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+
+  resetRecurrenceForm(rule: RecurrenceRule | null = null) {
+    this.recurrenceRule = rule;
+    this.recurrenceRuleType = rule?.rule_type || 'fixed_day';
+    this.recurrenceFrequency = rule?.frequency || 'daily';
+    this.recurrenceInterval = rule?.interval || 1;
+    this.recurrenceWeekday = rule?.weekday || 'monday';
+    this.recurrenceDayOfMonth = rule?.day_of_month || 1;
+    this.recurrenceMonthOfYear = rule?.month_of_year || 1;
+    this.recurrenceStartDate = this.editDueDate;
+    this.recurrenceEndDate = rule?.end_date?.slice(0, 10) || '';
+    this.recurrenceMessage = '';
   }
 
   createRecurrence() {
@@ -266,13 +466,19 @@ export class MyTasksComponent implements OnInit {
       rule_type: this.recurrenceRuleType
     };
     if (this.recurrenceFrequency === 'weekly') payload['weekday'] = this.recurrenceWeekday;
-    if (this.recurrenceFrequency === 'monthly') payload['day_of_month'] = this.recurrenceDayOfMonth;
-    if (this.recurrenceFrequency === 'yearly') {
-      payload['day_of_month'] = this.recurrenceDayOfMonth;
-      payload['month_of_year'] = this.recurrenceMonthOfYear;
-    }
-    this.api.createRecurrence(this.selectedTask.id, payload).subscribe({
-      next: () => this.recurrenceMessage = 'Recorrência criada com sucesso.',
+    const request = this.recurrenceRule
+      ? this.api.updateRecurrence(this.selectedTask.id, payload)
+      : this.api.createRecurrence(this.selectedTask.id, payload);
+    request.subscribe({
+      next: (response) => {
+        this.recurrenceRule = (response as { recurrence?: RecurrenceRule }).recurrence || this.recurrenceRule;
+        this.recurrenceMessage = this.recurrenceRule
+          ? 'Recorrência atualizada com sucesso.'
+          : 'Recorrência criada com sucesso.';
+        if (this.selectedTask) {
+          this.selectedTask = { ...this.selectedTask, recurrence: this.recurrenceRule };
+        }
+      },
       error: error => this.recurrenceMessage = error?.error?.message || 'Não foi possível criar a recorrência.'
     });
   }
@@ -282,8 +488,11 @@ export class MyTasksComponent implements OnInit {
   }
 
   stopTimer() {
-    this.timer.stop();
-    if (this.selectedTask) this.api.getTaskTimeEntries(this.selectedTask.id).subscribe(entries => this.timeEntries = entries);
+    this.timer.stop().subscribe(() => {
+      if (this.selectedTask) {
+        this.api.getTaskTimeEntries(this.selectedTask.id).subscribe(entries => this.timeEntries = entries);
+      }
+    });
   }
 
   postComment() {

@@ -12,6 +12,9 @@ function sanitizeProjectDescription(value = '') {
   return String(value ?? '').trim().slice(0, MAX_PROJECT_DESCRIPTION_LENGTH);
 }
 
+/**
+ * Obtém os dados dos utilizadores de um projeto
+ */
 router.get('/userProjectsDetails', (req, res) => {
   const user_id = req.user.id;
 
@@ -273,6 +276,9 @@ router.delete('/:projectId', (req, res) => {
   res.status(204).send();
 });
 
+/**
+ * Obtém os dados dos utilizadores de um projeto
+ */
 router.get('/:projectId/users', (req, res) => {
   const { projectId } = req.params;
 
@@ -283,6 +289,9 @@ router.get('/:projectId/users', (req, res) => {
   return res.status(200).json(users);
 });
 
+/**
+ * Obtém todos os projetos ao qual o utilizador pertence
+ */
 router.get('/', (req, res) => {
   const user_id = req.user.id;
   const projects = db.prepare(`SELECT p.* FROM projects p JOIN team_members tm ON p.team_id = tm.team_id WHERE tm.user_id = ?`).all(user_id);

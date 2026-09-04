@@ -18,6 +18,15 @@
           <small class="field-error">Introduza um email válido.</small>
         }
       </div>
+      <div class="field">
+        <label>Departamento</label>
+        <select [(ngModel)]="departmentId" name="departmentId" required>
+          <option [ngValue]="null" disabled>Selecionar departamento</option>
+          @for (dept of departments; track dept.id) {
+            <option [ngValue]="dept.id">{{ dept.name }}</option>
+          }
+        </select>
+      </div>
 
       <div class="field">
         <label for="newpw">Password Nova</label>

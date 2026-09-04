@@ -4,6 +4,14 @@
       <a routerLink="/reports" class="logo">
         <span style="font-weight: 300;">JC Ribeiro - Task Management</span>
       </a>
+      <button
+        class="burger-btn"
+        type="button"
+        (click)="toggleMenu()"
+        [attr.aria-expanded]="menuOpen"
+        aria-label="Abrir menu">
+        ☰
+      </button>
     </div>
     <nav
       class="header-nav"
@@ -36,16 +44,61 @@
         (click)="closeMenu()">
         Tarefas
       </a>
+      @if (!timer.activeEntry()) {
+        <div class="nav-start-timer">
+          <button
+            class="btn-start-timer-menu"
+            type="button"
+            (click)="startQuickTimer(); closeMenu()">
+            Start Timer
+          </button>
+        </div>
+      }
+      <div class="nav-account">
+        <a
+          routerLink="/my-profile"
+          class="nav-link"
+          [class.active]="isActive('/my-profile')"
+          (click)="closeMenu()">
+          {{ auth.currentUser()?.username }}
+        </a>
+        <button
+          class="nav-link nav-link-btn"
+          type="button"
+          (click)="toggleDarkMode(); closeMenu()">
+          {{ darkMode ? '☀️ Claro' : '🌙 Escuro' }}
+        </button>
+        <button
+          class="nav-link nav-link-btn"
+          type="button"
+          (click)="auth.logout(); closeMenu()">
+          Sair
+        </button>
+      </div>
     </nav>
+    @if (!timer.activeEntry()) {
+      <div class="header-timer header-timer-start">
+        <button
+          class="btn-start-timer"
+          type="button"
+          aria-label="Start Timer"
+          title="Start Timer"
+          (click)="startQuickTimer()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 5.14v13.72L19.25 12 8 5.14z"/>
+          </svg>
+        </button>
+      </div>
+    }
     @if (timer.activeEntry(); as active) {
-      <div class="header-timer">
-        <span>
+      <div class="header-timer header-timer-running">
+        <span class="header-elapsed">
           ⏱ {{ fmt(timer.elapsedSeconds()) }}
         </span>
         <span class="task-title">
-          {{ active.task_title }}
+          {{ active.task_title || 'Sem tarefa' }}
         </span>
-        <button class="btn btn-sm btn-danger" (click)="timer.stop()">
+        <button class="btn btn-sm btn-danger" (click)="stopHeaderTimer()">
           Parar
         </button>
       </div>
@@ -88,3 +141,79 @@
 <main [class.with-header]="auth.isLoggedIn">
   <router-outlet/>
 </main>
+
+@if (showTaskModal && timer.pendingUnassigned(); as pending) {
+  <div class="modal-overlay timer-task-overlay">
+    <div class="modal card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Registar tempo</h3>
+      </div>
+      <p class="timer-task-duration">Tempo registado: {{ fmt(pending.duration || 0) }}</p>
+      <div class="timer-mode-switch">
+        <button
+          type="button"
+          [class.active]="assignMode === 'create'"
+          (click)="setAssignMode('create')">
+          Nova tarefa
+        </button>
+        <button
+          type="button"
+          [class.active]="assignMode === 'existing'"
+          (click)="setAssignMode('existing')">
+          Tarefa existente
+        </button>
+      </div>
+
+      @if (assignMode === 'create') {
+        <label>Título</label>
+        <input [(ngModel)]="taskTitle" placeholder="O que esteve a fazer?" />
+        <label>Descrição</label>
+        <textarea [(ngModel)]="taskDescription" rows="3" placeholder="Detalhes da tarefa (opcional)"></textarea>
+        <label>Projeto</label>
+        <select [(ngModel)]="taskProjectId" (ngModelChange)="onProjectChange()">
+          <option [ngValue]="null">Sem projeto (tarefa pessoal)</option>
+          @for (project of projects; track project.id) {
+            <option [ngValue]="project.id">{{ project.name }}</option>
+          }
+        </select>
+        @if (taskProjectId) {
+          <label>Lista</label>
+          <select [(ngModel)]="taskListId">
+            <option [ngValue]="null">Selecionar lista</option>
+            @for (list of lists; track list.id) {
+              <option [ngValue]="list.id">{{ list.name }}</option>
+            }
+          </select>
+          @if (!lists.length) {
+            <p class="muted">Este projeto não tem listas.</p>
+          }
+        } @else {
+          <p class="muted">A tarefa fica só na sua lista pessoal.</p>
+        }
+      } @else {
+        <label>Tarefa</label>
+        <select [(ngModel)]="existingTaskId">
+          <option [ngValue]="null">Selecionar tarefa</option>
+          @for (task of existingTasks; track task.id) {
+            <option [ngValue]="task.id">{{ task.title }} ({{ task.project_name || 'Pessoal' }})</option>
+          }
+        </select>
+        @if (!existingTasks.length) {
+          <p class="muted">Não tem tarefas para atribuir este tempo.</p>
+        }
+      }
+
+      @if (taskError) {
+        <p class="timer-task-error">{{ taskError }}</p>
+      }
+      <div class="modal-actions">
+        <button class="btn btn-primary" type="button" (click)="saveTimerTask()" [disabled]="savingTask">
+          {{ assignMode === 'create' ? 'Criar tarefa' : 'Atribuir tempo' }}
+        </button>
+        <button class="btn btn-ghost" type="button" (click)="discardTimerTask()" [disabled]="savingTask">
+          Descartar tempo
+        </button>
+      </div>
+    </div>
+  </div>
+}

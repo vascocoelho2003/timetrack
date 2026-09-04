@@ -4,15 +4,17 @@ const path = require('path');
 const fs = require('fs');
 const swaggerUi = require('swagger-ui-express');
 const { initDb } = require('./db');
-
 const authRoutes = require('./routes/auth');
 const teamRoutes = require('./routes/teams');
 const projectRoutes = require('./routes/projects');
 const taskListRoutes = require('./routes/taskLists');
 const taskRoutes = require('./routes/tasks');
 const timeEntryRoutes = require('./routes/timeEntries');
+const departmentsRoutes = require('./routes/department');
+const clientRoutes = require('./routes/client');
 const importRoutes = require('./routes/import');
 const dashboardRoutes = require('./routes/dashboard');
+const reportRoutes = require('./routes/report');
 const { swaggerSpec } = require('./swagger');
 const dotenv = require('dotenv');
 const cron = require("node-cron");
@@ -42,17 +44,18 @@ app.get('/docs.json', (_req, res) => {
   res.setHeader('content-type', 'application/json');
   res.send(swaggerSpec);
 });
-
 app.use('/api/auth', authRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/task-lists', taskListRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/time', timeEntryRoutes);
+app.use('/api/departments', departmentsRoutes);
+app.use('/api/clients', clientRoutes);
+app.use('/api/reports', reportRoutes);
 app.use('/api/', timeEntryRoutes);
 app.use('/api', dashboardRoutes);
 app.use('/api', importRoutes);
-
 app.use((err, _req, res, _next) => {
   console.error(err);
   res.status(500).json({ error: 'Erro interno do servidor' });

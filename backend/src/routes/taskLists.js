@@ -129,7 +129,7 @@ router.get('/:listId/tasks', (req, res) => {
   let tasks;
 
     tasks = db.prepare(`
-      SELECT * FROM tasks WHERE task_list_id = ? AND status != 'done'
+      SELECT * FROM tasks WHERE task_list_id = ?
       ORDER BY created_at DESC
     `).all(listId);
 

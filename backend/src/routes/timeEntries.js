@@ -7,6 +7,7 @@ const {
   isTaskAssignee,
   getTaskWithContext,
   getTeamIdForProject,
+  isPersonalTaskOwner,
 } = require('../utils/permissions');
 
 const router = express.Router();
@@ -37,15 +38,19 @@ router.use(authMiddleware);
  */
 router.post('/start', (req, res) => {
   const { taskId } = req.body;
-  if (!taskId) return res.status(400).json({ error: 'taskId é obrigatório' });
 
-  const ctx = getTaskWithContext(taskId);
-  if (!ctx) return res.status(404).json({ error: 'Tarefa não encontrada' });
-  if (!isTeamMember(req.user.id, ctx.team_id)) {
-    return res.status(403).json({ error: 'Sem acesso' });
-  }
-  if (!isTaskAssignee(req.user.id, taskId)) {
-    return res.status(403).json({ error: 'Apenas assignees podem registar tempo' });
+  if (taskId) {
+    const ctx = getTaskWithContext(taskId);
+    if (!ctx) return res.status(404).json({ error: 'Tarefa não encontrada' });
+    if (ctx.team_id && !isTeamMember(req.user.id, ctx.team_id)) {
+      return res.status(403).json({ error: 'Sem acesso' });
+    }
+    if (!ctx.team_id && !isPersonalTaskOwner(req.user.id, ctx)) {
+      return res.status(403).json({ error: 'Sem acesso' });
+    }
+    if (!isTaskAssignee(req.user.id, taskId)) {
+      return res.status(403).json({ error: 'Apenas assignees podem registar tempo' });
+    }
   }
 
   const active = db.prepare(
@@ -62,9 +67,15 @@ router.post('/start', (req, res) => {
   const now = new Date().toISOString();
   const result = db.prepare(
     'INSERT INTO time_entries (user_id, task_id, start) VALUES (?, ?, ?)'
-  ).run(req.user.id, taskId, now);
+  ).run(req.user.id, taskId || null, now);
 
-  res.status(201).json(db.prepare('SELECT * FROM time_entries WHERE id = ?').get(result.lastInsertRowid));
+  const entry = db.prepare(`
+    SELECT te.*, t.title as task_title FROM time_entries te
+    LEFT JOIN tasks t ON t.id = te.task_id
+    WHERE te.id = ?
+  `).get(result.lastInsertRowid);
+
+  res.status(201).json(entry);
 });
 
 /**
@@ -97,7 +108,13 @@ router.post('/stop', (req, res) => {
   db.prepare('UPDATE time_entries SET end = ?, duration = ? WHERE id = ?')
     .run(now, duration, active.id);
 
-  res.json(db.prepare('SELECT * FROM time_entries WHERE id = ?').get(active.id));
+  const entry = db.prepare(`
+    SELECT te.*, t.title as task_title FROM time_entries te
+    LEFT JOIN tasks t ON t.id = te.task_id
+    WHERE te.id = ?
+  `).get(active.id);
+
+  res.json(entry);
 });
 
 /**
@@ -116,11 +133,104 @@ router.post('/stop', (req, res) => {
 router.get('/active', (req, res) => {
   const active = db.prepare(`
     SELECT te.*, t.title as task_title FROM time_entries te
-    JOIN tasks t ON t.id = te.task_id
+    LEFT JOIN tasks t ON t.id = te.task_id
     WHERE te.user_id = ? AND te.end IS NULL
   `).get(req.user.id);
 
   res.json(active || null);
+});
+
+router.get('/unassigned/pending', (req, res) => {
+  const entry = db.prepare(`
+    SELECT te.*, t.title as task_title FROM time_entries te
+    LEFT JOIN tasks t ON t.id = te.task_id
+    WHERE te.user_id = ? AND te.task_id IS NULL AND te.end IS NOT NULL
+    ORDER BY te.end DESC
+    LIMIT 1
+  `).get(req.user.id);
+
+  res.json(entry || null);
+});
+
+router.post('/unassigned/:id/assign', (req, res) => {
+  const entryId = +req.params.id;
+  const {
+    existingTaskId,
+    title,
+    description = '',
+    taskListId = null,
+    priority = 'medium',
+    dueDate = null,
+  } = req.body;
+
+  const entry = db.prepare(
+    'SELECT * FROM time_entries WHERE id = ? AND user_id = ?'
+  ).get(entryId, req.user.id);
+
+  if (!entry) return res.status(404).json({ error: 'Registo de tempo não encontrado' });
+  if (entry.task_id) return res.status(409).json({ error: 'Este tempo já tem uma tarefa' });
+
+  if (existingTaskId) {
+    const ctx = getTaskWithContext(existingTaskId);
+    if (!ctx) return res.status(404).json({ error: 'Tarefa não encontrada' });
+    if (!isTaskAssignee(req.user.id, existingTaskId)) {
+      return res.status(403).json({ error: 'Só pode atribuir tempo a tarefas suas' });
+    }
+    db.prepare('UPDATE time_entries SET task_id = ? WHERE id = ?').run(existingTaskId, entryId);
+    return res.json(ctx);
+  }
+
+  if (!title?.trim()) return res.status(400).json({ error: 'O título é obrigatório' });
+
+  let listId = taskListId || null;
+  if (listId) {
+    const list = db.prepare(`
+      SELECT tl.*, p.team_id FROM task_lists tl
+      JOIN projects p ON p.id = tl.project_id
+      WHERE tl.id = ?
+    `).get(listId);
+
+    if (!list) return res.status(404).json({ error: 'Lista não encontrada' });
+    if (!isTeamMember(req.user.id, list.team_id)) {
+      return res.status(403).json({ error: 'Sem acesso a este projeto' });
+    }
+  }
+
+  const createFromTimer = db.transaction(() => {
+    const result = db.prepare(`
+      INSERT INTO tasks (task_list_id, title, description, status, priority, due_date, created_by_user_id)
+      VALUES (?, ?, ?, 'todo', ?, ?, ?)
+    `).run(
+      listId,
+      title.trim(),
+      String(description || '').trim(),
+      priority,
+      dueDate,
+      req.user.id
+    );
+
+    const taskId = result.lastInsertRowid;
+    db.prepare('INSERT INTO task_assignees (task_id, user_id) VALUES (?, ?)').run(taskId, req.user.id);
+    db.prepare('UPDATE time_entries SET task_id = ? WHERE id = ?').run(taskId, entryId);
+
+    return db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId);
+  });
+
+  const task = createFromTimer();
+  res.status(201).json(task);
+});
+
+router.delete('/unassigned/:id', (req, res) => {
+  const entryId = +req.params.id;
+  const entry = db.prepare(
+    'SELECT * FROM time_entries WHERE id = ? AND user_id = ?'
+  ).get(entryId, req.user.id);
+
+  if (!entry) return res.status(404).json({ error: 'Registo de tempo não encontrado' });
+  if (entry.task_id) return res.status(409).json({ error: 'Não é possível descartar tempo já associado a uma tarefa' });
+
+  db.prepare('DELETE FROM time_entries WHERE id = ?').run(entryId);
+  res.status(204).send();
 });
 
 /**
@@ -147,7 +257,7 @@ router.get('/task/:taskId', (req, res) => {
   const ctx = getTaskWithContext(taskId);
   if (!ctx) return res.status(404).json({ error: 'Tarefa não encontrada' });
 
-  if (!isTeamMember(req.user.id, ctx.team_id)) {
+  if (ctx.team_id ? !isTeamMember(req.user.id, ctx.team_id) : !isPersonalTaskOwner(req.user.id, ctx)) {
     return res.status(403).json({ error: 'Sem acesso' });
   }
 

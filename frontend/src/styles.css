@@ -36,6 +36,12 @@ body {
   color: var(--text);
   line-height: 1.5;
   transition: background-color 0.2s, color 0.2s;
+  overflow-x: hidden;
+}
+
+html {
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 .public-theme-toggle {
@@ -91,8 +97,8 @@ a:hover {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   box-shadow: var(--shadow);
-  flex-wrap: wrap;
-  overflow-x: auto;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 .logo {
@@ -236,6 +242,15 @@ label {
   color: var(--muted);
 }
 
+.mat-mdc-checkbox label,
+.mdc-form-field > label {
+  display: inline;
+  margin: 0;
+  font-weight: 500;
+  color: inherit;
+  line-height: 1.2;
+}
+
 input, textarea, select {
   width: 100%;
   padding: 0.5rem 0.75rem;
@@ -355,6 +370,13 @@ input:focus, textarea:focus, select:focus {
   color: var(--muted);
 }
 
+.auth-card .error {
+  display: block;
+  color: #b91c1c;
+  font-size: 0.8rem;
+  margin: 0.15rem 0 0.5rem;
+}
+
 .alert {
   background: #fef2f2;
   color: #b91c1c;
@@ -362,6 +384,59 @@ input:focus, textarea:focus, select:focus {
   border-radius: 6px;
   margin-bottom: 0.75rem;
   font-size: 0.9rem;
+}
+
+.error-banner {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  background: #b91c1c;
+  color: #fff;
+  padding: 1rem 1.1rem;
+  border-radius: 8px;
+  margin: 0.5rem 0 1rem;
+  border: 3px solid #7f1d1d;
+  box-shadow: 0 0 0 4px rgba(185, 28, 28, 0.28), 0 10px 24px rgba(0, 0, 0, 0.2);
+  font-size: 1rem;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+.error-banner-icon {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: #fff;
+  color: #b91c1c;
+  font-weight: 800;
+  font-size: 1.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.error-banner-body strong {
+  display: block;
+  font-size: 1.15rem;
+  margin-bottom: 0.35rem;
+}
+
+.error-banner-body p {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.98rem;
+}
+
+:root.dark-mode .error-banner {
+  background: #ef4444;
+  color: #fff;
+  border-color: #fecaca;
+}
+
+:root.dark-mode .error-banner-icon {
+  color: #b91c1c;
 }
 
 /* Badges */
@@ -687,13 +762,13 @@ input:focus, textarea:focus, select:focus {
   }
 
   .header-timer {
-    width: 100%;
-    flex-wrap: wrap;
+    width: auto;
+    flex-wrap: nowrap;
     font-size: 0.8rem;
   }
 
   .header-user {
-    width: 100%;
+    width: auto;
     font-size: 0.8rem;
   }
 
