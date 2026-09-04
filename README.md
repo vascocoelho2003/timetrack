@@ -34,7 +34,7 @@ O objetivo deste projeto é desenvolver uma aplicação WEB que permita fazer a 
 - ✅ Controlar o tempo despendido em cada tarefa por cada colaborador;
 - ✅ Gerir as tarefas por prioridade;
 - ✅ Exportar Relatórios de Tempos para PDF;
-- 🚀 View em formato de calendário;
+- ✅ View em formato de calendário;
 - 🚀 Possível integração com Microsoft To Do, Teams, Planner.
 
 ---
