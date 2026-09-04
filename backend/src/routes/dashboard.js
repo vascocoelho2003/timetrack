@@ -5,6 +5,9 @@ const router = express.Router();
 
 router.use(authMiddleware)
 
+/**
+ * Obtém os dados necessários para a Dashboard da Home Page
+ */
 router.get('/dashboard', authMiddleware, async (req, res) => {
     const dashboard = db.prepare(`
         SELECT
@@ -73,6 +76,9 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
     return res.status(200).json(dashboard);
 });
 
+/**
+ * Obtém as tarefas atribuídas ao utilizador logado para apresentar na página my-tasks
+ */
 router.get('/my-todo-tasks', authMiddleware, async (req, res) => {
     const tasks = db.prepare(`
         SELECT
@@ -96,6 +102,9 @@ router.get('/my-todo-tasks', authMiddleware, async (req, res) => {
     return res.status(200).json(tasks);
 });
 
+/**
+ * Obtém os projetos a que o utilizador logado pertence para apresentar na página Projects
+ */
 router.get('/my-projects', authMiddleware, async (req, res) => {
     const projects = db.prepare(`
         SELECT DISTINCT
@@ -115,6 +124,9 @@ router.get('/my-projects', authMiddleware, async (req, res) => {
     return res.status(200).json(projects);
 });
 
+/**
+ * Obtém os dados necessários para o relatório de projeto
+ */
 router.get('/project_report/:projectId', authMiddleware, async(req, res) => {
     const { projectId } = req.params;
     const { startDate, endDate } = req.query;
@@ -238,6 +250,9 @@ router.get('/project_report/:projectId', authMiddleware, async(req, res) => {
     res.status(200).json(report);
 });
 
+/**
+ * Obtém os dados necessários para o relatório geral de colaboradores
+ */
 router.get('/colaborators_reports/', authMiddleware, async(req,res)=>{
     const id = req.user.id;
     const teamMates = db.prepare(`
@@ -316,6 +331,9 @@ router.get('/colaborators_reports/', authMiddleware, async(req,res)=>{
     return res.status(200).json(teamMates);
 });
 
+/**
+ * Obtém os dados necessários para o relatório de colaborador
+ */
 router.get('/colaborator_report/:id', authMiddleware, (req, res) => {
     const userId = req.params.id;
     const { startDate, endDate } = req.query;

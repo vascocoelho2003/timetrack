@@ -7,13 +7,12 @@ import {
   todo_tasks,
   my_projects, userProjectsDetails,
   ColaboratorReportDetails, Department,
-    Client, TaskDependency, DependencyType,personal_report,
-    ClientReport,
-    getDepartment,
-    ColaboratorClientReport
+  Client, TaskDependency, DependencyType,personal_report,
+  ClientReport,
+  getDepartment,
+  ColaboratorClientReport
 } from './models';
 import {environment} from '../../environments/environments';
-import { IndividualClientReportComponent } from '../pages/individual-client-report/individual-client-report.component';
 
 const API = environment.apiUrl;
 

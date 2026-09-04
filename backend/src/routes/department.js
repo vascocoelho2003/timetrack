@@ -3,15 +3,19 @@ const { db } = require('../db');
 const {authMiddleware}=require('../middleware/auth');
 const router = express.Router();
 
-// Public: used by the register page before login
+router.use(authMiddleware)
+
+/**
+ * Obtém todos os departamentos registados no sistema
+ */
 router.get('/getDepartments', async(req,res)=>{
     const departments = db.prepare(`SELECT * FROM departments`).all();
     return res.status(200).json(departments);
 })
 
-router.use(authMiddleware)
-
-// CREATE A DEPARTMENT
+/**
+ * Cria um novo departamento no sistema
+ */
 router.post('/createDepartment', authMiddleware, async(req,res)=>{
     const {name} = req.body
     const departmentExists = db.prepare(`SELECT * FROM departments WHERE name = ?`).get(name);
@@ -23,21 +27,27 @@ router.post('/createDepartment', authMiddleware, async(req,res)=>{
     return res.status(200).json(department)
 })
 
-// READ ONE DEPARTMENT
+/**
+ * Obtém um departamento registado no sistema através do id
+ */
 router.get('/getDepartment/:department_id', authMiddleware, async(req,res)=>{
     const { department_id } = req.params;
     const department = db.prepare(`SELECT * FROM departments WHERE id = ?`).get(department_id)
     return res.status(200).json(department);
 })
 
-// DELETE A DEPARTMENT
+/**
+ * Elimina um departamento registado no sistema através do id
+ */
 router.delete('/deleteDepartment/:department_id', authMiddleware, async(req,res)=>{
     const {department_id} = req.params;
     resposta = db.prepare(`DELETE FROM departments WHERE id = ?`).run(department_id);
     return res.status(200).json(resposta);
 })
 
-// GET MY DEPARTMENT
+/**
+ * Obtém o departamento do utilizador logado
+ */
 router.get('/getMyDepartment',authMiddleware, async(req,res)=>{
     const dept = db.prepare(`SELECT d.id , d.name FROM users u JOIN departments d ON d.id = u.department_id WHERE u.id = ?`).get(req.user.id);
     return res.status(200).json(dept || null);

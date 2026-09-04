@@ -6,6 +6,12 @@ const { signToken, authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
 
+/**
+ * Verificar se as duas passwords são iguais
+ * @param {*} password 
+ * @param {*} passwordConfirm 
+ * @returns 
+ */
 function passwordsMatch(password, passwordConfirm) {
   if (typeof password !== 'string' || typeof passwordConfirm !== 'string') {
     return false;
@@ -155,6 +161,9 @@ router.get('/me', authMiddleware, (req, res) => {
   res.json(user);
 });
 
+/**
+ * Obtém os dados do utilizador logado
+ */
 router.put('/me', authMiddleware, (req, res) => {
   const { username, email, password, department_id } = req.body;
   const normalizedEmail = email?.trim().toLowerCase();
@@ -203,6 +212,9 @@ router.put('/me', authMiddleware, (req, res) => {
   res.json({ user, token });
 });
 
+/**
+ * Obter departamento do utilizador logado
+ */
 router.get('/getDepartment', authMiddleware, async (req, res) => {
   const user_id = req.user.id;
   const department = db.prepare(`

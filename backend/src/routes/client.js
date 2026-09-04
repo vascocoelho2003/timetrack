@@ -32,7 +32,7 @@ router.get('/getAllClients', authMiddleware, async(req,res)=>{
     return res.status(200).json(clients);
 })
 
-//
+// Criar cliente
 router.post('/createClient', authMiddleware, async(req,res)=>{
     const { client_type, user_id, department_id } = req.body;
 

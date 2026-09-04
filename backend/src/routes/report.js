@@ -3,6 +3,13 @@ const { db } = require('../db');
 const {authMiddleware} = require('../middleware/auth');
 const router = express.Router();
 
+router.use(authMiddleware)
+
+/**
+ * Prepara a data de início para ser utilizada na query
+ * @param {*} date 
+ * @returns 
+ */
 function toStartOfDay(date) {
     if (!date) return date;
     
@@ -13,6 +20,11 @@ function toStartOfDay(date) {
     return date.length <= 10 ? `${date}T00:00:00.000Z` : date;
 }
 
+/**
+ * Prepara a data de fim para ser utilizada na query
+ * @param {*} date 
+ * @returns 
+ */
 function toEndOfDay(date) {
     if (!date) return date;
     
@@ -22,8 +34,6 @@ function toEndOfDay(date) {
     }
     return date.length <= 10 ? `${date}T23:59:59.999Z` : date;
 }
-
-router.use(authMiddleware)
 
 /**
  * Relatório Geral do Clientes:
