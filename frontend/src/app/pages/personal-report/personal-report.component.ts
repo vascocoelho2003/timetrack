@@ -1,32 +1,29 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ClientReport } from '../../core/models';
-import { AuthService } from '../../core/auth.service';
-import { ApiService } from '../../core/api.service';
 import { Router } from '@angular/router';
+import { personal_report } from '../../core/models';
+import { ApiService } from '../../core/api.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import {MatCheckboxChange, MatCheckboxModule} from '@angular/material/checkbox';
 
 @Component({
-  selector: 'app-client-reports',
-  imports: [FormsModule,MatCheckboxModule],
-  templateUrl: './client-reports.component.html',
-  styleUrl: './client-reports.component.css'
+  selector: 'app-personal-report',
+  imports: [FormsModule],
+  templateUrl: './personal-report.component.html',
+  styleUrl: './personal-report.component.css'
 })
-export class ClientReportsComponent implements OnInit{
-  
-  reports: ClientReport[] = [];
-  filteredReports: ClientReport[] = [];
+
+export class PersonalReportComponent implements OnInit{
+  reports : personal_report [] = [];
+  filteredReports : personal_report [] = [];
   searchText = '';
   startDate = '';
   endDate = '';
   page = 1;
   pageSize = 10;
-  selected_user_id = 0;
-  department = false;
+  selectedId = 0;
 
-  constructor(private authService: AuthService,private apiService: ApiService,private router:Router){}
+  constructor(private apiService: ApiService, private router: Router){}
 
   ngOnInit(): void {
     const now = new Date();
@@ -35,54 +32,32 @@ export class ClientReportsComponent implements OnInit{
     this.loadReport();
   }
 
-  onDepartmentChange(event: MatCheckboxChange): void {
-    this.department = event.checked;
-    this.loadReport();
-  }
-
-  selectRow(report: ClientReport): void {
-    this.selected_user_id = report.user_id;
-    this.router.navigate(['/individual-client-report'], {
-      state: { id: report.user_id, username: report.username, startDate: this.startDate, endDate:this.endDate, department: this.department }
-    });
-  }
-
-  loadReport(): void {
-    this.apiService.getGeneralClientReport(this.startDate, this.endDate, this.department).subscribe({
+  loadReport():void{
+    this.apiService.getPersonalReport(this.startDate, this.endDate).subscribe({
       next: (data)=>{
         this.reports = data;
         this.applyFilter();
-      },      
-      error: (error) => {
-        console.log("Erro ao carregar o relatório", error);
       }
-    });
-  }
-
-  onCustomDateChange(): void {
-    if (this.startDate && this.endDate) {
-      this.loadReport();
-    }
-  }
-
-  applyFilter(): void {
-    const search = this.searchText.trim().toLowerCase();
-    this.filteredReports = search
-      ? this.reports.filter(r => r.username.toLowerCase().includes(search))
-      : [...this.reports];
-    this.page = 1;
+    })
   }
 
   get totalPages(): number {
     return Math.max(1, Math.ceil(this.filteredReports.length / this.pageSize));
   }
 
-  get pagedReports(): ClientReport[] {
+  get pagedReports() {
     this.page = Math.min(this.page, this.totalPages);
     const start = (this.page - 1) * this.pageSize;
     return this.filteredReports.slice(start, start + this.pageSize);
   }
 
+  applyFilter(): void {
+    const search = this.searchText.trim().toLowerCase();
+    this.filteredReports = search
+      ? this.reports.filter(r => (r.name ?? '').toLowerCase().includes(search))
+      : [...this.reports];
+    this.page = 1;
+  }
   async exportPdf(): Promise<void> {
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -101,7 +76,7 @@ export class ClientReportsComponent implements OnInit{
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.text('Relatório Geral de Cliente', margin, 43);
+    doc.text('Relatório Pessoal', margin, 43);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
@@ -110,11 +85,11 @@ export class ClientReportsComponent implements OnInit{
     autoTable(doc, {
       startY: 62,
       margin: { left: margin, right: margin },
-      head: [['Colaborador', 'Nº de Tarefas', 'Tempo Despendido']],
+      head: [['Cliente', 'Nº de Tarefas', 'Tempo Despendido']],
       body: this.filteredReports.map(r => [
-        r.username,
-        `${r.total_tarefas} tarefas`,
-        this.formatDuration(r.tempo_total)
+        r.name || '—',
+        `${r.nr_tarefas} tarefas`,
+        this.formatDuration(r.duration)
       ]),
       theme: 'plain',
       styles: {
@@ -139,7 +114,7 @@ export class ClientReportsComponent implements OnInit{
       }
     });
 
-    doc.save(`relatorio-cliente-${this.getPeriodLabel().replace(/ /g, '-')}.pdf`);
+    doc.save(`relatorio-pessoal-${this.getPeriodLabel().replace(/ /g, '-')}.pdf`);
   }
 
   private loadImage(src: string): Promise<HTMLImageElement | null> {
@@ -161,19 +136,32 @@ export class ClientReportsComponent implements OnInit{
     return `${day}/${month}/${year}`;
   }
 
-  private toDateInput(date: Date): string {
-    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+  onCustomDateChange(): void {
+    if (this.startDate && this.endDate) {
+      this.loadReport();
+    }
   }
 
-  formatDuration(seconds: number): string {
-    const totalSeconds = Math.max(0, Number(seconds) || 0);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const remainingSeconds = totalSeconds % 60;
-    return [
-      String(hours).padStart(2, '0'),
-      String(minutes).padStart(2, '0'),
-      String(remainingSeconds).padStart(2, '0')
-    ].join(':');
+  private toDateInput(date: Date): string {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+  selectRow(report: personal_report): void{
+    this.selectedId = report.id;
+    this.router.navigate(['/colaborator-client-report'], {
+      state: {
+        id: report.id,
+        name: report.name,
+        startDate: this.startDate,
+        endDate: this.endDate
+      }
+    });
+  }
+
+  formatDuration(seconds: number): string{
+    const total = Math.max(0, Number(seconds) || 0);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
   }
 }

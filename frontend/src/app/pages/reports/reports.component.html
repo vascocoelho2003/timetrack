@@ -6,11 +6,11 @@
       <button routerLink="/projects-reports" class="btn-outline">Relatórios Projeto</button>
       <button routerLink="/colaborators-reports" class="btn-outline">Relatórios Colaborador</button>
       <button routerLink="/client-reports" class="btn-outline">Relatórios de Cliente</button>
+      <button routerLink="/personal-report" class="btn-outline">Relatório Pessoal</button>
     </div>
   </div>
 
   <div class="dashboard-card">
-
     <div class="stats-row top">
       <div class="stat-tile large">
         <span routerLink="/teams" class="stat-value">{{this.nr_equipas}}</span>
@@ -21,7 +21,6 @@
         <span routerLink="/my_projects" class="stat-label">Projetos</span>
       </div>
     </div>
-
     <div class="stats-row bottom">
       <div routerLink="/my-tasks" class="stat-tile">
         <span class="stat-value">{{this.total_tasks}}</span>

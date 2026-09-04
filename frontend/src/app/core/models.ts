@@ -12,12 +12,37 @@ export interface Client {
   name: string;
 }
 
+export interface ColaboratorClientReport{
+  title: string;
+  status: string;
+  due_date: string;
+  task_id: number;
+  duration: number;
+  ultima_atualizacao: string;
+}
+
 export interface ClientReport{
   user_id: number;
   username: string;
   total_tarefas: number;
   tempo_total: number;
   ultima_atualizacao: string;
+}
+
+export interface personal_report{
+  id: number;
+  client_type: string;
+  nr_tarefas: number;
+  duration: number;
+  name: string;
+}
+
+export interface DepartmentName{
+  name:string;
+}
+
+export interface getDepartment{
+  department: DepartmentName
 }
 
 export interface IndividualClientReport{

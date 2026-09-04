@@ -1,100 +1,53 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { IndividualClientReport } from '../../core/models';
+import { Router } from '@angular/router';
+import { ColaboratorClientReport } from '../../core/models';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 @Component({
-  selector: 'app-individual-client-report',
+  selector: 'app-colaborator-client-report',
   imports: [FormsModule],
-  templateUrl: './individual-client-report.component.html',
-  styleUrl: './individual-client-report.component.css'
+  templateUrl: './colaborator-client-report.component.html',
+  styleUrl: './colaborator-client-report.component.css'
 })
-export class IndividualClientReportComponent implements OnInit {
-
-  user_id: number = 0;
-  username: string = '';
-  startDate: string = '';
-  endDate : string = '';
-  department : boolean = false;
-  tasks : IndividualClientReport [] = [];
+export class ColaboratorClientReportComponent implements OnInit {
+  client_id = 0;
+  username = '';
+  cliente_username = '';
+  startDate = '';
+  endDate = '';
   page = 1;
   pageSize = 10;
-  cliente_username = '';
+  tasks: ColaboratorClientReport[] = [];
+
+  constructor(
+    private router: Router,
+    private apiService: ApiService,
+    private authService: AuthService
+  ) {}
+
+  ngOnInit(): void {
+    const state = this.router.getCurrentNavigation()?.extras.state ?? history.state;
+    this.client_id = state?.['id'] ?? 0;
+    this.cliente_username = state?.['name'] ?? '';
+    this.username = this.authService.currentUser()?.username ?? '';
+    const now = new Date();
+    this.startDate = state?.['startDate'] || `${now.getFullYear()}-01-01`;
+    this.endDate = state?.['endDate'] || this.toDateInput(now);
+    this.loadReport();
+  }
 
   get totalPages(): number {
     return Math.max(1, Math.ceil(this.tasks.length / this.pageSize));
   }
 
-  get pagedTasks(): IndividualClientReport[] {
+  get pagedTasks(): ColaboratorClientReport[] {
     this.page = Math.min(this.page, this.totalPages);
     const start = (this.page - 1) * this.pageSize;
     return this.tasks.slice(start, start + this.pageSize);
-  }
-
-  constructor(private router: Router, private apiService: ApiService, private authService: AuthService) {}
-
-  ngOnInit(): void {
-    const state = this.router.getCurrentNavigation()?.extras.state
-      ?? history.state;
-    this.user_id = state?.['id'] ?? 0;
-    this.department = state?.['department']??false;
-    this.username = state?.['username'] ?? '';
-    this.cliente_username = this.authService.currentUser()?.username ?? '';
-    const now = new Date();
-    this.startDate = state?.['startDate'] || `${now.getFullYear()}-01-01`;
-    this.endDate   = state?.['endDate']   || this.toDateInput(now);
-    if(this.department===true){
-      this.load_client_username();
-    }
-    this.loadReport();
-
-  }
-
-  formatDuration(seconds: number): string {
-    const total = Math.max(0, Number(seconds) || 0);
-    const h = Math.floor(total / 3600);
-    const m = Math.floor((total % 3600) / 60);
-    const s = total % 60;
-    return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
-  }
-
-  formatDate(dateStr: string | null): string {
-    if (!dateStr) return '—';
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return '—';
-    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-  }
-
-  load_client_username(){
-    this.apiService.getClientDepartment(this.user_id).subscribe({
-      next: (data)=>{
-        this.cliente_username=data.department.name;
-      }
-    })
-  }
-
-  statusLabel(status: string): string {
-    const map: Record<string, string> = {
-      todo: 'Por Fazer',
-      doing: 'In Progress',
-      done: 'Concluído'
-    };
-    return map[status] ?? status;
-  }
-
-  onCustomDateChange(): void {
-    if (this.startDate && this.endDate) {
-      this.page = 1;
-      this.loadReport();
-    }
-  }
-
-  private toDateInput(date: Date): string {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   }
 
   async exportPdf(): Promise<void> {
@@ -115,7 +68,7 @@ export class IndividualClientReportComponent implements OnInit {
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.text('Relatório de Cliente por Colaborador', margin, 43);
+    doc.text('Relatório Pessoal por Cliente', margin, 43);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
@@ -160,8 +113,8 @@ export class IndividualClientReportComponent implements OnInit {
       }
     });
 
-    const safeName = this.username.trim().replace(/[<>:"/\\|?*\s]/g, '-');
-    doc.save(`relatorio-cliente-${safeName}-${this.getPeriodLabel().replace(/ /g, '-')}.pdf`);
+    const safeName = (this.cliente_username || this.username).trim().replace(/[<>:"/\\|?*\s]/g, '-');
+    doc.save(`relatorio-pessoal-${safeName}-${this.getPeriodLabel().replace(/ /g, '-')}.pdf`);
   }
 
   private loadImage(src: string): Promise<HTMLImageElement | null> {
@@ -183,11 +136,46 @@ export class IndividualClientReportComponent implements OnInit {
     return `${day}/${month}/${year}`;
   }
 
-  loadReport():void{
-    this.apiService.getIndividualClientReport(this.startDate,this.endDate,this.user_id,this.department).subscribe({
-      next: (data)=>{
-        this.tasks=data;
+  onCustomDateChange(): void {
+    if (this.startDate && this.endDate) {
+      this.page = 1;
+      this.loadReport();
+    }
+  }
+
+  private toDateInput(date: Date): string {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+
+  loadReport(): void {
+    this.apiService.getColaboratorClientReport(this.startDate, this.endDate, this.client_id).subscribe({
+      next: (data) => {
+        this.tasks = data;
       }
-    })
+    });
+  }
+
+  statusLabel(status: string): string {
+    const map: Record<string, string> = {
+      todo: 'Por Fazer',
+      doing: 'In Progress',
+      done: 'Concluído'
+    };
+    return map[status] ?? status;
+  }
+
+  formatDate(dateStr: string | null): string {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '—';
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+  }
+
+  formatDuration(seconds: number): string {
+    const total = Math.max(0, Number(seconds) || 0);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
   }
 }

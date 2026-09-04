@@ -203,4 +203,15 @@ router.put('/me', authMiddleware, (req, res) => {
   res.json({ user, token });
 });
 
+router.get('/getDepartment', authMiddleware, async (req, res) => {
+  const user_id = req.user.id;
+  const department = db.prepare(`
+    SELECT d.name
+    FROM users u
+    JOIN departments d ON u.department_id = d.id
+    WHERE u.id = ?
+  `).get(user_id);
+  return res.status(200).json({ department });
+});
+
 module.exports = router;

@@ -242,6 +242,15 @@ label {
   color: var(--muted);
 }
 
+.mat-mdc-checkbox label,
+.mdc-form-field > label {
+  display: inline;
+  margin: 0;
+  font-weight: 500;
+  color: inherit;
+  line-height: 1.2;
+}
+
 input, textarea, select {
   width: 100%;
   padding: 0.5rem 0.75rem;

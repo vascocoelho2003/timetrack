@@ -2,13 +2,13 @@
   <a class="back" href="/reports">← Equipa</a>
 
   <div class="title-row">
-    <h2 class="page-heading">Relatório Geral de Cliente</h2>
+    <h2 class="page-heading">Relatório Pessoal</h2>
   </div>
 
   <div class="toolbar">
     <div class="toolbar-left">
       <div class="search">
-        <input type="text" placeholder="Pesquisar Colaborador" [(ngModel)]="searchText" (input)="applyFilter()" />
+        <input type="text" placeholder="Pesquisar Cliente" [(ngModel)]="searchText" (input)="applyFilter()" />
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="7"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -30,31 +30,25 @@
       <input type="date" class="date-input" [(ngModel)]="endDate" (ngModelChange)="onCustomDateChange()" />
     </div>
   </div>
-  <section class="task-filters">
-    <mat-checkbox
-    value="department"
-    (change)="onDepartmentChange($event)">
-      Departamento
-    </mat-checkbox>
-  </section>
+
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th>Colaborador</th>
+          <th>Cliente</th>
           <th>Nrº de Tarefas</th>
           <th>Tempo Despendido</th>
         </tr>
       </thead>
       <tbody>
-        @for (report of pagedReports; track report.user_id){
+        @for (report of pagedReports; track report.id) {
         <tr
           (click)="selectRow(report)"
-          [class.selected]="selected_user_id === report.user_id"
+          [class.selected]="selectedId === report.id"
         >
-          <td>{{report.username}}</td>
-          <td>{{report.total_tarefas}} tarefas</td>
-          <td>{{formatDuration(report.tempo_total)}}</td>
+          <td>{{report.name}}</td>
+          <td>{{report.nr_tarefas}} tarefas</td>
+          <td>{{formatDuration(report.duration)}}</td>
         </tr>
         } @empty {
         <tr><td colspan="3">Não foram encontrados registos.</td></tr>

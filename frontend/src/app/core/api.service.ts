@@ -7,8 +7,10 @@ import {
   todo_tasks,
   my_projects, userProjectsDetails,
   ColaboratorReportDetails, Department,
-    Client, TaskDependency, DependencyType,
-    ClientReport
+    Client, TaskDependency, DependencyType,personal_report,
+    ClientReport,
+    getDepartment,
+    ColaboratorClientReport
 } from './models';
 import {environment} from '../../environments/environments';
 import { IndividualClientReportComponent } from '../pages/individual-client-report/individual-client-report.component';
@@ -232,19 +234,38 @@ export class ApiService {
     return this.http.get<Client[]>(`${API}/clients/getAllClients`);
   }
 
-  getGeneralClientReport(startDate?: string, endDate?: string){
+  getGeneralClientReport(startDate?: string, endDate?: string, department?: boolean){
     const params: Record<string, string> = {};
     if (startDate) params['startDate'] = startDate;
     if (endDate) params['endDate'] = endDate;
-
+    params['department'] = department ? 'true' : 'false';
     return this.http.get<ClientReport[]>(`${API}/reports/generalClientReport`, { params });
   }
 
-  getIndividualClientReport(startDate?: string, endDate?: string, user_id?: number){
+  getIndividualClientReport(startDate?: string, endDate?: string, user_id?: number, department?: boolean){
     const params: Record<string, string> = {};
     if (startDate) params['startDate'] = startDate;
     if (endDate) params['endDate'] = endDate;
+    if(department) params['department']=department?'true':'false';
     return this.http.get<IndividualClientReport[]>(`${API}/reports/ClientReport/${user_id}`, { params });
+  }
+
+  getClientDepartment(user_id: number){
+    return this.http.get<getDepartment>(`${API}/auth/getDepartment`);
+  }
+
+  getPersonalReport(startDate?: string, endDate?: string){
+    const params: Record<string, string> = {};
+    if (startDate) params['startDate'] = startDate;
+    if (endDate) params['endDate'] = endDate;
+    return this.http.get<personal_report[]>(`${API}/reports/ColaboratorReport`, { params });
+  }
+
+  getColaboratorClientReport(startDate?: string, endDate?: string, client_id?: number){
+    const params: Record<string, string> = {};
+    if (startDate) params['startDate'] = startDate;
+    if (endDate) params['endDate'] = endDate;
+    return this.http.get<ColaboratorClientReport[]>(`${API}/reports/ColaboratorClientReport/${client_id}`,{params});
   }
 
 }
