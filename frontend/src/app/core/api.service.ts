@@ -1,39 +1,68 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import {
-  Team, TeamMember, Project, TaskList, Task, TimeEntry, ReportData, Comment,Task_proj,
-  User, colaboratorReport,
-  DashboardData,project_report,IndividualClientReport,
+  Team,
+  TeamMember,
+  Project,
+  TaskList,
+  Task,
+  TimeEntry,
+  ReportData,
+  Comment,
+  Task_proj,
+  User,
+  colaboratorReport,
+  DashboardData,
+  project_report,
+  IndividualClientReport,
   todo_tasks,
-  my_projects, userProjectsDetails,
-  ColaboratorReportDetails, Department,
-  Client, TaskDependency, DependencyType,personal_report,
+  my_projects,
+  userProjectsDetails,
+  ColaboratorReportDetails,
+  Department,
+  Client,
+  TaskDependency,
+  DependencyType,
+  personal_report,
   ClientReport,
   getDepartment,
-  ColaboratorClientReport
+  ColaboratorClientReport,
+  AdminDashboard,
+  AdminUser,
+  AdminDepartment,
+  AdminTeam,
+  AdminProject,
 } from './models';
-import {environment} from '../../environments/environments';
+import { environment } from '../../environments/environments';
 
 const API = environment.apiUrl;
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  
   constructor(private http: HttpClient) {}
 
   // Teams
-  getTeams() { return this.http.get<Team[]>(`${API}/teams`); }
+  getTeams() {
+    return this.http.get<Team[]>(`${API}/teams`);
+  }
 
-  createTeam(name: string) { return this.http.post<Team>(`${API}/teams`, { name }); }
+  createTeam(name: string) {
+    return this.http.post<Team>(`${API}/teams`, { name });
+  }
 
-  deleteTeam(teamId: number) { return this.http.delete(`${API}/teams/${teamId}`); }
+  deleteTeam(teamId: number) {
+    return this.http.delete(`${API}/teams/${teamId}`);
+  }
 
   getTeamMembers(teamId: number) {
     return this.http.get<TeamMember[]>(`${API}/teams/${teamId}/members`);
   }
 
   addTeamMember(teamId: number, email: string, role: string) {
-    return this.http.post<TeamMember>(`${API}/teams/${teamId}/members`, { email, role });
+    return this.http.post<TeamMember>(`${API}/teams/${teamId}/members`, {
+      email,
+      role,
+    });
   }
 
   removeTeamMember(teamId: number, userId: number) {
@@ -44,9 +73,12 @@ export class ApiService {
   getProjects(teamId: number) {
     return this.http.get<Project[]>(`${API}/projects/team/${teamId}`);
   }
-  
+
   createProject(teamId: number, name: string, description: string) {
-    return this.http.post<Project>(`${API}/projects/team/${teamId}`, { name, description });
+    return this.http.post<Project>(`${API}/projects/team/${teamId}`, {
+      name,
+      description,
+    });
   }
 
   getProject(projectId: number) {
@@ -63,20 +95,23 @@ export class ApiService {
   }
 
   createTaskList(projectId: number, name: string) {
-    return this.http.post<TaskList>(`${API}/task-lists/project/${projectId}`, { name });
+    return this.http.post<TaskList>(`${API}/task-lists/project/${projectId}`, {
+      name,
+    });
   }
 
   deleteTaskList(listId: number) {
     return this.http.delete(`${API}/task-lists/${listId}`);
   }
-  
+
   getTasks(listId: number) {
     return this.http.get<Task[]>(`${API}/task-lists/${listId}/tasks`);
   }
 
   // Tasks
-  getTask(taskId: number) { return this.http.get<Task>(`${API}/tasks/${taskId}`); 
-}
+  getTask(taskId: number) {
+    return this.http.get<Task>(`${API}/tasks/${taskId}`);
+  }
 
   createTask(data: {
     taskListId: number;
@@ -105,7 +140,9 @@ export class ApiService {
   }
 
   addComment(taskId: number, content: string) {
-    return this.http.post<Comment>(`${API}/tasks/${taskId}/comments`, { content });
+    return this.http.post<Comment>(`${API}/tasks/${taskId}/comments`, {
+      content,
+    });
   }
 
   deleteComment(taskId: number, commentId: number) {
@@ -113,51 +150,86 @@ export class ApiService {
   }
 
   createRecurrence(taskId: number, data: Record<string, unknown>) {
-    return this.http.post<{ message: string; recurrence: unknown }>(`${API}/tasks/recurrence/${taskId}`, data);
+    return this.http.post<{ message: string; recurrence: unknown }>(
+      `${API}/tasks/recurrence/${taskId}`,
+      data,
+    );
   }
 
   updateRecurrence(taskId: number, data: Record<string, unknown>) {
-    return this.http.put<{ message: string; recurrence: unknown }>(`${API}/tasks/recurrence/${taskId}`, data);
+    return this.http.put<{ message: string; recurrence: unknown }>(
+      `${API}/tasks/recurrence/${taskId}`,
+      data,
+    );
   }
 
   getTaskDependencies(taskId: number) {
-    return this.http.get<TaskDependency[]>(`${API}/tasks/${taskId}/dependencies`);
+    return this.http.get<TaskDependency[]>(
+      `${API}/tasks/${taskId}/dependencies`,
+    );
   }
 
-  createDependency(taskId: number, predecessor: number, dependency_type: DependencyType) {
-    return this.http.post<TaskDependency>(`${API}/tasks/create_dependency/${taskId}`, {
-      predecessor,
-      dependency_type,
-    });
+  createDependency(
+    taskId: number,
+    predecessor: number,
+    dependency_type: DependencyType,
+  ) {
+    return this.http.post<TaskDependency>(
+      `${API}/tasks/create_dependency/${taskId}`,
+      {
+        predecessor,
+        dependency_type,
+      },
+    );
   }
 
-  updateDependency(taskId: number, predecessor: number, dependency_type: DependencyType) {
-    return this.http.put<TaskDependency>(`${API}/tasks/update_dependency/${taskId}`, {
-      predecessor,
-      dependency_type,
-    });
+  updateDependency(
+    taskId: number,
+    predecessor: number,
+    dependency_type: DependencyType,
+  ) {
+    return this.http.put<TaskDependency>(
+      `${API}/tasks/update_dependency/${taskId}`,
+      {
+        predecessor,
+        dependency_type,
+      },
+    );
   }
 
   startTimer(taskId?: number) {
-    return this.http.post<TimeEntry>(`${API}/time/start`, taskId ? { taskId } : {});
+    return this.http.post<TimeEntry>(
+      `${API}/time/start`,
+      taskId ? { taskId } : {},
+    );
   }
-  stopTimer() { return this.http.post<TimeEntry>(`${API}/time/stop`, {}); }
+  stopTimer() {
+    return this.http.post<TimeEntry>(`${API}/time/stop`, {});
+  }
 
-  getActiveTimer() { return this.http.get<TimeEntry | null>(`${API}/time/active`); }
+  getActiveTimer() {
+    return this.http.get<TimeEntry | null>(`${API}/time/active`);
+  }
 
   getPendingUnassignedTimer() {
     return this.http.get<TimeEntry | null>(`${API}/time/unassigned/pending`);
   }
 
-  assignUnassignedTimer(entryId: number, data: {
-    existingTaskId?: number;
-    title?: string;
-    description?: string;
-    taskListId?: number | null;
-    priority?: string;
-    dueDate?: string | null;
-  }) {
-    return this.http.post<Task>(`${API}/time/unassigned/${entryId}/assign`, data);
+  assignUnassignedTimer(
+    entryId: number,
+    data: {
+      existingTaskId?: number;
+      title?: string;
+      description?: string;
+      taskListId?: number | null;
+      priority?: string;
+      dueDate?: string | null;
+    },
+  ) {
+    return this.http.post<Task>(
+      `${API}/time/unassigned/${entryId}/assign`,
+      data,
+    );
   }
 
   discardUnassignedTimer(entryId: number) {
@@ -171,100 +243,197 @@ export class ApiService {
     return this.http.get<ReportData>(`${API}/time/reports/team/${teamId}`);
   }
 
-  getProjectMembers(projectId: number){
+  getProjectMembers(projectId: number) {
     return this.http.get<User[]>(`${API}/projects/${projectId}/users`);
   }
 
-  getDashboard(){
+  getDashboard() {
     return this.http.get<DashboardData>(`${API}/dashboard`);
   }
 
-  getMyTodoTasks(){
+  getMyTodoTasks() {
     return this.http.get<todo_tasks[]>(`${API}/my-todo-tasks`);
   }
 
-  getMyProjects(){
+  getMyProjects() {
     return this.http.get<my_projects[]>(`${API}/my-projects`);
   }
 
-  getUserProjects(){
+  getUserProjects() {
     return this.http.get<Project[]>(`${API}/projects`);
   }
 
-  getUserTasks(){
+  getUserTasks() {
     return this.http.get<Task_proj[]>(`${API}/tasks/`);
   }
 
-  getUserProjectDetails(){
-    return this.http.get<userProjectsDetails[]>(`${API}/projects/userProjectsDetails`);
+  getUserProjectDetails() {
+    return this.http.get<userProjectsDetails[]>(
+      `${API}/projects/userProjectsDetails`,
+    );
   }
 
-  getProjectReport(projectId: number, startDate?: string, endDate?: string){
+  getProjectReport(projectId: number, startDate?: string, endDate?: string) {
     const params: Record<string, string> = {};
     if (startDate) params['startDate'] = startDate;
     if (endDate) params['endDate'] = endDate;
 
-    return this.http.get<project_report>(`${API}/project_report/${projectId}`, { params });
+    return this.http.get<project_report>(`${API}/project_report/${projectId}`, {
+      params,
+    });
   }
 
-  getColaboratorReport(){
+  getColaboratorReport() {
     return this.http.get<colaboratorReport[]>(`${API}/colaborators_reports`);
   }
 
-  getColaboratorReportDetails(id: number, startDate?: string, endDate?: string){
+  getColaboratorReportDetails(
+    id: number,
+    startDate?: string,
+    endDate?: string,
+  ) {
     const params: Record<string, string> = {};
     if (startDate) params['startDate'] = startDate;
     if (endDate) params['endDate'] = endDate;
 
-    return this.http.get<ColaboratorReportDetails[]>(`${API}/colaborator_report/${id}`, { params });
+    return this.http.get<ColaboratorReportDetails[]>(
+      `${API}/colaborator_report/${id}`,
+      { params },
+    );
   }
 
   // Carregar Departments
-  getDepartments(){
-    return this.http.get<Department []>(`${API}/departments/getDepartments`);
+  getDepartments() {
+    return this.http.get<Department[]>(`${API}/departments/getDepartments`);
   }
 
-  getMyDepartment(){
-    return this.http.get<Department | null>(`${API}/departments/getMyDepartment`);
+  getMyDepartment() {
+    return this.http.get<Department | null>(
+      `${API}/departments/getMyDepartment`,
+    );
   }
 
   // Carregar Clientes
-  getClients(){
+  getClients() {
     return this.http.get<Client[]>(`${API}/clients/getAllClients`);
   }
 
-  getGeneralClientReport(startDate?: string, endDate?: string, department?: boolean){
+  getGeneralClientReport(
+    startDate?: string,
+    endDate?: string,
+    department?: boolean,
+  ) {
     const params: Record<string, string> = {};
     if (startDate) params['startDate'] = startDate;
     if (endDate) params['endDate'] = endDate;
     params['department'] = department ? 'true' : 'false';
-    return this.http.get<ClientReport[]>(`${API}/reports/generalClientReport`, { params });
+    return this.http.get<ClientReport[]>(`${API}/reports/generalClientReport`, {
+      params,
+    });
   }
 
-  getIndividualClientReport(startDate?: string, endDate?: string, user_id?: number, department?: boolean){
+  getIndividualClientReport(
+    startDate?: string,
+    endDate?: string,
+    user_id?: number,
+    department?: boolean,
+  ) {
     const params: Record<string, string> = {};
     if (startDate) params['startDate'] = startDate;
     if (endDate) params['endDate'] = endDate;
-    if(department) params['department']=department?'true':'false';
-    return this.http.get<IndividualClientReport[]>(`${API}/reports/ClientReport/${user_id}`, { params });
+    if (department) params['department'] = department ? 'true' : 'false';
+    return this.http.get<IndividualClientReport[]>(
+      `${API}/reports/ClientReport/${user_id}`,
+      { params },
+    );
   }
 
-  getClientDepartment(user_id: number){
+  getClientDepartment(user_id: number) {
     return this.http.get<getDepartment>(`${API}/auth/getDepartment`);
   }
 
-  getPersonalReport(startDate?: string, endDate?: string){
+  getPersonalReport(startDate?: string, endDate?: string) {
     const params: Record<string, string> = {};
     if (startDate) params['startDate'] = startDate;
     if (endDate) params['endDate'] = endDate;
-    return this.http.get<personal_report[]>(`${API}/reports/ColaboratorReport`, { params });
+    return this.http.get<personal_report[]>(
+      `${API}/reports/ColaboratorReport`,
+      { params },
+    );
   }
 
-  getColaboratorClientReport(startDate?: string, endDate?: string, client_id?: number){
+  getColaboratorClientReport(
+    startDate?: string,
+    endDate?: string,
+    client_id?: number,
+  ) {
     const params: Record<string, string> = {};
     if (startDate) params['startDate'] = startDate;
     if (endDate) params['endDate'] = endDate;
-    return this.http.get<ColaboratorClientReport[]>(`${API}/reports/ColaboratorClientReport/${client_id}`,{params});
+    return this.http.get<ColaboratorClientReport[]>(
+      `${API}/reports/ColaboratorClientReport/${client_id}`,
+      { params },
+    );
   }
 
+  getAdminDashboard() {
+    return this.http.get<AdminDashboard>(`${API}/admin/dashboard`);
+  }
+
+  getAdminUsers() {
+    return this.http.get<AdminUser[]>(`${API}/admin/users`);
+  }
+
+  getAdminUser(userId: number) {
+    return this.http.get<AdminUser>(`${API}/admin/users/${userId}`);
+  }
+
+  createAdminUser(data: {
+    username: string;
+    email: string;
+    password: string;
+    passwordConfirm: string;
+    department_id: number;
+    profile: 'admin' | 'user';
+  }) {
+    return this.http.post<AdminUser>(`${API}/admin/users`, data);
+  }
+
+  updateAdminUser(
+    userId: number,
+    data: {
+      username: string;
+      email: string;
+      department_id: number;
+      profile: 'admin' | 'user';
+      password?: string;
+    },
+  ) {
+    return this.http.put<{ user: AdminUser; token?: string }>(
+      `${API}/admin/users/${userId}`,
+      data,
+    );
+  }
+
+  setAdminUserActive(userId: number, active: boolean) {
+    return this.http.put<AdminUser>(`${API}/admin/users/${userId}/active`, {
+      active,
+    });
+  }
+
+  getAdminDepartments() {
+    return this.http.get<AdminDepartment[]>(`${API}/admin/departments`);
+  }
+
+  getAdminTeams() {
+    return this.http.get<AdminTeam[]>(`${API}/admin/teams`);
+  }
+
+  getAdminProjects() {
+    return this.http.get<AdminProject[]>(`${API}/admin/projects`);
+  }
+
+  createDepartment(name: string) {
+    return this.http.post(`${API}/departments/createDepartment`, { name });
+  }
 }

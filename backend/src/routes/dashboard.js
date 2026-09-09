@@ -1,15 +1,17 @@
-const express = require('express');
-const { db } = require('../db');
-const {authMiddleware}=require('../middleware/auth');
+const express = require("express");
+const { db } = require("../db");
+const { authMiddleware } = require("../middleware/auth");
 const router = express.Router();
 
-router.use(authMiddleware)
+router.use(authMiddleware);
 
 /**
  * Obtém os dados necessários para a Dashboard da Home Page
  */
-router.get('/dashboard', authMiddleware, async (req, res) => {
-    const dashboard = db.prepare(`
+router.get("/dashboard", authMiddleware, async (req, res) => {
+  const dashboard = db
+    .prepare(
+      `
         SELECT
             u.id,
             u.username,
@@ -71,16 +73,20 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
             AND p.active = 'TRUE'
         WHERE u.id = ?
         GROUP BY u.id, u.username;
-    `).get(req.user.id);
+    `,
+    )
+    .get(req.user.id);
 
-    return res.status(200).json(dashboard);
+  return res.status(200).json(dashboard);
 });
 
 /**
  * Obtém as tarefas atribuídas ao utilizador logado para apresentar na página my-tasks
  */
-router.get('/my-todo-tasks', authMiddleware, async (req, res) => {
-    const tasks = db.prepare(`
+router.get("/my-todo-tasks", authMiddleware, async (req, res) => {
+  const tasks = db
+    .prepare(
+      `
         SELECT
             t.title,
             t.due_date
@@ -97,16 +103,20 @@ router.get('/my-todo-tasks', authMiddleware, async (req, res) => {
             t.priority DESC,
             t.due_date ASC,
             t.created_at DESC;
-    `).all(req.user.id);
+    `,
+    )
+    .all(req.user.id);
 
-    return res.status(200).json(tasks);
+  return res.status(200).json(tasks);
 });
 
 /**
  * Obtém os projetos a que o utilizador logado pertence para apresentar na página Projects
  */
-router.get('/my-projects', authMiddleware, async (req, res) => {
-    const projects = db.prepare(`
+router.get("/my-projects", authMiddleware, async (req, res) => {
+  const projects = db
+    .prepare(
+      `
         SELECT DISTINCT
             p.name AS project_name,
             t.name AS team_name
@@ -119,20 +129,24 @@ router.get('/my-projects', authMiddleware, async (req, res) => {
           AND t.active = 'TRUE'
           AND p.active = 'TRUE'
         ORDER BY p.name ASC;
-    `).all(req.user.id);
+    `,
+    )
+    .all(req.user.id);
 
-    return res.status(200).json(projects);
+  return res.status(200).json(projects);
 });
 
 /**
  * Obtém os dados necessários para o relatório de projeto
  */
-router.get('/project_report/:projectId', authMiddleware, async(req, res) => {
-    const { projectId } = req.params;
-    const { startDate, endDate } = req.query;
-    const hasDateRange = startDate && endDate;
+router.get("/project_report/:projectId", authMiddleware, async (req, res) => {
+  const { projectId } = req.params;
+  const { startDate, endDate } = req.query;
+  const hasDateRange = startDate && endDate;
 
-    const rows = db.prepare(`
+  const rows = db
+    .prepare(
+      `
         SELECT
             p.id AS project_id,
             p.name AS project_name,
@@ -173,7 +187,7 @@ router.get('/project_report/:projectId', authMiddleware, async(req, res) => {
         LEFT JOIN time_entries te
             ON te.task_id = t.id
             AND te.user_id = u.id
-            ${hasDateRange ? "AND date(te.start) >= date(@startDate) AND date(te.start) < date(@endDate, '+1 day')" : ''}
+            ${hasDateRange ? "AND date(te.start) >= date(@startDate) AND date(te.start) < date(@endDate, '+1 day')" : ""}
 
         WHERE p.id = @projectId
 
@@ -188,74 +202,76 @@ router.get('/project_report/:projectId', authMiddleware, async(req, res) => {
             t.due_date,
             t.id,
             u.username
-    `).all({ projectId, startDate, endDate });
+    `,
+    )
+    .all({ projectId, startDate, endDate });
 
-    if (!rows.length) {
-        return res.status(404).json({
-            message: 'Projeto não encontrado.'
-        });
+  if (!rows.length) {
+    return res.status(404).json({
+      message: "Projeto não encontrado.",
+    });
+  }
+
+  const report = {
+    project: {
+      id: rows[0].project_id,
+      name: rows[0].project_name,
+      team_name: rows[0].team_name,
+    },
+    task_lists: [],
+  };
+
+  const listsMap = new Map();
+
+  rows.forEach((row) => {
+    if (!listsMap.has(row.list_id)) {
+      listsMap.set(row.list_id, {
+        id: row.list_id,
+        name: row.list_name,
+        tasks: [],
+      });
+
+      report.task_lists.push(listsMap.get(row.list_id));
     }
 
-    const report = {
-        project: {
-            id: rows[0].project_id,
-            name: rows[0].project_name,
-            team_name: rows[0].team_name
-        },
-        task_lists: []
-    };
+    const list = listsMap.get(row.list_id);
 
-    const listsMap = new Map();
+    let task = list.tasks.find((t) => t.id === row.task_id);
 
-    rows.forEach(row => {
+    if (!task && row.task_id) {
+      task = {
+        id: row.task_id,
+        title: row.title,
+        status: row.status,
+        due_date: row.due_date,
+        total_time: 0,
+        assignees: [],
+      };
 
-        if (!listsMap.has(row.list_id)) {
-            listsMap.set(row.list_id, {
-                id: row.list_id,
-                name: row.list_name,
-                tasks: []
-            });
+      list.tasks.push(task);
+    }
 
-            report.task_lists.push(listsMap.get(row.list_id));
-        }
+    if (task && row.user_id) {
+      task.assignees.push({
+        id: row.user_id,
+        username: row.username,
+        time: row.user_time,
+      });
 
-        const list = listsMap.get(row.list_id);
-
-        let task = list.tasks.find(t => t.id === row.task_id);
-
-        if (!task && row.task_id) {
-            task = {
-                id: row.task_id,
-                title: row.title,
-                status: row.status,
-                due_date: row.due_date,
-                total_time: 0,
-                assignees: []
-            };
-
-            list.tasks.push(task);
-        }
-
-        if (task && row.user_id) {
-            task.assignees.push({
-                id: row.user_id,
-                username: row.username,
-                time: row.user_time
-            });
-
-            task.total_time += row.user_time;
-        }
-
-    });
-    res.status(200).json(report);
+      task.total_time += row.user_time;
+    }
+  });
+  res.status(200).json(report);
 });
 
 /**
  * Obtém os dados necessários para o relatório geral de colaboradores
  */
-router.get('/colaborators_reports/', authMiddleware, async(req,res)=>{
-    const id = req.user.id;
-    const teamMates = db.prepare(`
+router.get("/colaborators_reports/", authMiddleware, async (req, res) => {
+  const id = req.user.id;
+  const teamMates = db
+    .prepare(
+      `
         SELECT
             u.id AS user_id,
             u.username,
@@ -295,9 +311,13 @@ router.get('/colaborators_reports/', authMiddleware, async(req,res)=>{
 
         ORDER BY
             u.username;
-    `).all(id);
+    `,
+    )
+    .all(id);
 
-    const totalTimes = db.prepare(`
+  const totalTimes = db
+    .prepare(
+      `
         SELECT
             te.user_id,
             COALESCE(SUM(te.duration), 0) AS total_time
@@ -318,28 +338,30 @@ router.get('/colaborators_reports/', authMiddleware, async(req,res)=>{
         )
           AND datetime(te.created_at) >= datetime('now', '-1 month')
         GROUP BY te.user_id
-    `).all(id);
-    
-    const timesMap = new Map(
-        totalTimes.map(t => [t.user_id, t.total_time])
-    );
-    
-    teamMates.forEach(user => {
-        user.total_time = timesMap.get(user.user_id) || 0;
-    });
+    `,
+    )
+    .all(id);
 
-    return res.status(200).json(teamMates);
+  const timesMap = new Map(totalTimes.map((t) => [t.user_id, t.total_time]));
+
+  teamMates.forEach((user) => {
+    user.total_time = timesMap.get(user.user_id) || 0;
+  });
+
+  return res.status(200).json(teamMates);
 });
 
 /**
  * Obtém os dados necessários para o relatório de colaborador
  */
-router.get('/colaborator_report/:id', authMiddleware, (req, res) => {
-    const userId = req.params.id;
-    const { startDate, endDate } = req.query;
-    const hasDateRange = startDate && endDate;
+router.get("/colaborator_report/:id", authMiddleware, (req, res) => {
+  const userId = req.params.id;
+  const { startDate, endDate } = req.query;
+  const hasDateRange = startDate && endDate;
 
-    const timeEntries = db.prepare(`
+  const timeEntries = db
+    .prepare(
+      `
         SELECT
             t.title,
             t.status,
@@ -360,10 +382,12 @@ router.get('/colaborator_report/:id', authMiddleware, (req, res) => {
             ON tm.team_id = p.team_id
            AND tm.user_id = te.user_id
         WHERE te.user_id = ?
-        ${hasDateRange ? "AND date(te.start) >= date(?) AND date(te.start) < date(?, '+1 day')" : ''}
-    `).all(...(hasDateRange ? [userId, startDate, endDate] : [userId]));
+        ${hasDateRange ? "AND date(te.start) >= date(?) AND date(te.start) < date(?, '+1 day')" : ""}
+    `,
+    )
+    .all(...(hasDateRange ? [userId, startDate, endDate] : [userId]));
 
-    return res.status(200).json(timeEntries);
+  return res.status(200).json(timeEntries);
 });
 
 module.exports = router;

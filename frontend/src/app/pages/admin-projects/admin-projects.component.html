@@ -1,0 +1,40 @@
+<div class="page">
+  <a class="back" routerLink="/admin-panel">← Painel de Admin</a>
+  <h1 class="page-title">Projetos</h1>
+
+  <div class="search">
+    <input type="text" placeholder="Pesquisar projeto" [(ngModel)]="searchText" (input)="applyFilter()" />
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="7"></circle>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Projeto</th>
+          <th>Equipa</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (project of pagedItems; track project.id) {
+        <tr>
+          <td>{{ project.name }}</td>
+          <td>{{ project.team_name }}</td>
+        </tr>
+        } @empty {
+        <tr><td colspan="2">Não foram encontrados registos.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (totalPages > 1) {
+  <div class="pagination">
+    <button [disabled]="page === 1" (click)="page = page - 1">Anterior</button>
+    <span>Página {{ page }} de {{ totalPages }}</span>
+    <button [disabled]="page === totalPages" (click)="page = page + 1">Seguinte</button>
+  </div>
+  }
+</div>

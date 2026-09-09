@@ -939,3 +939,12 @@ html, body { height: 100%; }
   background-color: var(--surface);
   color: var(--text);
 }
+
+:root.dark-mode .mat-mdc-checkbox {
+  --mdc-form-field-label-text-color: var(--text);
+}
+
+:root.dark-mode .mat-mdc-checkbox label,
+:root.dark-mode .mat-mdc-checkbox .mdc-label {
+  color: var(--text);
+}

@@ -1,0 +1,86 @@
+<div class="page">
+  <a class="back" routerLink="/admin-panel/users">← Utilizadores</a>
+  <h1 class="page-title">Editar utilizador</h1>
+
+  @if (loading) {
+    <p class="muted">A carregar...</p>
+  } @else if (!username && error) {
+    <p class="error">{{ error }}</p>
+  } @else {
+    <div class="edit-card">
+      <div class="edit-header">
+        <span class="status-pill" [attr.data-status]="active ? 'done' : 'todo'">
+          {{ active ? 'Ativo' : 'Inativo' }}
+        </span>
+      </div>
+
+      <form class="edit-form" (ngSubmit)="submit()">
+        <div class="edit-grid">
+          <div class="field">
+            <label for="username">Username</label>
+            <input id="username" name="username" [(ngModel)]="username" required />
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" [(ngModel)]="email" required />
+          </div>
+          <div class="field">
+            <label for="departmentId">Departamento</label>
+            <select id="departmentId" name="departmentId" [(ngModel)]="departmentId" required>
+              <option [ngValue]="null" disabled>Selecionar departamento</option>
+              @for (dept of departments; track dept.id) {
+                <option [ngValue]="dept.id">{{ dept.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label for="profile">Perfil</label>
+            <select
+              id="profile"
+              name="profile"
+              [(ngModel)]="profile"
+              [disabled]="userId === currentUserId">
+              <option value="user">Utilizador</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="newPassword">Nova password</label>
+            <input
+              id="newPassword"
+              name="newPassword"
+              type="password"
+              [(ngModel)]="newPassword"
+              autocomplete="new-password"
+              placeholder="Deixar em branco para manter"
+            />
+          </div>
+          <div class="field">
+            <label for="passwordConfirm">Confirmar password</label>
+            <input
+              id="passwordConfirm"
+              name="passwordConfirm"
+              type="password"
+              [(ngModel)]="passwordConfirm"
+              autocomplete="new-password"
+            />
+          </div>
+        </div>
+
+        @if (error) {
+          <p class="error">{{ error }}</p>
+        }
+        @if (success) {
+          <p class="success">{{ success }}</p>
+        }
+
+        <div class="edit-actions">
+          <a class="btn btn-ghost" routerLink="/admin-panel/users">Cancelar</a>
+          <button class="btn btn-primary" type="submit" [disabled]="saving">
+            {{ saving ? 'A guardar...' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+</div>

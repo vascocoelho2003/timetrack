@@ -1,15 +1,15 @@
-const Database = require('better-sqlite3');
-const path = require('path');
-const fs = require('fs');
+const Database = require("better-sqlite3");
+const path = require("path");
+const fs = require("fs");
 
-const dataDir = path.join(__dirname, '..', 'data');
+const dataDir = path.join(__dirname, "..", "data");
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
-const dbPath = path.join(dataDir, 'timetrack.db');
+const dbPath = path.join(dataDir, "timetrack.db");
 const db = new Database(dbPath);
 
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+db.pragma("journal_mode = WAL");
+db.pragma("foreign_keys = ON");
 
 function initDb() {
   db.exec(`
@@ -62,12 +62,6 @@ function initDb() {
       description TEXT DEFAULT '',
       active BOOLEAN NOT NULL DEFAULT 'TRUE',
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS project_guests(
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-      PRIMARY KEY (user_id, project_id)
     );
 
     CREATE TABLE IF NOT EXISTS task_lists (
@@ -154,19 +148,25 @@ function initDb() {
   `);
 
   const userColumns = db.prepare(`PRAGMA table_info(users)`).all();
-  if (!userColumns.some((column) => column.name === 'department_id')) {
-    db.exec(`ALTER TABLE users ADD COLUMN department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL`);
+  if (!userColumns.some((column) => column.name === "department_id")) {
+    db.exec(
+      `ALTER TABLE users ADD COLUMN department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL`,
+    );
   }
 
   const taskColumns = db.prepare(`PRAGMA table_info(tasks)`).all();
-  if (!taskColumns.some((column) => column.name === 'client_id')) {
-    db.exec(`ALTER TABLE tasks ADD COLUMN client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL`);
+  if (!taskColumns.some((column) => column.name === "client_id")) {
+    db.exec(
+      `ALTER TABLE tasks ADD COLUMN client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL`,
+    );
   }
 
   const timeEntryColumns = db.prepare(`PRAGMA table_info(time_entries)`).all();
-  const taskIdColumn = timeEntryColumns.find((column) => column.name === 'task_id');
+  const taskIdColumn = timeEntryColumns.find(
+    (column) => column.name === "task_id",
+  );
   if (taskIdColumn?.notnull === 1) {
-    db.pragma('foreign_keys = OFF');
+    db.pragma("foreign_keys = OFF");
     db.exec(`
       CREATE TABLE time_entries_new (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -185,13 +185,19 @@ function initDb() {
       CREATE INDEX IF NOT EXISTS idx_time_entries_task ON time_entries(task_id);
     `);
     try {
-      const maxId = db.prepare('SELECT MAX(id) as maxId FROM time_entries').get()?.maxId || 0;
-      db.prepare("DELETE FROM sqlite_sequence WHERE name = 'time_entries'").run();
-      db.prepare("INSERT INTO sqlite_sequence(name, seq) VALUES ('time_entries', ?)").run(maxId);
+      const maxId =
+        db.prepare("SELECT MAX(id) as maxId FROM time_entries").get()?.maxId ||
+        0;
+      db.prepare(
+        "DELETE FROM sqlite_sequence WHERE name = 'time_entries'",
+      ).run();
+      db.prepare(
+        "INSERT INTO sqlite_sequence(name, seq) VALUES ('time_entries', ?)",
+      ).run(maxId);
     } catch {
       // sqlite_sequence may not exist yet
     }
-    db.pragma('foreign_keys = ON');
+    db.pragma("foreign_keys = ON");
   }
 }
 

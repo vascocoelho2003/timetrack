@@ -1,230 +1,243 @@
 const docs = [
   {
-    group: 'Saúde',
-    method: 'GET',
-    path: '/api/health',
+    group: "Saúde",
+    method: "GET",
+    path: "/api/health",
     auth: false,
-    description: 'Verifica se a API está disponível.',
+    description: "Verifica se a API está disponível.",
   },
   {
-    group: 'Autenticação',
-    method: 'POST',
-    path: '/api/auth/register',
+    group: "Autenticação",
+    method: "POST",
+    path: "/api/auth/register",
     auth: false,
-    description: 'Cria um novo utilizador, guarda a password com hash e devolve um token JWT.',
+    description:
+      "Cria um novo utilizador, guarda a password com hash e devolve um token JWT.",
   },
   {
-    group: 'Autenticação',
-    method: 'POST',
-    path: '/api/auth/login',
+    group: "Autenticação",
+    method: "POST",
+    path: "/api/auth/login",
     auth: false,
-    description: 'Autentica um utilizador e devolve um token JWT.',
+    description: "Autentica um utilizador e devolve um token JWT.",
   },
   {
-    group: 'Autenticação',
-    method: 'GET',
-    path: '/api/auth/me',
+    group: "Autenticação",
+    method: "GET",
+    path: "/api/auth/me",
     auth: true,
-    description: 'Devolve os dados do utilizador autenticado.',
+    description: "Devolve os dados do utilizador autenticado.",
   },
   {
-    group: 'Equipas',
-    method: 'GET',
-    path: '/api/teams',
+    group: "Equipas",
+    method: "GET",
+    path: "/api/teams",
     auth: true,
-    description: 'Lista as equipas às quais o utilizador atual pertence.',
+    description: "Lista as equipas às quais o utilizador atual pertence.",
   },
   {
-    group: 'Equipas',
-    method: 'POST',
-    path: '/api/teams',
+    group: "Equipas",
+    method: "POST",
+    path: "/api/teams",
     auth: true,
-    description: 'Cria uma nova equipa e define o utilizador como administrador.',
+    description:
+      "Cria uma nova equipa e define o utilizador como administrador.",
   },
   {
-    group: 'Equipas',
-    method: 'GET',
-    path: '/api/teams/:teamId/members',
+    group: "Equipas",
+    method: "GET",
+    path: "/api/teams/:teamId/members",
     auth: true,
-    description: 'Lista os membros de uma equipa.',
+    description: "Lista os membros de uma equipa.",
   },
   {
-    group: 'Equipas',
-    method: 'POST',
-    path: '/api/teams/:teamId/members',
+    group: "Equipas",
+    method: "POST",
+    path: "/api/teams/:teamId/members",
     auth: true,
-    description: 'Adiciona um utilizador à equipa, desde que o pedido seja feito por um administrador.',
+    description:
+      "Adiciona um utilizador à equipa, desde que o pedido seja feito por um administrador.",
   },
   {
-    group: 'Equipas',
-    method: 'DELETE',
-    path: '/api/teams/:teamId/members/:userId',
+    group: "Equipas",
+    method: "DELETE",
+    path: "/api/teams/:teamId/members/:userId",
     auth: true,
-    description: 'Remove um membro da equipa.',
+    description: "Remove um membro da equipa.",
   },
   {
-    group: 'Equipas',
-    method: 'DELETE',
-    path: '/api/teams/:teamId',
+    group: "Equipas",
+    method: "DELETE",
+    path: "/api/teams/:teamId",
     auth: true,
-    description: 'Elimina uma equipa, disponível apenas para administradores.',
+    description: "Elimina uma equipa, disponível apenas para administradores.",
   },
   {
-    group: 'Projetos',
-    method: 'GET',
-    path: '/api/projects/team/:teamId',
+    group: "Projetos",
+    method: "GET",
+    path: "/api/projects/team/:teamId",
     auth: true,
-    description: 'Lista os projetos de uma equipa.',
+    description: "Lista os projetos de uma equipa.",
   },
   {
-    group: 'Projetos',
-    method: 'POST',
-    path: '/api/projects/team/:teamId',
+    group: "Projetos",
+    method: "POST",
+    path: "/api/projects/team/:teamId",
     auth: true,
-    description: 'Cria um projeto numa equipa e cria automaticamente uma lista inicial “A fazer”.',
+    description:
+      "Cria um projeto numa equipa e cria automaticamente uma lista inicial “A fazer”.",
   },
   {
-    group: 'Projetos',
-    method: 'GET',
-    path: '/api/projects/:projectId',
+    group: "Projetos",
+    method: "GET",
+    path: "/api/projects/:projectId",
     auth: true,
-    description: 'Obtém os detalhes de um projeto.',
+    description: "Obtém os detalhes de um projeto.",
   },
   {
-    group: 'Projetos',
-    method: 'PUT',
-    path: '/api/projects/:projectId',
+    group: "Projetos",
+    method: "PUT",
+    path: "/api/projects/:projectId",
     auth: true,
-    description: 'Atualiza os dados de um projeto, disponível apenas para administradores.',
+    description:
+      "Atualiza os dados de um projeto, disponível apenas para administradores.",
   },
   {
-    group: 'Projetos',
-    method: 'DELETE',
-    path: '/api/projects/:projectId',
+    group: "Projetos",
+    method: "DELETE",
+    path: "/api/projects/:projectId",
     auth: true,
-    description: 'Elimina um projeto, disponível apenas para administradores.',
+    description: "Elimina um projeto, disponível apenas para administradores.",
   },
   {
-    group: 'Listas de tarefas',
-    method: 'GET',
-    path: '/api/task-lists/project/:projectId',
+    group: "Listas de tarefas",
+    method: "GET",
+    path: "/api/task-lists/project/:projectId",
     auth: true,
-    description: 'Lista as listas de tarefas de um projeto.',
+    description: "Lista as listas de tarefas de um projeto.",
   },
   {
-    group: 'Listas de tarefas',
-    method: 'POST',
-    path: '/api/task-lists/project/:projectId',
+    group: "Listas de tarefas",
+    method: "POST",
+    path: "/api/task-lists/project/:projectId",
     auth: true,
-    description: 'Cria uma nova lista de tarefas num projeto.',
+    description: "Cria uma nova lista de tarefas num projeto.",
   },
   {
-    group: 'Listas de tarefas',
-    method: 'GET',
-    path: '/api/task-lists/:listId/tasks',
+    group: "Listas de tarefas",
+    method: "GET",
+    path: "/api/task-lists/:listId/tasks",
     auth: true,
-    description: 'Lista as tarefas de uma lista. Utilizadores normais só veem as tarefas em que estão atribuídos.',
+    description:
+      "Lista as tarefas de uma lista. Utilizadores normais só veem as tarefas em que estão atribuídos.",
   },
   {
-    group: 'Listas de tarefas',
-    method: 'DELETE',
-    path: '/api/task-lists/:listId',
+    group: "Listas de tarefas",
+    method: "DELETE",
+    path: "/api/task-lists/:listId",
     auth: true,
-    description: 'Remove uma lista de tarefas, disponível apenas para administradores.',
+    description:
+      "Remove uma lista de tarefas, disponível apenas para administradores.",
   },
   {
-    group: 'Tarefas',
-    method: 'POST',
-    path: '/api/tasks',
+    group: "Tarefas",
+    method: "POST",
+    path: "/api/tasks",
     auth: true,
-    description: 'Cria uma nova tarefa numa lista e opcionalmente associa assignees.',
+    description:
+      "Cria uma nova tarefa numa lista e opcionalmente associa assignees.",
   },
   {
-    group: 'Tarefas',
-    method: 'GET',
-    path: '/api/tasks/:taskId',
+    group: "Tarefas",
+    method: "GET",
+    path: "/api/tasks/:taskId",
     auth: true,
-    description: 'Obtém os detalhes de uma tarefa, incluindo subtarefas, comentários e assignees.',
+    description:
+      "Obtém os detalhes de uma tarefa, incluindo subtarefas, comentários e assignees.",
   },
   {
-    group: 'Tarefas',
-    method: 'PUT',
-    path: '/api/tasks/:taskId',
+    group: "Tarefas",
+    method: "PUT",
+    path: "/api/tasks/:taskId",
     auth: true,
-    description: 'Atualiza uma tarefa. Administradores podem editar tudo; outros utilizadores só podem alterar o estado.',
+    description:
+      "Atualiza uma tarefa. Administradores podem editar tudo; outros utilizadores só podem alterar o estado.",
   },
   {
-    group: 'Tarefas',
-    method: 'DELETE',
-    path: '/api/tasks/:taskId',
+    group: "Tarefas",
+    method: "DELETE",
+    path: "/api/tasks/:taskId",
     auth: true,
-    description: 'Remove uma tarefa, disponível apenas para administradores.',
+    description: "Remove uma tarefa, disponível apenas para administradores.",
   },
   {
-    group: 'Tarefas',
-    method: 'POST',
-    path: '/api/tasks/:taskId/comments',
+    group: "Tarefas",
+    method: "POST",
+    path: "/api/tasks/:taskId/comments",
     auth: true,
-    description: 'Adiciona um comentário a uma tarefa.',
+    description: "Adiciona um comentário a uma tarefa.",
   },
   {
-    group: 'Tarefas',
-    method: 'DELETE',
-    path: '/api/tasks/:taskId/comments/:commentId',
+    group: "Tarefas",
+    method: "DELETE",
+    path: "/api/tasks/:taskId/comments/:commentId",
     auth: true,
-    description: 'Remove um comentário, disponível apenas para o autor.',
+    description: "Remove um comentário, disponível apenas para o autor.",
   },
   {
-    group: 'Tempo',
-    method: 'POST',
-    path: '/api/time/start',
+    group: "Tempo",
+    method: "POST",
+    path: "/api/time/start",
     auth: true,
-    description: 'Inicia um registo de tempo para uma tarefa, disponível apenas para assignees.',
+    description:
+      "Inicia um registo de tempo para uma tarefa, disponível apenas para assignees.",
   },
   {
-    group: 'Tempo',
-    method: 'POST',
-    path: '/api/time/stop',
+    group: "Tempo",
+    method: "POST",
+    path: "/api/time/stop",
     auth: true,
-    description: 'Termina o timer ativo do utilizador atual.',
+    description: "Termina o timer ativo do utilizador atual.",
   },
   {
-    group: 'Tempo',
-    method: 'GET',
-    path: '/api/time/active',
+    group: "Tempo",
+    method: "GET",
+    path: "/api/time/active",
     auth: true,
-    description: 'Devolve o timer ativo do utilizador atual, se existir.',
+    description: "Devolve o timer ativo do utilizador atual, se existir.",
   },
   {
-    group: 'Tempo',
-    method: 'GET',
-    path: '/api/time/task/:taskId',
+    group: "Tempo",
+    method: "GET",
+    path: "/api/time/task/:taskId",
     auth: true,
-    description: 'Lista os registos de tempo de uma tarefa.',
+    description: "Lista os registos de tempo de uma tarefa.",
   },
   {
-    group: 'Tempo',
-    method: 'GET',
-    path: '/api/time/reports/team/:teamId',
+    group: "Tempo",
+    method: "GET",
+    path: "/api/time/reports/team/:teamId",
     auth: true,
-    description: 'Gera relatórios de tempo por utilizador, projeto e tarefa para uma equipa.',
+    description:
+      "Gera relatórios de tempo por utilizador, projeto e tarefa para uma equipa.",
   },
   {
-    group: 'Tempo',
-    method: 'GET',
-    path: '/api/time/reports/project/:projectId',
+    group: "Tempo",
+    method: "GET",
+    path: "/api/time/reports/project/:projectId",
     auth: true,
-    description: 'Gera relatórios de tempo por utilizador e tarefa para um projeto.',
+    description:
+      "Gera relatórios de tempo por utilizador e tarefa para um projeto.",
   },
 ];
 
 function escapeHtml(value) {
   return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function renderDocsPage() {
@@ -235,23 +248,31 @@ function renderDocsPage() {
     return acc;
   }, {});
 
-  const sections = Object.entries(grouped).map(([group, endpoints]) => `
+  const sections = Object.entries(grouped)
+    .map(
+      ([group, endpoints]) => `
     <section>
       <h2>${escapeHtml(group)}</h2>
       <div class="cards">
-        ${endpoints.map((endpoint) => `
+        ${endpoints
+          .map(
+            (endpoint) => `
           <article class="card">
             <div class="header">
               <span class="method ${escapeHtml(endpoint.method.toLowerCase())}">${escapeHtml(endpoint.method)}</span>
               <code>${escapeHtml(endpoint.path)}</code>
             </div>
             <p>${escapeHtml(endpoint.description)}</p>
-            <small>${endpoint.auth ? 'Autenticação obrigatória' : 'Sem autenticação'}</small>
+            <small>${endpoint.auth ? "Autenticação obrigatória" : "Sem autenticação"}</small>
           </article>
-        `).join('')}
+        `,
+          )
+          .join("")}
       </div>
     </section>
-  `).join('');
+  `,
+    )
+    .join("");
 
   return `<!doctype html>
 <html lang="pt">

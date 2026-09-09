@@ -1,38 +1,45 @@
-const { db } = require('../db');
+const { db } = require("../db");
 
 const STATUS_LABEL = {
-  todo: 'Por fazer',
-  doing: 'Em progresso',
-  done: 'Concluída',
+  todo: "Por fazer",
+  doing: "Em progresso",
+  done: "Concluída",
 };
 
 const TYPE_LABEL = {
-  FS: 'Finish to Start',
-  SS: 'Start to Start',
-  FF: 'Finish to Finish',
-  SF: 'Start to Finish',
+  FS: "Finish to Start",
+  SS: "Start to Start",
+  FF: "Finish to Finish",
+  SF: "Start to Finish",
 };
 
+/**
+ * Obtém a tarefa que está a bloquear a tarefa atual por dependência
+ * @param {*} dep
+ * @param {*} targetStatus
+ * @returns
+ */
 function blockingReason(dep, targetStatus) {
   const title = dep.predecessor_title;
-  const predLabel = STATUS_LABEL[dep.predecessor_status] || dep.predecessor_status;
+  const predLabel =
+    STATUS_LABEL[dep.predecessor_status] || dep.predecessor_status;
   const typeLabel = TYPE_LABEL[dep.dependency_type] || dep.dependency_type;
   const predStatus = dep.predecessor_status;
 
-  if (targetStatus !== 'todo') {
-    if (dep.dependency_type === 'FS' && predStatus !== 'done') {
+  if (targetStatus !== "todo") {
+    if (dep.dependency_type === "FS" && predStatus !== "done") {
       return `A dependência ${dep.dependency_type} (${typeLabel}) com «${title}» exige que essa tarefa esteja concluída (Estado atual: ${predLabel}).`;
     }
-    if (dep.dependency_type === 'SS' && predStatus === 'todo') {
+    if (dep.dependency_type === "SS" && predStatus === "todo") {
       return `A dependência ${dep.dependency_type} (${typeLabel}) com «${title}» exige que essa tarefa já tenha arrancado (Estado atual: ${predLabel}).`;
     }
   }
 
-  if (targetStatus === 'done') {
-    if (dep.dependency_type === 'FF' && predStatus !== 'done') {
+  if (targetStatus === "done") {
+    if (dep.dependency_type === "FF" && predStatus !== "done") {
       return `A dependência ${dep.dependency_type} (${typeLabel}) com «${title}» exige que essa tarefa esteja concluída (Estado atual: ${predLabel}).`;
     }
-    if (dep.dependency_type === 'SF' && predStatus === 'todo') {
+    if (dep.dependency_type === "SF" && predStatus === "todo") {
       return `A dependência ${dep.dependency_type} (${typeLabel}) com «${title}» exige que essa tarefa já tenha arrancado (Estado atual: ${predLabel}).`;
     }
   }
@@ -40,18 +47,28 @@ function blockingReason(dep, targetStatus) {
   return null;
 }
 
+/**
+ * Verifica se a tarefa atual tem dependências que estão bloqueando a alteração de estado
+ * @param {*} taskId
+ * @param {*} targetStatus
+ * @returns
+ */
 function checkDependencies(taskId, targetStatus) {
   if (!targetStatus) {
     return { ok: true };
   }
 
-  const dependencies = db.prepare(`
+  const dependencies = db
+    .prepare(
+      `
     SELECT d.predecessor, d.dependency_type,
            p.title AS predecessor_title, p.status AS predecessor_status
     FROM dependencies d
     JOIN tasks p ON d.predecessor = p.id
     WHERE d.successor = ?
-  `).all(taskId);
+  `,
+    )
+    .all(taskId);
 
   if (dependencies.length === 0) {
     return { ok: true };
@@ -75,13 +92,14 @@ function checkDependencies(taskId, targetStatus) {
     return { ok: true };
   }
 
-  const error = blockers.length === 1
-    ? `Não é possível alterar o estado. ${blockers[0].reason}`
-    : `Não é possível alterar o estado:\n${blockers.map(b => `• ${b.reason}`).join('\n')}`;
+  const error =
+    blockers.length === 1
+      ? `Não é possível alterar o estado. ${blockers[0].reason}`
+      : `Não é possível alterar o estado:\n${blockers.map((b) => `• ${b.reason}`).join("\n")}`;
 
   return { ok: false, error, blocking: blockers[0], blockers };
 }
 
 module.exports = {
-  checkDependencies
+  checkDependencies,
 };

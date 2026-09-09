@@ -1,0 +1,130 @@
+<div class="page">
+  <a class="back" routerLink="/admin-panel">← Painel de Admin</a>
+  <h1 class="page-title">Utilizadores</h1>
+  @if (error) {
+    <p class="error">{{ error }}</p>
+  }
+
+  <div class="toolbar">
+    <div class="search">
+      <input type="text" placeholder="Pesquisar utilizador" [(ngModel)]="searchText" (input)="applyFilter()" />
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </div>
+    <button class="btn btn-primary" type="button" (click)="toggleNewUserForm()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      Criar Utilizador
+    </button>
+  </div>
+
+  @if (showNewUserForm) {
+    <div class="create-form">
+      <p class="create-form-label">Novo utilizador</p>
+      @if (formError) {
+        <p class="error">{{ formError }}</p>
+      }
+      <div class="create-form-grid">
+        <div class="field">
+          <label for="newUsername">Username</label>
+          <input id="newUsername" name="newUsername" [(ngModel)]="newUsername" placeholder="username" />
+        </div>
+        <div class="field">
+          <label for="newEmail">Email</label>
+          <input id="newEmail" name="newEmail" type="email" [(ngModel)]="newEmail" placeholder="email@exemplo.com" />
+        </div>
+        <div class="field">
+          <label for="newDepartmentId">Departamento</label>
+          <select id="newDepartmentId" name="newDepartmentId" [(ngModel)]="newDepartmentId">
+            <option [ngValue]="null" disabled>Selecionar departamento</option>
+            @for (dept of departments; track dept.id) {
+              <option [ngValue]="dept.id">{{ dept.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label for="newProfile">Perfil</label>
+          <select id="newProfile" name="newProfile" [(ngModel)]="newProfile">
+            <option value="user">Utilizador</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="newPassword">Password</label>
+          <input id="newPassword" name="newPassword" type="password" [(ngModel)]="newPassword" autocomplete="new-password" />
+        </div>
+        <div class="field">
+          <label for="newPasswordConfirm">Confirmar password</label>
+          <input id="newPasswordConfirm" name="newPasswordConfirm" type="password" [(ngModel)]="newPasswordConfirm" autocomplete="new-password" />
+        </div>
+      </div>
+      <div class="create-form-actions">
+        <button class="btn btn-ghost" type="button" (click)="toggleNewUserForm()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="creating" (click)="createUser()">
+          {{ creating ? 'A criar...' : 'Criar' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Departamento</th>
+          <th>Perfil</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of pagedItems; track user.id) {
+        <tr class="clickable" (click)="openUser(user)">
+          <td>{{ user.username }}</td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.department_name || '—' }}</td>
+          <td>{{ user.profile }}</td>
+          <td>
+            <span class="status-pill" [attr.data-status]="user.active ? 'done' : 'todo'">
+              {{ user.active ? 'Ativo' : 'Inativo' }}
+            </span>
+          </td>
+          <td>
+            @if (user.active) {
+              <button
+                class="btn btn-danger btn-sm"
+                type="button"
+                [disabled]="user.id === currentUserId"
+                (click)="setActive($event, user, false)">
+                Desativar
+              </button>
+            } @else {
+              <button
+                class="btn btn-ghost btn-sm"
+                type="button"
+                (click)="setActive($event, user, true)">
+                Ativar
+              </button>
+            }
+          </td>
+        </tr>
+        } @empty {
+        <tr><td colspan="6">Não foram encontrados registos.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (totalPages > 1) {
+  <div class="pagination">
+    <button [disabled]="page === 1" (click)="page = page - 1">Anterior</button>
+    <span>Página {{ page }} de {{ totalPages }}</span>
+    <button [disabled]="page === totalPages" (click)="page = page + 1">Seguinte</button>
+  </div>
+  }
+</div>

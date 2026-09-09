@@ -30,7 +30,7 @@
       </thead>
       <tbody>
         @for( proj of filteredProjects; track proj.id){ 
-        <tr style="cursor: pointer;">
+        <tr>
           <td [routerLink]="['/project-report', proj.id]">{{proj.name}}</td>
           <td>
             <a [routerLink]="['/teams', proj.team_id]" class="team-name">

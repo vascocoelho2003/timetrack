@@ -3,16 +3,17 @@ export interface User {
   email: string;
   username: string;
   department_id?: number;
+  profile?: 'admin' | 'user';
 }
 
 export interface Client {
   id: number;
-  user_id : number;
+  user_id: number;
   client_type: string;
   name: string;
 }
 
-export interface ColaboratorClientReport{
+export interface ColaboratorClientReport {
   title: string;
   status: string;
   due_date: string;
@@ -21,7 +22,7 @@ export interface ColaboratorClientReport{
   ultima_atualizacao: string;
 }
 
-export interface ClientReport{
+export interface ClientReport {
   user_id: number;
   username: string;
   total_tarefas: number;
@@ -29,7 +30,7 @@ export interface ClientReport{
   ultima_atualizacao: string;
 }
 
-export interface personal_report{
+export interface personal_report {
   id: number;
   client_type: string;
   nr_tarefas: number;
@@ -37,15 +38,15 @@ export interface personal_report{
   name: string;
 }
 
-export interface DepartmentName{
-  name:string;
+export interface DepartmentName {
+  name: string;
 }
 
-export interface getDepartment{
-  department: DepartmentName
+export interface getDepartment {
+  department: DepartmentName;
 }
 
-export interface IndividualClientReport{
+export interface IndividualClientReport {
   title: string;
   status: string;
   due_date: string;
@@ -68,20 +69,61 @@ export interface DashboardData {
   high_priority_tasks: number;
 }
 
-export interface Department{
+export interface AdminDashboard {
+  total_users: number;
+  total_departments: number;
+  total_teams: number;
+  total_projects: number;
+  total_tasks: number;
+  total_clients: number;
+}
+
+export interface AdminUser {
+  id: number;
+  username: string;
+  email: string;
+  profile: 'admin' | 'user' | string;
+  active: boolean;
+  created_at: string;
+  department_id: number | null;
+  department_name: string | null;
+}
+
+export interface AdminDepartment {
+  id: number;
+  name: string;
+  nr_users: number;
+}
+
+export interface AdminTeam {
+  id: number;
+  name: string;
+  created_at: string;
+  created_by_name: string | null;
+  nr_members: number;
+}
+
+export interface AdminProject {
+  id: number;
+  name: string;
+  team_name: string;
+  created_at: string;
+}
+
+export interface Department {
   id: number;
   name: string;
 }
 
-export interface colaboratorReport{
+export interface colaboratorReport {
   user_id: number;
   username: string;
   nr_tasks: number;
   nr_closed_tasks: number;
-  total_time: number; 
+  total_time: number;
 }
 
-export interface userProjectsDetails{
+export interface userProjectsDetails {
   id: number;
   name: string;
   description: string;
@@ -92,36 +134,36 @@ export interface userProjectsDetails{
   done_tasks: number;
 }
 
-export interface projectForReport{
+export interface projectForReport {
   id: number;
   name: string;
   team_name?: string;
 }
 
-export interface assigneesForReport{
+export interface assigneesForReport {
   id: number;
   username: string;
   time: number;
 }
 
-export interface taskForReport{
+export interface taskForReport {
   id: number;
   title: string;
   status: string;
   due_date: string | null;
   total_time: number;
-  assignees : assigneesForReport[];
+  assignees: assigneesForReport[];
 }
 
-export interface tasklistForReport{
+export interface tasklistForReport {
   id: number;
   name: string;
   tasks: taskForReport[];
 }
 
-export interface project_report{
+export interface project_report {
   project: projectForReport;
-  task_lists : tasklistForReport [];
+  task_lists: tasklistForReport[];
 }
 
 export interface todo_tasks {
@@ -145,7 +187,6 @@ export interface TeamModel {
   id: number;
   name: string;
 }
-
 
 export interface TeamMember extends User {
   role: 'admin' | 'member';
@@ -214,7 +255,7 @@ export interface Task_proj {
   id: number;
   team_id: number | null;
   project_id: number | null;
-  task_list_name: string | null,
+  task_list_name: string | null;
   project_name: string | null;
   task_list_id: number | null;
   parent_task_id: number | null;
@@ -256,7 +297,7 @@ export interface ReportData {
   byTask: { id: number; title: string; total_seconds: number }[];
 }
 
-export interface ColaboratorReportDetails{
+export interface ColaboratorReportDetails {
   title: string;
   id: number;
   status: string;

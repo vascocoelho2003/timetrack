@@ -1,4 +1,4 @@
-@if (auth.isLoggedIn) {
+@if (auth.isLoggedIn && !auth.isAdmin) {
   <header class="app-header">
     <div class="header-left">
       <a routerLink="/reports" class="logo">
@@ -103,6 +103,85 @@
         </button>
       </div>
     }
+    <div class="header-user">
+      <span routerLink="/my-profile" class="header-username"><u>{{ auth.currentUser()?.username }}</u></span>
+      <button
+        class="btn btn-ghost btn-sm theme-toggle"
+        type="button"
+        (click)="toggleDarkMode()"
+        [attr.aria-label]="darkMode ? 'Ativar modo claro' : 'Ativar modo escuro'">
+        {{ darkMode ? '☀️ Claro' : '🌙 Escuro' }}
+      </button>
+      <button
+        class="btn btn-ghost btn-sm"
+        (click)="auth.logout()">
+        Sair
+      </button>
+    </div>
+  </header>
+}
+
+@if (auth.isLoggedIn && auth.isAdmin) {
+  <header class="app-header">
+    <div class="header-left">
+      <a routerLink="/reports" class="logo">
+        <span style="font-weight: 300;">JC Ribeiro - Task Management</span>
+      </a>
+      <button
+        class="burger-btn"
+        type="button"
+        (click)="toggleMenu()"
+        [attr.aria-expanded]="menuOpen"
+        aria-label="Abrir menu">
+        ☰
+      </button>
+    </div>
+    <nav
+      class="header-nav"
+      [class.open]="menuOpen">
+      <a
+        routerLink="/admin-panel/users"
+        class="nav-link"
+        [class.active]="isActive('/admin-panel/users')"
+        (click)="closeMenu()">
+        Utilizadores
+      </a>
+      <a
+      routerLink="/admin-panel/departments"
+      class="nav-link"
+      [class.active]="isActive('/admin-panel/departments')"
+      (click)="closeMenu()">
+      Departamentos
+      </a>
+      <a
+      routerLink="/admin-panel/teams"
+      class="nav-link"
+      [class.active]="isActive('/admin-panel/teams')"
+      (click)="closeMenu()">
+      Equipas
+      </a>
+      <div class="nav-account">
+        <a
+          routerLink="/my-profile"
+          class="nav-link"
+          [class.active]="isActive('/my-profile')"
+          (click)="closeMenu()">
+          {{ auth.currentUser()?.username }}
+        </a>
+        <button
+          class="nav-link nav-link-btn"
+          type="button"
+          (click)="toggleDarkMode(); closeMenu()">
+          {{ darkMode ? '☀️ Claro' : '🌙 Escuro' }}
+        </button>
+        <button
+          class="nav-link nav-link-btn"
+          type="button"
+          (click)="auth.logout(); closeMenu()">
+          Sair
+        </button>
+      </div>
+    </nav>
     <div class="header-user">
       <span routerLink="/my-profile" class="header-username"><u>{{ auth.currentUser()?.username }}</u></span>
       <button

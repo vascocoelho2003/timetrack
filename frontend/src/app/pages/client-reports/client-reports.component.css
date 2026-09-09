@@ -65,6 +65,13 @@
 .task-filters mat-checkbox {
   display: inline-flex;
   align-items: center;
+  color: var(--text);
+  --mdc-form-field-label-text-color: var(--text);
+}
+
+.task-filters mat-checkbox ::ng-deep .mdc-label,
+.task-filters mat-checkbox ::ng-deep label {
+  color: var(--text);
 }
 
 .toolbar-left {

@@ -1,45 +1,68 @@
-const express = require('express');
-const { db } = require('../db');
-const { authMiddleware } = require('../middleware/auth');
-const { createRecurrency, recurrenceRuleExists, getRecurrency } = require('../controllers/recurrency_controller');
-const { parseDocsUrl } = require('../utils/url');
-const { checkDependencies } = require('../utils/dependenciesRules');
-  const {
-    isTeamAdmin,
-    canViewTask,
-    getTaskWithContext,
-    attachAssignees,
-    isTaskAssignee,
-    isPersonalTaskOwner,
-  } = require('../utils/permissions');
+const express = require("express");
+const { db } = require("../db");
+const { authMiddleware } = require("../middleware/auth");
+const {
+  createRecurrency,
+  recurrenceRuleExists,
+  getRecurrency,
+} = require("../controllers/recurrency_controller");
+const { parseDocsUrl } = require("../utils/url");
+const { checkDependencies } = require("../utils/dependenciesRules");
+const {
+  isTeamAdmin,
+  canViewTask,
+  getTaskWithContext,
+  attachAssignees,
+  isTaskAssignee,
+  isPersonalTaskOwner,
+} = require("../utils/permissions");
 
-const { getDaysBetweenAlertAndDue } = require('../utils/diffDates');
+const { getDaysBetweenAlertAndDue } = require("../utils/diffDates");
 const router = express.Router();
 router.use(authMiddleware);
 
+/**
+ * Atribui uma tarefa a um utilizador
+ */
 function setAssignees(taskId, assigneeIds) {
-  db.prepare('DELETE FROM task_assignees WHERE task_id = ?').run(taskId);
-  const insert = db.prepare('INSERT INTO task_assignees (task_id, user_id) VALUES (?, ?)');
+  db.prepare("DELETE FROM task_assignees WHERE task_id = ?").run(taskId);
+  const insert = db.prepare(
+    "INSERT INTO task_assignees (task_id, user_id) VALUES (?, ?)",
+  );
   for (const uid of assigneeIds || []) {
     insert.run(taskId, uid);
   }
 }
 
-const DEPENDENCY_TYPES = ['SS', 'FS', 'FF', 'SF'];
+const DEPENDENCY_TYPES = ["SS", "FS", "FF", "SF"];
 
+/**
+ * Obtém as dependências da tarefa
+ * @param {*} taskId
+ * @returns
+ */
 function getTaskDependencies(taskId) {
-  return db.prepare(`
+  return db
+    .prepare(
+      `
     SELECT d.predecessor, d.successor, d.dependency_type,
            t.title AS predecessor_title, t.status AS predecessor_status
     FROM dependencies d
     JOIN tasks t ON t.id = d.predecessor
     WHERE d.successor = ?
-  `).all(taskId);
+  `,
+    )
+    .all(taskId);
 }
 
-router.get('/',(req,res)=>{
+/**
+ * Obtém as tarefas do utilizador
+ */
+router.get("/", (req, res) => {
   const user_id = req.user.id;
-  tasks = db.prepare(`SELECT
+  tasks = db
+    .prepare(
+      `SELECT
     t.*, tl.name as task_list_name,
     p.id AS project_id,
     p.name AS project_name,
@@ -48,9 +71,11 @@ router.get('/',(req,res)=>{
     JOIN task_assignees ta ON ta.task_id = t.id
     LEFT JOIN task_lists tl ON tl.id = t.task_list_id
     LEFT JOIN projects p ON p.id = tl.project_id
-    WHERE ta.user_id = ? ORDER BY t.due_date DESC`).all(user_id);
+    WHERE ta.user_id = ? ORDER BY t.due_date DESC`,
+    )
+    .all(user_id);
   return res.status(200).json(tasks);
-})
+});
 
 /**
  * @openapi
@@ -90,16 +115,16 @@ router.get('/',(req,res)=>{
  *       201:
  *         description: Tarefa criada com sucesso
  */
-router.post('/', (req, res) => {
+router.post("/", (req, res) => {
   const {
     taskListId = null,
     title,
-    description = '',
-    status = 'todo',
-    priority = 'medium',
+    description = "",
+    status = "todo",
+    priority = "medium",
     assigneeIds = [],
     parentTaskId = null,
-    docs_url = '',
+    docs_url = "",
   } = req.body;
 
   let { dueDate = null, alertDate = null } = req.body;
@@ -108,19 +133,29 @@ router.post('/', (req, res) => {
   created_by_user = req.user.id;
 
   if (!title?.trim()) {
-    return res.status(400).json({ error: 'taskListId e título são obrigatórios' });
+    return res
+      .status(400)
+      .json({ error: "taskListId e título são obrigatórios" });
   }
 
   const parsedDocsUrl = parseDocsUrl(docs_url);
   if (!parsedDocsUrl.ok) {
-    return res.status(400).json({ error: 'O campo Docs tem de ser um URL válido (ex: https://exemplo.com)' });
+    return res
+      .status(400)
+      .json({
+        error:
+          "O campo Docs tem de ser um URL válido (ex: https://exemplo.com)",
+      });
   }
 
-  const list = db.prepare('SELECT tl.*, p.team_id FROM task_lists tl JOIN projects p ON p.id = tl.project_id WHERE tl.id = ?')
+  const list = db
+    .prepare(
+      "SELECT tl.*, p.team_id FROM task_lists tl JOIN projects p ON p.id = tl.project_id WHERE tl.id = ?",
+    )
     .get(taskListId);
-  if (!list) return res.status(404).json({ error: 'Lista não encontrada' });
+  if (!list) return res.status(404).json({ error: "Lista não encontrada" });
   if (!isTeamAdmin(req.user.id, list.team_id)) {
-    return res.status(403).json({ error: 'Apenas admins podem criar tarefas' });
+    return res.status(403).json({ error: "Apenas admins podem criar tarefas" });
   }
   if (alertDate && dueDate) {
     alert_offset_days = getDaysBetweenAlertAndDue(alertDate, dueDate);
@@ -130,23 +165,41 @@ router.post('/', (req, res) => {
     alertDate = null;
     dueDate = null;
   }
-  
 
-  const result = db.prepare(`
+  const result = db
+    .prepare(
+      `
     INSERT INTO tasks (task_list_id, title, description, status, priority, due_date, created_by_user_id, next_alert_date, docs_url,alert_offset_days)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?)
-  `).run(taskListId, title.trim(), description.trim(), status, priority, dueDate, created_by_user, alertDate, parsedDocsUrl.url, alert_offset_days);
+  `,
+    )
+    .run(
+      taskListId,
+      title.trim(),
+      description.trim(),
+      status,
+      priority,
+      dueDate,
+      created_by_user,
+      alertDate,
+      parsedDocsUrl.url,
+      alert_offset_days,
+    );
 
   const taskId = result.lastInsertRowid;
   setAssignees(taskId, assigneeIds);
 
-  const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId);
+  const task = db.prepare("SELECT * FROM tasks WHERE id = ?").get(taskId);
   res.status(201).json({ ...task, assigneeIds: assigneeIds || [] });
 });
 
-
-router.get('/my_tasks',(req,res)=> {
-  const tasks = db.prepare(`
+/**
+ * Obtém as tarefas do utiilizador logado
+ */
+router.get("/my_tasks", (req, res) => {
+  const tasks = db
+    .prepare(
+      `
     SELECT
         t.id,
         t.title,
@@ -183,10 +236,12 @@ router.get('/my_tasks',(req,res)=> {
         END,
         t.due_date ASC,
         t.created_at DESC;
-`).all(req.user.id);
+`,
+    )
+    .all(req.user.id);
 
-return res.status(200).json(tasks);
-})
+  return res.status(200).json(tasks);
+});
 
 /**
  * @openapi
@@ -207,25 +262,29 @@ return res.status(200).json(tasks);
  *       200:
  *         description: Tarefa encontrada
  */
-router.get('/:taskId', (req, res) => {
+router.get("/:taskId", (req, res) => {
   const taskId = +req.params.taskId;
   if (!canViewTask(req.user.id, taskId)) {
-    return res.status(403).json({ error: 'Sem acesso à tarefa' });
+    return res.status(403).json({ error: "Sem acesso à tarefa" });
   }
 
-  const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId);
-  const assigneeIds = db.prepare('SELECT user_id FROM task_assignees WHERE task_id = ?')
-    .all(taskId).map(r => r.user_id);
+  const task = db.prepare("SELECT * FROM tasks WHERE id = ?").get(taskId);
+  const assigneeIds = db
+    .prepare("SELECT user_id FROM task_assignees WHERE task_id = ?")
+    .all(taskId)
+    .map((r) => r.user_id);
 
-  const subtasks = db.prepare(
-    'SELECT * FROM tasks ORDER BY created_at'
-  ).all();
+  const subtasks = db.prepare("SELECT * FROM tasks ORDER BY created_at").all();
 
-  const comments = db.prepare(`
+  const comments = db
+    .prepare(
+      `
     SELECT c.*, u.username as user_name
     FROM comments c JOIN users u ON u.id = c.user_id
     WHERE c.task_id = ? ORDER BY c.created_at
-  `).all(taskId);
+  `,
+    )
+    .all(taskId);
 
   res.json({
     ...task,
@@ -237,7 +296,7 @@ router.get('/:taskId', (req, res) => {
   });
 });
 
-router.get('/recurrenceexists/:taskId/', (req, res) => {
+router.get("/recurrenceexists/:taskId/", (req, res) => {
   const taskId = +req.params.taskId;
   const exists = recurrenceRuleExists(taskId);
   return res.status(200).json({ exists });
@@ -284,27 +343,45 @@ router.get('/recurrenceexists/:taskId/', (req, res) => {
  *       200:
  *         description: Tarefa atualizada
  */
-router.put('/:taskId', (req, res) => {
-
+router.put("/:taskId", (req, res) => {
   const taskId = +req.params.taskId;
   const ctx = getTaskWithContext(taskId);
-  if (!ctx) return res.status(404).json({ error: 'Tarefa não encontrada' });
+  if (!ctx) return res.status(404).json({ error: "Tarefa não encontrada" });
 
   const personalOwner = isPersonalTaskOwner(req.user.id, ctx);
-  const admin = ctx.team_id ? isTeamAdmin(req.user.id, ctx.team_id) : personalOwner;
+  const admin = ctx.team_id
+    ? isTeamAdmin(req.user.id, ctx.team_id)
+    : personalOwner;
   const assignee = isTaskAssignee(req.user.id, taskId);
 
   if (!admin && !assignee) {
-    return res.status(403).json({ error: 'Apenas o utilizador atribuído pode alterar o estado' });
+    return res
+      .status(403)
+      .json({ error: "Apenas o utilizador atribuído pode alterar o estado" });
   }
 
-  const { title, description, status, priority, dueDate, assigneeIds, clientId, next_alert_date, docs_url } = req.body;
+  const {
+    title,
+    description,
+    status,
+    priority,
+    dueDate,
+    assigneeIds,
+    clientId,
+    next_alert_date,
+    docs_url,
+  } = req.body;
 
   let parsedDocsUrl = null;
   if (docs_url !== undefined) {
     parsedDocsUrl = parseDocsUrl(docs_url);
     if (!parsedDocsUrl.ok) {
-      return res.status(400).json({ error: 'O campo Docs tem de ser um URL válido (ex: https://exemplo.com)' });
+      return res
+        .status(400)
+        .json({
+          error:
+            "O campo Docs tem de ser um URL válido (ex: https://exemplo.com)",
+        });
     }
   }
 
@@ -319,7 +396,8 @@ router.put('/:taskId', (req, res) => {
   }
 
   if (admin) {
-    db.prepare(`
+    db.prepare(
+      `
       UPDATE tasks SET
         title = COALESCE(?, title),
         description = COALESCE(?, description),
@@ -330,90 +408,129 @@ router.put('/:taskId', (req, res) => {
         client_id = COALESCE(?, client_id),
         docs_url = COALESCE(?, docs_url)
       WHERE id = ?
-    `).run(
+    `,
+    ).run(
       title?.trim() ?? null,
-      description !== undefined ? (description !== null ? description.trim() : null) : null,
+      description !== undefined
+        ? description !== null
+          ? description.trim()
+          : null
+        : null,
       status ?? null,
       priority ?? null,
       dueDate !== undefined ? dueDate : null,
-      next_alert_date !== undefined ? next_alert_date: null,
+      next_alert_date !== undefined ? next_alert_date : null,
       clientId !== undefined ? clientId : null,
-      parsedDocsUrl ? (parsedDocsUrl.url ?? '') : null,
-      taskId
+      parsedDocsUrl ? (parsedDocsUrl.url ?? "") : null,
+      taskId,
     );
     if (assigneeIds !== undefined) setAssignees(taskId, assigneeIds);
     const recurrence = getRecurrency(taskId);
-    if (dueDate && (recurrence?.frequency === 'monthly' || recurrence?.frequency === 'yearly')) {
-      const [, month, day] = String(dueDate).slice(0, 10).split('-').map(Number);
-      db.prepare(`
+    if (
+      dueDate &&
+      (recurrence?.frequency === "monthly" ||
+        recurrence?.frequency === "yearly")
+    ) {
+      const [, month, day] = String(dueDate)
+        .slice(0, 10)
+        .split("-")
+        .map(Number);
+      db.prepare(
+        `
         UPDATE recurrence_rules
         SET day_of_month = ?, month_of_year = CASE WHEN frequency = 'yearly' THEN ? ELSE month_of_year END
         WHERE task_id = ?
-      `).run(day, month, taskId);
+      `,
+      ).run(day, month, taskId);
     }
-    if (status === 'done' && recurrenceRuleExists(taskId)) {
-      createRecurrency(taskId,req.user.id);
+    if (status === "done" && recurrenceRuleExists(taskId)) {
+      createRecurrency(taskId, req.user.id);
     }
   } else {
-    db.prepare(`
+    db.prepare(
+      `
       UPDATE tasks SET
         status = COALESCE(?, status),
         client_id = COALESCE(?, client_id),
         docs_url = COALESCE(?, docs_url)
       WHERE id = ?
-    `).run(
+    `,
+    ).run(
       status ?? null,
       clientId !== undefined ? clientId : null,
-      parsedDocsUrl ? (parsedDocsUrl.url ?? '') : null,
-      taskId
+      parsedDocsUrl ? (parsedDocsUrl.url ?? "") : null,
+      taskId,
     );
-    if (status === 'done' && recurrenceRuleExists(taskId)===true) {
-      createRecurrency(taskId,req.user.id);
+    if (status === "done" && recurrenceRuleExists(taskId) === true) {
+      createRecurrency(taskId, req.user.id);
     }
   }
 
-  const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId);
-  const ids = db.prepare('SELECT user_id FROM task_assignees WHERE task_id = ?')
-    .all(taskId).map(r => r.user_id);
+  const task = db.prepare("SELECT * FROM tasks WHERE id = ?").get(taskId);
+  const ids = db
+    .prepare("SELECT user_id FROM task_assignees WHERE task_id = ?")
+    .all(taskId)
+    .map((r) => r.user_id);
   res.json({ ...task, assigneeIds: ids });
 });
 
-router.get('/:taskId/dependencies', (req, res) => {
+/**
+ * Obtém as dependencias da tarefa com o ID enviado por parâmetro
+ */
+router.get("/:taskId/dependencies", (req, res) => {
   const taskId = +req.params.taskId;
   if (!canViewTask(req.user.id, taskId)) {
-    return res.status(403).json({ error: 'Sem acesso à tarefa' });
+    return res.status(403).json({ error: "Sem acesso à tarefa" });
   }
   res.json(getTaskDependencies(taskId));
 });
 
-router.post('/create_dependency/:taskId', (req, res) => {
+/**
+ * Cria uma dependência para a tarefa com o id enviado por parâmetro
+ */
+router.post("/create_dependency/:taskId", (req, res) => {
   const taskId = +req.params.taskId;
   const predecessor = +req.body.predecessor;
-  const dependency_type = String(req.body.dependency_type || 'FF').toUpperCase();
+  const dependency_type = String(
+    req.body.dependency_type || "FF",
+  ).toUpperCase();
 
   const ctx = getTaskWithContext(taskId);
-  if (!ctx) return res.status(404).json({ error: 'Tarefa não encontrada' });
+  if (!ctx) return res.status(404).json({ error: "Tarefa não encontrada" });
   const personalOwner = isPersonalTaskOwner(req.user.id, ctx);
-  const admin = ctx.team_id ? isTeamAdmin(req.user.id, ctx.team_id) : personalOwner;
+  const admin = ctx.team_id
+    ? isTeamAdmin(req.user.id, ctx.team_id)
+    : personalOwner;
   if (!admin) {
-    return res.status(403).json({ error: 'Apenas administradores podem gerir dependências' });
+    return res
+      .status(403)
+      .json({ error: "Apenas administradores podem gerir dependências" });
   }
   if (!predecessor || !DEPENDENCY_TYPES.includes(dependency_type)) {
-    return res.status(400).json({ error: 'Predecessora e tipo de dependência são obrigatórios' });
+    return res
+      .status(400)
+      .json({ error: "Predecessora e tipo de dependência são obrigatórios" });
   }
   if (predecessor === taskId) {
-    return res.status(400).json({ error: 'Uma tarefa não pode depender de si própria' });
+    return res
+      .status(400)
+      .json({ error: "Uma tarefa não pode depender de si própria" });
   }
 
-  const pred = db.prepare('SELECT id, title, status FROM tasks WHERE id = ?').get(predecessor);
-  if (!pred) return res.status(404).json({ error: 'Tarefa predecessora não encontrada' });
+  const pred = db
+    .prepare("SELECT id, title, status FROM tasks WHERE id = ?")
+    .get(predecessor);
+  if (!pred)
+    return res
+      .status(404)
+      .json({ error: "Tarefa predecessora não encontrada" });
 
   try {
     db.prepare(
-      `INSERT INTO dependencies (predecessor, successor, dependency_type) VALUES (?, ?, ?)`
+      `INSERT INTO dependencies (predecessor, successor, dependency_type) VALUES (?, ?, ?)`,
     ).run(predecessor, taskId, dependency_type);
   } catch {
-    return res.status(409).json({ error: 'Esta dependência já existe' });
+    return res.status(409).json({ error: "Esta dependência já existe" });
   }
 
   return res.status(200).json({
@@ -425,7 +542,10 @@ router.post('/create_dependency/:taskId', (req, res) => {
   });
 });
 
-router.put('/update_dependency/:taskId', (req, res) => {
+/**
+ * Atualiza a dependência da tarefa com o id enviado por parâmetro
+ */
+router.put("/update_dependency/:taskId", (req, res) => {
   const taskId = +req.params.taskId;
   const predecessor = +req.body.predecessor;
   const dependency_type = req.body.dependency_type
@@ -433,28 +553,36 @@ router.put('/update_dependency/:taskId', (req, res) => {
     : null;
 
   const ctx = getTaskWithContext(taskId);
-  if (!ctx) return res.status(404).json({ error: 'Tarefa não encontrada' });
+  if (!ctx) return res.status(404).json({ error: "Tarefa não encontrada" });
   const personalOwner = isPersonalTaskOwner(req.user.id, ctx);
-  const admin = ctx.team_id ? isTeamAdmin(req.user.id, ctx.team_id) : personalOwner;
+  const admin = ctx.team_id
+    ? isTeamAdmin(req.user.id, ctx.team_id)
+    : personalOwner;
   if (!admin) {
-    return res.status(403).json({ error: 'Apenas administradores podem gerir dependências' });
+    return res
+      .status(403)
+      .json({ error: "Apenas administradores podem gerir dependências" });
   }
   if (!predecessor) {
-    return res.status(400).json({ error: 'Predecessora é obrigatória' });
+    return res.status(400).json({ error: "Predecessora é obrigatória" });
   }
   if (dependency_type && !DEPENDENCY_TYPES.includes(dependency_type)) {
-    return res.status(400).json({ error: 'Tipo de dependência inválido' });
+    return res.status(400).json({ error: "Tipo de dependência inválido" });
   }
 
-  const result = db.prepare(
-    `UPDATE dependencies SET dependency_type = COALESCE(?, dependency_type) WHERE predecessor = ? AND successor = ?`
-  ).run(dependency_type, predecessor, taskId);
+  const result = db
+    .prepare(
+      `UPDATE dependencies SET dependency_type = COALESCE(?, dependency_type) WHERE predecessor = ? AND successor = ?`,
+    )
+    .run(dependency_type, predecessor, taskId);
 
   if (result.changes === 0) {
-    return res.status(404).json({ error: 'Dependência não encontrada' });
+    return res.status(404).json({ error: "Dependência não encontrada" });
   }
 
-  const dep = getTaskDependencies(taskId).find(d => d.predecessor === predecessor);
+  const dep = getTaskDependencies(taskId).find(
+    (d) => d.predecessor === predecessor,
+  );
   return res.status(200).json(dep);
 });
 
@@ -477,18 +605,20 @@ router.put('/update_dependency/:taskId', (req, res) => {
  *       204:
  *         description: Tarefa eliminada com sucesso
  */
-router.delete('/:taskId', (req, res) => {
+router.delete("/:taskId", (req, res) => {
   const taskId = +req.params.taskId;
   const ctx = getTaskWithContext(taskId);
-  if (!ctx) return res.status(404).json({ error: 'Tarefa não encontrada' });
+  if (!ctx) return res.status(404).json({ error: "Tarefa não encontrada" });
   const canDelete = ctx.team_id
     ? isTeamAdmin(req.user.id, ctx.team_id)
     : isPersonalTaskOwner(req.user.id, ctx);
   if (!canDelete) {
-    return res.status(403).json({ error: 'Apenas admins podem eliminar tarefas' });
+    return res
+      .status(403)
+      .json({ error: "Apenas admins podem eliminar tarefas" });
   }
 
-  db.prepare('DELETE FROM tasks WHERE id = ?').run(taskId);
+  db.prepare("DELETE FROM tasks WHERE id = ?").run(taskId);
   res.status(204).send();
 });
 
@@ -521,25 +651,31 @@ router.delete('/:taskId', (req, res) => {
  *       201:
  *         description: Comentário criado com sucesso
  */
-router.post('/:taskId/comments', (req, res) => {
+router.post("/:taskId/comments", (req, res) => {
   const taskId = +req.params.taskId;
   const { content } = req.body;
 
   if (!canViewTask(req.user.id, taskId)) {
-    return res.status(403).json({ error: 'Sem acesso' });
+    return res.status(403).json({ error: "Sem acesso" });
   }
   if (!content?.trim()) {
-    return res.status(400).json({ error: 'Comentário vazio' });
+    return res.status(400).json({ error: "Comentário vazio" });
   }
 
-  const result = db.prepare(
-    'INSERT INTO comments (task_id, user_id, content) VALUES (?, ?, ?)'
-  ).run(taskId, req.user.id, content.trim());
+  const result = db
+    .prepare(
+      "INSERT INTO comments (task_id, user_id, content) VALUES (?, ?, ?)",
+    )
+    .run(taskId, req.user.id, content.trim());
 
-  const comment = db.prepare(`
+  const comment = db
+    .prepare(
+      `
     SELECT c.*, u.username as user_name FROM comments c
     JOIN users u ON u.id = c.user_id WHERE c.id = ?
-  `).get(result.lastInsertRowid);
+  `,
+    )
+    .get(result.lastInsertRowid);
 
   res.status(201).json(comment);
 });
@@ -568,23 +704,27 @@ router.post('/:taskId/comments', (req, res) => {
  *       204:
  *         description: Comentário eliminado com sucesso
  */
-router.delete('/:taskId/comments/:commentId', (req, res) => {
+router.delete("/:taskId/comments/:commentId", (req, res) => {
   const taskId = +req.params.taskId;
   const commentId = +req.params.commentId;
 
   if (!canViewTask(req.user.id, taskId)) {
-    return res.status(403).json({ error: 'Sem acesso' });
+    return res.status(403).json({ error: "Sem acesso" });
   }
 
-  const comment = db.prepare('SELECT * FROM comments WHERE id = ?').get(commentId);
+  const comment = db
+    .prepare("SELECT * FROM comments WHERE id = ?")
+    .get(commentId);
   if (!comment) {
-    return res.status(404).json({ error: 'Comentário não encontrado' });
+    return res.status(404).json({ error: "Comentário não encontrado" });
   }
   if (comment.user_id !== req.user.id) {
-    return res.status(403).json({ error: 'Apenas o autor pode eliminar o comentário' });
+    return res
+      .status(403)
+      .json({ error: "Apenas o autor pode eliminar o comentário" });
   }
 
-  db.prepare('DELETE FROM comments WHERE id = ?').run(commentId);
+  db.prepare("DELETE FROM comments WHERE id = ?").run(commentId);
   res.status(204).send();
 });
 
@@ -601,26 +741,31 @@ router.delete('/:taskId/comments/:commentId', (req, res) => {
  *       200:
  *         description: Tarefas fechadas encontradas
  */
-router.get('/:projectId/get_closed_tasks', (req, res) => {
+router.get("/:projectId/get_closed_tasks", (req, res) => {
   const { projectId } = req.params;
 
-  const tasks = db.prepare(`SELECT * FROM tasks WHERE status = 'done' AND task_list_id IN(SELECT id FROM task_lists WHERE project_id = ?)`).all(projectId);
-  const assigneesStmt = db.prepare(`SELECT u.id, u.username FROM task_assignees ta JOIN users u ON u.id = ta.user_id WHERE ta.task_id = ?`);
+  const tasks = db
+    .prepare(
+      `SELECT * FROM tasks WHERE status = 'done' AND task_list_id IN(SELECT id FROM task_lists WHERE project_id = ?)`,
+    )
+    .all(projectId);
+  const assigneesStmt = db.prepare(
+    `SELECT u.id, u.username FROM task_assignees ta JOIN users u ON u.id = ta.user_id WHERE ta.task_id = ?`,
+  );
 
-  const result = tasks.map(task => ({
+  const result = tasks.map((task) => ({
     ...task,
-    assignees: assigneesStmt.all(task.id)
+    assignees: assigneesStmt.all(task.id),
   }));
-  
+
   return res.status(200).json(result);
 });
 
-router.get('',(req,res)=>{
-  const tasks = db.prepare(`SELECT * FROM tasks`).all()
+router.get("", (req, res) => {
+  const tasks = db.prepare(`SELECT * FROM tasks`).all();
 
-  return res.status(200).json(tasks)
-})
-
+  return res.status(200).json(tasks);
+});
 
 /**
  * @openapi
@@ -667,73 +812,130 @@ router.get('',(req,res)=>{
  *       201:
  *         description: Regra de recorrência criada com sucesso
  */
-router.post('/recurrence/:taskId', (req,res)=>{
+router.post("/recurrence/:taskId", (req, res) => {
   const taskId = +req.params.taskId;
-  const { frequency, interval, weekday, day_of_month, month_of_year, start_date, end_date, rule_type } = req.body;
+  const {
+    frequency,
+    interval,
+    weekday,
+    day_of_month,
+    month_of_year,
+    start_date,
+    end_date,
+    rule_type,
+  } = req.body;
 
   const task = getTaskWithContext(taskId);
-  if (!task) return res.status(404).json({ message: 'Tarefa não encontrada' });
+  if (!task) return res.status(404).json({ message: "Tarefa não encontrada" });
   if (!isTeamAdmin(req.user.id, task.team_id)) {
-    return res.status(403).json({ message: 'Apenas admins podem gerir recorrências' });
+    return res
+      .status(403)
+      .json({ message: "Apenas admins podem gerir recorrências" });
   }
 
   if (getRecurrency(taskId)) {
-    return res.status(400).json({ message: 'Regra de recorrência já existe para esta tarefa' });
+    return res
+      .status(400)
+      .json({ message: "Regra de recorrência já existe para esta tarefa" });
   }
 
   let calculatedDayOfMonth = day_of_month;
   let calculatedMonthOfYear = month_of_year;
-  if (frequency === 'monthly' || frequency === 'yearly') {
+  if (frequency === "monthly" || frequency === "yearly") {
     if (!task.due_date) {
-      return res.status(400).json({ message: 'As frequências mensal e anual requerem um prazo na tarefa' });
+      return res
+        .status(400)
+        .json({
+          message: "As frequências mensal e anual requerem um prazo na tarefa",
+        });
     }
-    const [, month, day] = String(task.due_date).slice(0, 10).split('-').map(Number);
+    const [, month, day] = String(task.due_date)
+      .slice(0, 10)
+      .split("-")
+      .map(Number);
     calculatedDayOfMonth = day;
-    if (frequency === 'yearly') calculatedMonthOfYear = month;
+    if (frequency === "yearly") calculatedMonthOfYear = month;
   }
 
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO recurrence_rules (task_id, frequency, interval, weekday, day_of_month, month_of_year, start_date, end_date, rule_type)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(taskId, frequency, interval, weekday, calculatedDayOfMonth, calculatedMonthOfYear, start_date, end_date, rule_type);
+  `,
+  ).run(
+    taskId,
+    frequency,
+    interval,
+    weekday,
+    calculatedDayOfMonth,
+    calculatedMonthOfYear,
+    start_date,
+    end_date,
+    rule_type,
+  );
 
   res.status(201).json({
-    message: 'Regra de recorrência criada com sucesso',
+    message: "Regra de recorrência criada com sucesso",
     recurrence: getRecurrency(taskId),
   });
 });
 
-router.put('/recurrence/:taskId', (req, res) => {
+/**
+ * Atualiza a recurrência da tarefa com o id enviado por parâmetro
+ */
+router.put("/recurrence/:taskId", (req, res) => {
   const taskId = +req.params.taskId;
   const task = getTaskWithContext(taskId);
-  if (!task) return res.status(404).json({ message: 'Tarefa não encontrada' });
+  if (!task) return res.status(404).json({ message: "Tarefa não encontrada" });
   if (!isTeamAdmin(req.user.id, task.team_id)) {
-    return res.status(403).json({ message: 'Apenas admins podem gerir recorrências' });
+    return res
+      .status(403)
+      .json({ message: "Apenas admins podem gerir recorrências" });
   }
 
   const recurrence = getRecurrency(taskId);
   if (!recurrence) {
-    return res.status(404).json({ message: 'Regra de recorrência não encontrada' });
+    return res
+      .status(404)
+      .json({ message: "Regra de recorrência não encontrada" });
   }
 
-  const { frequency, interval, weekday, day_of_month, month_of_year, start_date, end_date, rule_type } = req.body;
+  const {
+    frequency,
+    interval,
+    weekday,
+    day_of_month,
+    month_of_year,
+    start_date,
+    end_date,
+    rule_type,
+  } = req.body;
   let calculatedDayOfMonth = day_of_month;
   let calculatedMonthOfYear = month_of_year;
-  if (frequency === 'monthly' || frequency === 'yearly') {
+  if (frequency === "monthly" || frequency === "yearly") {
     if (!task.due_date) {
-      return res.status(400).json({ message: 'As frequências mensal e anual requerem um prazo na tarefa' });
+      return res
+        .status(400)
+        .json({
+          message: "As frequências mensal e anual requerem um prazo na tarefa",
+        });
     }
-    const [, month, day] = String(task.due_date).slice(0, 10).split('-').map(Number);
+    const [, month, day] = String(task.due_date)
+      .slice(0, 10)
+      .split("-")
+      .map(Number);
     calculatedDayOfMonth = day;
-    if (frequency === 'yearly') calculatedMonthOfYear = month;
+    if (frequency === "yearly") calculatedMonthOfYear = month;
   }
 
-  db.prepare(`
+  db.prepare(
+    `
     UPDATE recurrence_rules
     SET frequency = ?, interval = ?, weekday = ?, day_of_month = ?,
         month_of_year = ?, start_date = ?, end_date = ?, rule_type = ?
     WHERE task_id = ?
-  `).run(
+  `,
+  ).run(
     frequency,
     interval,
     weekday ?? null,
@@ -742,30 +944,51 @@ router.put('/recurrence/:taskId', (req, res) => {
     start_date,
     end_date ?? null,
     rule_type,
-    taskId
+    taskId,
   );
 
-  res.json({ message: 'Regra de recorrência atualizada com sucesso', recurrence: getRecurrency(taskId) });
+  res.json({
+    message: "Regra de recorrência atualizada com sucesso",
+    recurrence: getRecurrency(taskId),
+  });
 });
 
-router.put('/change_recurrence_status/:taskId', (req, res) => {
+/**
+ * Altera o estado da recurrência de uma tarefa (Ativo ou Inativo)
+ */
+router.put("/change_recurrence_status/:taskId", (req, res) => {
   const taskId = +req.params.taskId;
   const task = getTaskWithContext(taskId);
   const recurrence = getRecurrency(task);
 
   if (!recurrence) {
-    return res.status(404).json({ message: 'Regra de recorrência não encontrada' });
+    return res
+      .status(404)
+      .json({ message: "Regra de recorrência não encontrada" });
   }
 
-  const isActive = recurrence.active === 1 || recurrence.active === true || String(recurrence.active).toLowerCase() === 'true';
+  const isActive =
+    recurrence.active === 1 ||
+    recurrence.active === true ||
+    String(recurrence.active).toLowerCase() === "true";
 
   if (isActive) {
-    db.prepare('UPDATE recurrence_rules SET active = ? WHERE task_id = ?').run(0, taskId);
-    return res.status(200).json({ message: 'Regra de recorrência desativada com sucesso' });
+    db.prepare("UPDATE recurrence_rules SET active = ? WHERE task_id = ?").run(
+      0,
+      taskId,
+    );
+    return res
+      .status(200)
+      .json({ message: "Regra de recorrência desativada com sucesso" });
   }
 
-  db.prepare('UPDATE recurrence_rules SET active = ? WHERE task_id = ?').run(1, taskId);
-  return res.status(200).json({ message: 'Regra de recorrência ativada com sucesso' });
+  db.prepare("UPDATE recurrence_rules SET active = ? WHERE task_id = ?").run(
+    1,
+    taskId,
+  );
+  return res
+    .status(200)
+    .json({ message: "Regra de recorrência ativada com sucesso" });
 });
 
 module.exports = router;

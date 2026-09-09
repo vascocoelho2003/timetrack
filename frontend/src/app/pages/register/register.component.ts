@@ -63,7 +63,7 @@ export class RegisterComponent implements OnInit{
     this.loading = true;
 
     this.auth.register(this.email, this.password, this.passwordConfirm, this.username, this.departmentId).subscribe({
-      next: () => this.router.navigate(['/teams']),
+      next: () => this.router.navigate([this.auth.homePath]),
       error: (err) => {
         this.loading = false;
         this.error = err.error?.error || 'Erro ao registar';

@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs/operators';
 import { User } from './models';
-import {environment} from '../../environments/environments';
+import { environment } from '../../environments/environments';
 
 const API = environment.apiUrl;
 const TOKEN_KEY = 'timetrack_token';
@@ -15,7 +15,7 @@ export class AuthService {
 
   constructor(
     private http: HttpClient,
-    private router: Router
+    private router: Router,
   ) {}
 
   get token(): string | null {
@@ -26,25 +26,55 @@ export class AuthService {
     return !!this.token;
   }
 
-  register(email: string, password: string, passwordConfirm: string, username: string, departmentId: number) {
-    return this.http.post<{ user: User; token: string }>(`${API}/auth/register`, {
-      email, password, passwordConfirm, username, department_id: departmentId,
-    }).pipe(tap(res => this.setSession(res)));
+  get isAdmin(): boolean {
+    return this.currentUser()?.profile === 'admin';
+  }
+
+  get homePath(): string {
+    return this.isAdmin ? '/admin-panel' : '/reports';
+  }
+
+  register(
+    email: string,
+    password: string,
+    passwordConfirm: string,
+    username: string,
+    departmentId: number,
+  ) {
+    return this.http
+      .post<{ user: User; token: string }>(`${API}/auth/register`, {
+        email,
+        password,
+        passwordConfirm,
+        username,
+        department_id: departmentId,
+      })
+      .pipe(tap((res) => this.setSession(res)));
   }
 
   login(email: string, password: string) {
-    return this.http.post<{ user: User; token: string }>(`${API}/auth/login`, {
-      email, password,
-    }).pipe(tap(res => this.setSession(res)));
+    return this.http
+      .post<{ user: User; token: string }>(`${API}/auth/login`, {
+        email,
+        password,
+      })
+      .pipe(tap((res) => this.setSession(res)));
   }
 
-  updateProfile(username: string, email: string, departmentId: number, password?: string) {
-    return this.http.put<{ user: User; token: string }>(`${API}/auth/me`, {
-      username,
-      email,
-      department_id: departmentId,
-      ...(password ? { password } : {}),
-    }).pipe(tap(res => this.setSession(res)));
+  updateProfile(
+    username: string,
+    email: string,
+    departmentId: number,
+    password?: string,
+  ) {
+    return this.http
+      .put<{ user: User; token: string }>(`${API}/auth/me`, {
+        username,
+        email,
+        department_id: departmentId,
+        ...(password ? { password } : {}),
+      })
+      .pipe(tap((res) => this.setSession(res)));
   }
 
   logout() {
@@ -52,6 +82,14 @@ export class AuthService {
     localStorage.removeItem(USER_KEY);
     this.currentUser.set(null);
     this.router.navigate(['/login']);
+  }
+
+  syncCurrentUser(user: User, token?: string) {
+    if (this.currentUser()?.id !== user.id) return;
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    const merged = { ...this.currentUser()!, ...user };
+    localStorage.setItem(USER_KEY, JSON.stringify(merged));
+    this.currentUser.set(merged);
   }
 
   private setSession(res: { user: User; token: string }) {

@@ -1,0 +1,36 @@
+<main class="page">
+  <div class="page-header">
+    <h1 class="page-title">Painel de Admin</h1>
+  </div>
+
+  <div class="dashboard-card">
+    <div class="stats-row top">
+      <a routerLink="/admin-panel/users" class="stat-tile large">
+        <span class="stat-value">{{ stats.total_users }}</span>
+        <span class="stat-label">Utilizadores</span>
+      </a>
+      <a routerLink="/admin-panel/teams" class="stat-tile large">
+        <span class="stat-value">{{ stats.total_teams }}</span>
+        <span class="stat-label">Equipas</span>
+      </a>
+    </div>
+    <div class="stats-row bottom">
+      <a routerLink="/admin-panel/departments" class="stat-tile">
+        <span class="stat-value">{{ stats.total_departments }}</span>
+        <span class="stat-label">Departamentos</span>
+      </a>
+      <a routerLink="/admin-panel/projects" class="stat-tile">
+        <span class="stat-value">{{ stats.total_projects }}</span>
+        <span class="stat-label">Projetos</span>
+      </a>
+      <div class="stat-tile">
+        <span class="stat-value">{{ stats.total_tasks }}</span>
+        <span class="stat-label">Tarefas</span>
+      </div>
+      <div class="stat-tile">
+        <span class="stat-value">{{ stats.total_clients }}</span>
+        <span class="stat-label">Clientes</span>
+      </div>
+    </div>
+  </div>
+</main>

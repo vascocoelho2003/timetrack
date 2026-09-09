@@ -53,7 +53,7 @@ export class AppComponent implements OnInit {
     this.darkMode = localStorage.getItem('dark-mode') === 'true';
     this.applyTheme();
 
-    if (this.auth.isLoggedIn) {
+    if (this.auth.isLoggedIn && !this.auth.isAdmin) {
       this.timer.refresh(() => {
         if (this.timer.pendingUnassigned()) this.openTaskModal();
       });

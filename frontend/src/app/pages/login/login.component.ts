@@ -22,7 +22,10 @@ export class LoginComponent {
     this.error = '';
     this.loading = true;
     this.auth.login(this.email, this.password).subscribe({
-      next: () => { this.loading = false; this.router.navigate(['/reports']); },
+      next: () => {
+        this.loading = false;
+        this.router.navigate([this.auth.homePath]);
+      },
       error: (err) => {
         this.loading = false;
         this.error = err.error?.error || 'Erro ao entrar';

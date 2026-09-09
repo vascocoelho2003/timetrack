@@ -16,7 +16,9 @@ export class TimerService {
   refresh(done?: () => void) {
     forkJoin({
       active: this.api.getActiveTimer().pipe(catchError(() => of(null))),
-      pending: this.api.getPendingUnassignedTimer().pipe(catchError(() => of(null))),
+      pending: this.api
+        .getPendingUnassignedTimer()
+        .pipe(catchError(() => of(null))),
     }).subscribe(({ active, pending }) => {
       this.activeEntry.set(active);
       this.pendingUnassigned.set(pending);
@@ -28,7 +30,7 @@ export class TimerService {
 
   start(taskId?: number) {
     return this.api.startTimer(taskId).subscribe({
-      next: entry => {
+      next: (entry) => {
         this.activeEntry.set(entry);
         this.startTicking(entry.start);
       },
@@ -37,14 +39,14 @@ export class TimerService {
 
   stop() {
     return this.api.stopTimer().pipe(
-      tap(entry => {
+      tap((entry) => {
         this.activeEntry.set(null);
         this.stopTicking();
         this.elapsedSeconds.set(0);
         if (entry && !entry.task_id) {
           this.pendingUnassigned.set(entry);
         }
-      })
+      }),
     );
   }
 
@@ -56,7 +58,7 @@ export class TimerService {
     this.stopTicking();
     const update = () => {
       this.elapsedSeconds.set(
-        Math.floor((Date.now() - new Date(startIso).getTime()) / 1000)
+        Math.floor((Date.now() - new Date(startIso).getTime()) / 1000),
       );
     };
     update();

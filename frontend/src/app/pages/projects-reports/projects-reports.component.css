@@ -112,6 +112,8 @@ th {
 }
 
 th:first-child, td:first-child { text-align: left; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: rgba(0, 0, 0, 0.03); }
 tbody tr + tr td { border-top: 1px solid #eee; }
 .team-name { margin-bottom: 6px; font-weight: 700; }
 .team-members { color: #1a1a1a; line-height: 1.7; }
