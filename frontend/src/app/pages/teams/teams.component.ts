@@ -9,8 +9,8 @@ import { Team } from '../../core/models';
   selector: 'app-teams',
   standalone: true,
   imports: [FormsModule, RouterLink],
-  templateUrl:'./teams.component.html',
-  styleUrl: './teams.component.css'
+  templateUrl: './teams.component.html',
+  styleUrl: './teams.component.css',
 })
 export class TeamsComponent implements OnInit {
   teams: Team[] = [];
@@ -18,19 +18,27 @@ export class TeamsComponent implements OnInit {
   showForm = false;
   loading = true;
 
-  constructor(public auth: AuthService, private api: ApiService) {}
+  constructor(
+    public auth: AuthService,
+    private api: ApiService,
+  ) {}
 
   ngOnInit() {
     this.api.getTeams().subscribe({
-      next: t => { this.teams = t; this.loading = false; },
-      error: () => { this.loading = false; },
+      next: (t) => {
+        this.teams = t;
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+      },
     });
   }
 
   createTeam() {
     if (!this.newTeamName.trim()) return;
     this.api.createTeam(this.newTeamName.trim()).subscribe({
-      next: team => {
+      next: (team) => {
         this.teams = [...this.teams, team];
         this.newTeamName = '';
         this.showForm = false;
@@ -42,7 +50,7 @@ export class TeamsComponent implements OnInit {
     if (confirm('Tem a certeza que quer eliminar esta equipa?')) {
       this.api.deleteTeam(teamId).subscribe({
         next: () => {
-          this.teams = this.teams.filter(t => t.id !== teamId);
+          this.teams = this.teams.filter((t) => t.id !== teamId);
         },
       });
     }

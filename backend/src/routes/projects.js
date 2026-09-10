@@ -253,6 +253,7 @@ router.put("/:projectId", (req, res) => {
   }
 
   const { name, description } = req.body;
+  if(typeof(name)!=="string") return res.status(404).json({error:"O Nome deve ser uma string"});
   const safeDescription =
     description !== undefined
       ? sanitizeProjectDescription(description)
@@ -312,7 +313,13 @@ router.get("/:projectId/users", (req, res) => {
   const users = db
     .prepare(
       `
-    SELECT u.id, u.username, u.email, tm.role FROM users u JOIN team_members tm ON tm.user_id = u.id JOIN projects p ON p.team_id = tm.team_id WHERE p.id = ? ORDER BY u.username
+    SELECT u.id, u.username, u.email, u.department_id, d.name AS department_name, tm.role
+    FROM users u
+    JOIN team_members tm ON tm.user_id = u.id
+    JOIN projects p ON p.team_id = tm.team_id
+    LEFT JOIN departments d ON d.id = u.department_id
+    WHERE p.id = ?
+    ORDER BY d.name COLLATE NOCASE, u.username COLLATE NOCASE
   `,
     )
     .all(projectId);

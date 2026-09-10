@@ -8,25 +8,23 @@ import { Project } from '../../core/models';
   selector: 'app-projects',
   imports: [RouterLink],
   templateUrl: './projects.component.html',
-  styleUrl: './projects.component.css'
+  styleUrl: './projects.component.css',
 })
-
-export class ProjectsComponent implements OnInit{
-  projects : Project [] = [];
+export class ProjectsComponent implements OnInit {
+  projects: Project[] = [];
   username = '';
 
   constructor(
     private auth: AuthService,
     private apiService: ApiService,
-    private router: Router
-  ){
-  }
-  
+    private router: Router,
+  ) {}
+
   ngOnInit(): void {
     this.apiService.getUserProjects().subscribe({
-      next: (data)=>{
-        this.projects = data
-      }
-    })
+      next: (data) => {
+        this.projects = data;
+      },
+    });
   }
 }

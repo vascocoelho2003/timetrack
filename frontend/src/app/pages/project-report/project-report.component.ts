@@ -11,10 +11,9 @@ import autoTable from 'jspdf-autotable';
   selector: 'app-project-report',
   imports: [RouterLink, FormsModule],
   templateUrl: './project-report.component.html',
-  styleUrl: './project-report.component.css'
+  styleUrl: './project-report.component.css',
 })
 export class ProjectReportComponent implements OnInit {
-  
   id!: number;
   dados?: project_report;
   selectedPeriod = 'custom';
@@ -22,29 +21,33 @@ export class ProjectReportComponent implements OnInit {
   endDate = '';
 
   constructor(
-    private route : ActivatedRoute,
-    private apiService: ApiService
-  ){}
+    private route: ActivatedRoute,
+    private apiService: ApiService,
+  ) {}
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(params => {
+    this.route.paramMap.subscribe((params) => {
       this.id = Number(params.get('id'));
       this.loadReport();
     });
   }
 
   loadReport(): void {
-    const dates = this.selectedPeriod === 'custom'
-      ? { startDate: this.startDate, endDate: this.endDate }
-      : this.getPeriodDates(this.selectedPeriod);
+    const dates =
+      this.selectedPeriod === 'custom'
+        ? { startDate: this.startDate, endDate: this.endDate }
+        : this.getPeriodDates(this.selectedPeriod);
 
-    this.apiService.getProjectReport(this.id, dates.startDate, dates.endDate).subscribe({
-      next: (data)=>{
-        this.dados = data;
-      },
-      error: (error)=>{
-        console.log("Erro ao obter os dados do Relatório do Projeto", error);
-      }});
+    this.apiService
+      .getProjectReport(this.id, dates.startDate, dates.endDate)
+      .subscribe({
+        next: (data) => {
+          this.dados = data;
+        },
+        error: (error) => {
+          console.log('Erro ao obter os dados do Relatório do Projeto', error);
+        },
+      });
   }
 
   onPeriodChange(): void {
@@ -62,14 +65,20 @@ export class ProjectReportComponent implements OnInit {
     }
   }
 
-  private getPeriodDates(period: string): { startDate: string; endDate: string } {
+  private getPeriodDates(period: string): {
+    startDate: string;
+    endDate: string;
+  } {
     const now = new Date();
     let start: Date;
 
     if (period === 'last-month') {
       start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const end = new Date(now.getFullYear(), now.getMonth(), 0);
-      return { startDate: this.toDateInput(start), endDate: this.toDateInput(end) };
+      return {
+        startDate: this.toDateInput(start),
+        endDate: this.toDateInput(end),
+      };
     }
 
     if (period === 'year') {
@@ -78,7 +87,10 @@ export class ProjectReportComponent implements OnInit {
       start = new Date(now.getFullYear(), now.getMonth(), 1);
     }
 
-    return { startDate: this.toDateInput(start), endDate: this.toDateInput(now) };
+    return {
+      startDate: this.toDateInput(start),
+      endDate: this.toDateInput(now),
+    };
   }
 
   private toDateInput(date: Date): string {
@@ -94,7 +106,7 @@ export class ProjectReportComponent implements OnInit {
     return [
       h.toString().padStart(2, '0'),
       m.toString().padStart(2, '0'),
-      s.toString().padStart(2, '0')
+      s.toString().padStart(2, '0'),
     ].join(':');
   }
 
@@ -116,9 +128,10 @@ export class ProjectReportComponent implements OnInit {
 
     document.setFont('helvetica', 'normal');
     document.setFontSize(9);
-    document.text('JC Ribeiro Task Management', pageWidth - margin, 20, { align: 'right' });
+    document.text('JC Ribeiro Task Management', pageWidth - margin, 20, {
+      align: 'right',
+    });
 
-    
     document.setFont('helvetica', 'bold');
     document.setFontSize(12);
     document.text('Relatório de Registos de Tempo de Projeto', margin, 43);
@@ -129,7 +142,7 @@ export class ProjectReportComponent implements OnInit {
     document.text(`Período: ${this.getReportPeriodLabel()}`, margin, 66);
 
     let currentY = 79;
-    const lists = this.dados.task_lists.filter(list => list.tasks.length > 0);
+    const lists = this.dados.task_lists.filter((list) => list.tasks.length > 0);
 
     if (!lists.length) {
       document.setFont('helvetica', 'normal');
@@ -140,21 +153,26 @@ export class ProjectReportComponent implements OnInit {
       autoTable(document, {
         startY: currentY,
         margin: { left: margin, right: margin },
-        head: [[
-          `Lista de Tarefas: ${list.name}`,
-          'Colaborador/Tempo',
-          'Estado',
-          'Prazo',
-          'Tempo Total'
-        ]],
-        body: list.tasks.map(task => [
+        head: [
+          [
+            `Lista de Tarefas: ${list.name}`,
+            'Colaborador/Tempo',
+            'Estado',
+            'Prazo',
+            'Tempo Total',
+          ],
+        ],
+        body: list.tasks.map((task) => [
           task.title,
           task.assignees
-            .map(assignee => `${assignee.username} (${this.formatDuration(assignee.time)})`)
+            .map(
+              (assignee) =>
+                `${assignee.username} (${this.formatDuration(assignee.time)})`,
+            )
             .join('\n') || '—',
           this.getStatusLabel(task.status),
           this.formatPdfDate(task.due_date),
-          this.formatDuration(task.total_time)
+          this.formatDuration(task.total_time),
         ]),
         theme: 'plain',
         styles: {
@@ -164,39 +182,48 @@ export class ProjectReportComponent implements OnInit {
           cellPadding: { top: 2.5, right: 2, bottom: 2.5, left: 2 },
           lineColor: [210, 210, 210],
           lineWidth: 0.15,
-          overflow: 'linebreak'
+          overflow: 'linebreak',
         },
         headStyles: {
           fontStyle: 'bold',
           fillColor: [255, 255, 255],
           textColor: [25, 25, 25],
           lineColor: [110, 110, 110],
-          lineWidth: { top: 0.25, bottom: 0.25, left: 0, right: 0 }
+          lineWidth: { top: 0.25, bottom: 0.25, left: 0, right: 0 },
         },
         columnStyles: {
           0: { cellWidth: 58 },
           1: { cellWidth: 48 },
           2: { cellWidth: 28 },
           3: { cellWidth: 25 },
-          4: { cellWidth: 27 }
+          4: { cellWidth: 27 },
         },
-        didParseCell: data => {
+        didParseCell: (data) => {
           if (data.section === 'body' && data.column.index === 0) {
-            data.cell.styles.cellPadding = { top: 2.5, right: 2, bottom: 2.5, left: 10 };
+            data.cell.styles.cellPadding = {
+              top: 2.5,
+              right: 2,
+              bottom: 2.5,
+              left: 10,
+            };
           }
-        }
+        },
       });
 
-      currentY = (document as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY
-        ? (document as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8
+      currentY = (document as jsPDF & { lastAutoTable?: { finalY: number } })
+        .lastAutoTable?.finalY
+        ? (document as jsPDF & { lastAutoTable: { finalY: number } })
+            .lastAutoTable.finalY + 8
         : currentY + 15;
     }
 
-    document.save(`relatorio-projeto-${this.sanitizeFileName(this.dados.project.name)}.pdf`);
+    document.save(
+      `relatorio-projeto-${this.sanitizeFileName(this.dados.project.name)}.pdf`,
+    );
   }
 
   private loadImage(source: string): Promise<HTMLImageElement | null> {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       const image = new Image();
       image.onload = () => resolve(image);
       image.onerror = () => resolve(null);
@@ -222,14 +249,19 @@ export class ProjectReportComponent implements OnInit {
   }
 
   private getStatusLabel(status: string): string {
-    return {
-      todo: 'Por Fazer',
-      doing: 'Em Progresso',
-      done: 'Concluída'
-    }[status] || status;
+    return (
+      {
+        todo: 'Por Fazer',
+        doing: 'Em Progresso',
+        done: 'Concluída',
+      }[status] || status
+    );
   }
 
   private sanitizeFileName(name: string): string {
-    return name.trim().replace(/[<>:"/\\|?*\u0000-\u001F]/g, '-').replace(/\s+/g, '-');
+    return name
+      .trim()
+      .replace(/[<>:"/\\|?*\u0000-\u001F]/g, '-')
+      .replace(/\s+/g, '-');
   }
 }

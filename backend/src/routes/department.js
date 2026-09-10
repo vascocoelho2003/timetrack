@@ -19,6 +19,11 @@ router.use(authMiddleware);
  */
 router.post("/createDepartment", authMiddleware, async (req, res) => {
   const { name } = req.body;
+  if (typeof name !== "string") {
+    return res.status(400).json({
+      error: "O campo name deve ser uma string"
+    });
+  }
   const departmentExists = db
     .prepare(`SELECT * FROM departments WHERE name = ?`)
     .get(name);

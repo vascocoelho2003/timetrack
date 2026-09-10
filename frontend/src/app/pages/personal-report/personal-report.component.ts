@@ -10,12 +10,11 @@ import autoTable from 'jspdf-autotable';
   selector: 'app-personal-report',
   imports: [FormsModule],
   templateUrl: './personal-report.component.html',
-  styleUrl: './personal-report.component.css'
+  styleUrl: './personal-report.component.css',
 })
-
-export class PersonalReportComponent implements OnInit{
-  reports : personal_report [] = [];
-  filteredReports : personal_report [] = [];
+export class PersonalReportComponent implements OnInit {
+  reports: personal_report[] = [];
+  filteredReports: personal_report[] = [];
   searchText = '';
   startDate = '';
   endDate = '';
@@ -23,7 +22,10 @@ export class PersonalReportComponent implements OnInit{
   pageSize = 10;
   selectedId = 0;
 
-  constructor(private apiService: ApiService, private router: Router){}
+  constructor(
+    private apiService: ApiService,
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
     const now = new Date();
@@ -32,13 +34,13 @@ export class PersonalReportComponent implements OnInit{
     this.loadReport();
   }
 
-  loadReport():void{
+  loadReport(): void {
     this.apiService.getPersonalReport(this.startDate, this.endDate).subscribe({
-      next: (data)=>{
+      next: (data) => {
         this.reports = data;
         this.applyFilter();
-      }
-    })
+      },
+    });
   }
 
   get totalPages(): number {
@@ -54,7 +56,9 @@ export class PersonalReportComponent implements OnInit{
   applyFilter(): void {
     const search = this.searchText.trim().toLowerCase();
     this.filteredReports = search
-      ? this.reports.filter(r => (r.name ?? '').toLowerCase().includes(search))
+      ? this.reports.filter((r) =>
+          (r.name ?? '').toLowerCase().includes(search),
+        )
       : [...this.reports];
     this.page = 1;
   }
@@ -72,7 +76,9 @@ export class PersonalReportComponent implements OnInit{
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text('JC Ribeiro Task Management', pageWidth - margin, 20, { align: 'right' });
+    doc.text('JC Ribeiro Task Management', pageWidth - margin, 20, {
+      align: 'right',
+    });
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
@@ -86,10 +92,10 @@ export class PersonalReportComponent implements OnInit{
       startY: 62,
       margin: { left: margin, right: margin },
       head: [['Cliente', 'Nº de Tarefas', 'Tempo Despendido']],
-      body: this.filteredReports.map(r => [
+      body: this.filteredReports.map((r) => [
         r.name || '—',
         `${r.nr_tarefas} tarefas`,
-        this.formatDuration(r.duration)
+        this.formatDuration(r.duration),
       ]),
       theme: 'plain',
       styles: {
@@ -105,20 +111,22 @@ export class PersonalReportComponent implements OnInit{
         fillColor: [255, 255, 255],
         textColor: [25, 25, 25],
         lineColor: [110, 110, 110],
-        lineWidth: { top: 0.25, bottom: 0.25, left: 0, right: 0 }
+        lineWidth: { top: 0.25, bottom: 0.25, left: 0, right: 0 },
       },
       columnStyles: {
         0: { cellWidth: 80 },
         1: { cellWidth: 50, halign: 'center' },
-        2: { cellWidth: 40, halign: 'right' }
-      }
+        2: { cellWidth: 40, halign: 'right' },
+      },
     });
 
-    doc.save(`relatorio-pessoal-${this.getPeriodLabel().replace(/ /g, '-')}.pdf`);
+    doc.save(
+      `relatorio-pessoal-${this.getPeriodLabel().replace(/ /g, '-')}.pdf`,
+    );
   }
 
   private loadImage(src: string): Promise<HTMLImageElement | null> {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => resolve(img);
       img.onerror = () => resolve(null);
@@ -145,23 +153,23 @@ export class PersonalReportComponent implements OnInit{
   private toDateInput(date: Date): string {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   }
-  selectRow(report: personal_report): void{
+  selectRow(report: personal_report): void {
     this.selectedId = report.id;
     this.router.navigate(['/colaborator-client-report'], {
       state: {
         id: report.id,
         name: report.name,
         startDate: this.startDate,
-        endDate: this.endDate
-      }
+        endDate: this.endDate,
+      },
     });
   }
 
-  formatDuration(seconds: number): string{
+  formatDuration(seconds: number): string {
     const total = Math.max(0, Number(seconds) || 0);
     const h = Math.floor(total / 3600);
     const m = Math.floor((total % 3600) / 60);
     const s = total % 60;
-    return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
+    return [h, m, s].map((v) => String(v).padStart(2, '0')).join(':');
   }
 }

@@ -111,11 +111,12 @@ router.get("/:teamId/members", (req, res) => {
   const members = db
     .prepare(
       `
-    SELECT u.id, u.email, u.username, tm.role
+    SELECT u.id, u.email, u.username, u.department_id, d.name AS department_name, tm.role
     FROM team_members tm
     JOIN users u ON u.id = tm.user_id
+    LEFT JOIN departments d ON d.id = u.department_id
     WHERE tm.team_id = ?
-    ORDER BY u.username
+    ORDER BY d.name COLLATE NOCASE, u.username COLLATE NOCASE
   `,
     )
     .all(teamId);

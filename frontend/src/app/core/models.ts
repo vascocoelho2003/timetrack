@@ -2,7 +2,8 @@ export interface User {
   id: number;
   email: string;
   username: string;
-  department_id?: number;
+  department_id?: number | null;
+  department_name?: string | null;
   profile?: 'admin' | 'user';
 }
 

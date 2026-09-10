@@ -9,12 +9,11 @@ import { FormsModule } from '@angular/forms';
   selector: 'app-colaborators-reports',
   imports: [RouterLink, FormsModule],
   templateUrl: './colaborators-reports.component.html',
-  styleUrl: './colaborators-reports.component.css'
+  styleUrl: './colaborators-reports.component.css',
 })
-export class ColaboratorsReportsComponent implements OnInit{
-
-  linhas : colaboratorReport [] = [];
-  filteredLinhas: colaboratorReport [] = [];
+export class ColaboratorsReportsComponent implements OnInit {
+  linhas: colaboratorReport[] = [];
+  filteredLinhas: colaboratorReport[] = [];
   searchText = '';
   page = 1;
   pageSize = 10;
@@ -22,9 +21,8 @@ export class ColaboratorsReportsComponent implements OnInit{
   constructor(
     private authService: AuthService,
     private apiService: ApiService,
-    private router: Router
-  ){}
-
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
     this.apiService.getColaboratorReport().subscribe({
@@ -32,15 +30,15 @@ export class ColaboratorsReportsComponent implements OnInit{
         this.linhas = data;
         this.filteredLinhas = data;
         this.page = 1;
-      }
-    })
+      },
+    });
   }
 
   applyFilter(): void {
     const search = this.searchText.trim().toLowerCase();
 
-    this.filteredLinhas = this.linhas.filter(linha =>
-      linha.username.toLowerCase().includes(search)
+    this.filteredLinhas = this.linhas.filter((linha) =>
+      linha.username.toLowerCase().includes(search),
     );
     this.page = 1;
   }
@@ -59,13 +57,12 @@ export class ColaboratorsReportsComponent implements OnInit{
     this.router.navigate(['/colaborator-report', linha.user_id], {
       queryParams: {
         total_time: linha.total_time,
-        username: linha.username
-      }
+        username: linha.username,
+      },
     });
   }
 
-  
-  formatDuration(seconds:number) {
+  formatDuration(seconds: number) {
     const totalSeconds = Math.max(0, Number(seconds) || 0);
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -73,7 +70,7 @@ export class ColaboratorsReportsComponent implements OnInit{
     return [
       String(hours).padStart(2, '0'),
       String(minutes).padStart(2, '0'),
-      String(remainingSeconds).padStart(2, '0')
+      String(remainingSeconds).padStart(2, '0'),
     ].join(':');
   }
 }

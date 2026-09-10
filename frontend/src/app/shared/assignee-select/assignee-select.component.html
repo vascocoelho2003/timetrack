@@ -1,0 +1,43 @@
+<div class="assignee-select">
+  <button
+    type="button"
+    class="assignee-trigger"
+    cdkOverlayOrigin
+    #origin="cdkOverlayOrigin"
+    [class.open]="open"
+    (click)="toggleOpen($event)">
+    <span class="assignee-trigger-text">{{ triggerLabel }}</span>
+    <span class="assignee-chevron" aria-hidden="true">▾</span>
+  </button>
+
+  <ng-template
+    cdkConnectedOverlay
+    [cdkConnectedOverlayOrigin]="origin"
+    [cdkConnectedOverlayOpen]="open"
+    [cdkConnectedOverlayHasBackdrop]="true"
+    [cdkConnectedOverlayBackdropClass]="'assignee-select-backdrop'"
+    [cdkConnectedOverlayWidth]="origin.elementRef.nativeElement.offsetWidth"
+    [cdkConnectedOverlayPush]="true"
+    (backdropClick)="close()">
+    <div class="assignee-panel" (click)="$event.stopPropagation()">
+      @if (groups.length) {
+        @for (group of groups; track group.name) {
+          <div class="assignee-group">
+            <p class="assignee-group-label">{{ group.name }}</p>
+            @for (member of group.members; track member.id) {
+              <label class="assignee-option">
+                <input
+                  type="checkbox"
+                  [checked]="isSelected(member.id)"
+                  (change)="toggleMember(member.id, $event)" />
+                {{ member.username }}
+              </label>
+            }
+          </div>
+        }
+      } @else {
+        <p class="assignee-empty">Sem utilizadores disponíveis.</p>
+      }
+    </div>
+  </ng-template>
+</div>

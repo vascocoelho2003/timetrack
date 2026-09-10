@@ -69,6 +69,11 @@ router.post("/register", (req, res) => {
       .status(400)
       .json({ error: "Email, password, confirmação e nome são obrigatórios" });
   }
+  if (!/^[a-zA-Z0-9._]+$/.test(username.trim())) {
+    return res.status(400).json({
+      error: "O username não pode conter espaços nem caracteres especiais",
+    });
+  }
   if (password.length < 6) {
     return res
       .status(400)
@@ -87,6 +92,11 @@ router.post("/register", (req, res) => {
     .get(departmentId);
   if (!department) {
     return res.status(400).json({ error: "Departamento inválido" });
+  }
+
+  const existingusername = db.prepare(`SELECT id FROM users WHERE username = ?`).get(username);
+  if(existingusername){
+    return res.status(409).json({error: "username já registado"})
   }
 
   const existing = db
@@ -214,6 +224,11 @@ router.put("/me", authMiddleware, (req, res) => {
 
   if (!normalizedEmail || !normalizedUsername) {
     return res.status(400).json({ error: "Email e username são obrigatórios" });
+  }
+  if (!/^[a-zA-Z0-9._]+$/.test(normalizedUsername)) {
+    return res.status(400).json({
+      error: "O username não pode conter espaços nem caracteres especiais",
+    });
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
     return res.status(400).json({ error: "Email inválido" });

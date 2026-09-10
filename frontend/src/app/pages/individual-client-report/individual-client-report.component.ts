@@ -11,16 +11,15 @@ import autoTable from 'jspdf-autotable';
   selector: 'app-individual-client-report',
   imports: [FormsModule],
   templateUrl: './individual-client-report.component.html',
-  styleUrl: './individual-client-report.component.css'
+  styleUrl: './individual-client-report.component.css',
 })
 export class IndividualClientReportComponent implements OnInit {
-
   user_id: number = 0;
   username: string = '';
   startDate: string = '';
-  endDate : string = '';
-  department : boolean = false;
-  tasks : IndividualClientReport [] = [];
+  endDate: string = '';
+  department: boolean = false;
+  tasks: IndividualClientReport[] = [];
   page = 1;
   pageSize = 10;
   cliente_username = '';
@@ -35,23 +34,26 @@ export class IndividualClientReportComponent implements OnInit {
     return this.tasks.slice(start, start + this.pageSize);
   }
 
-  constructor(private router: Router, private apiService: ApiService, private authService: AuthService) {}
+  constructor(
+    private router: Router,
+    private apiService: ApiService,
+    private authService: AuthService,
+  ) {}
 
   ngOnInit(): void {
-    const state = this.router.getCurrentNavigation()?.extras.state
-      ?? history.state;
+    const state =
+      this.router.getCurrentNavigation()?.extras.state ?? history.state;
     this.user_id = state?.['id'] ?? 0;
-    this.department = state?.['department']??false;
+    this.department = state?.['department'] ?? false;
     this.username = state?.['username'] ?? '';
     this.cliente_username = this.authService.currentUser()?.username ?? '';
     const now = new Date();
     this.startDate = state?.['startDate'] || `${now.getFullYear()}-01-01`;
-    this.endDate   = state?.['endDate']   || this.toDateInput(now);
-    if(this.department===true){
+    this.endDate = state?.['endDate'] || this.toDateInput(now);
+    if (this.department === true) {
       this.load_client_username();
     }
     this.loadReport();
-
   }
 
   formatDuration(seconds: number): string {
@@ -59,7 +61,7 @@ export class IndividualClientReportComponent implements OnInit {
     const h = Math.floor(total / 3600);
     const m = Math.floor((total % 3600) / 60);
     const s = total % 60;
-    return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
+    return [h, m, s].map((v) => String(v).padStart(2, '0')).join(':');
   }
 
   formatDate(dateStr: string | null): string {
@@ -69,19 +71,19 @@ export class IndividualClientReportComponent implements OnInit {
     return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
   }
 
-  load_client_username(){
+  load_client_username() {
     this.apiService.getClientDepartment(this.user_id).subscribe({
-      next: (data)=>{
-        this.cliente_username=data.department.name;
-      }
-    })
+      next: (data) => {
+        this.cliente_username = data.department.name;
+      },
+    });
   }
 
   statusLabel(status: string): string {
     const map: Record<string, string> = {
       todo: 'Por Fazer',
       doing: 'In Progress',
-      done: 'Concluído'
+      done: 'Concluído',
     };
     return map[status] ?? status;
   }
@@ -111,7 +113,9 @@ export class IndividualClientReportComponent implements OnInit {
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text('JC Ribeiro Task Management', pageWidth - margin, 20, { align: 'right' });
+    doc.text('JC Ribeiro Task Management', pageWidth - margin, 20, {
+      align: 'right',
+    });
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
@@ -126,13 +130,15 @@ export class IndividualClientReportComponent implements OnInit {
     autoTable(doc, {
       startY: 77,
       margin: { left: margin, right: margin },
-      head: [['Tarefa', 'Estado', 'Última Atualização', 'Prazo', 'Tempo Despendido']],
-      body: this.tasks.map(t => [
+      head: [
+        ['Tarefa', 'Estado', 'Última Atualização', 'Prazo', 'Tempo Despendido'],
+      ],
+      body: this.tasks.map((t) => [
         t.title,
         this.statusLabel(t.status),
         this.formatDate(t.ultima_atualizacao),
         this.formatDate(t.due_date),
-        this.formatDuration(t.duration)
+        this.formatDuration(t.duration),
       ]),
       theme: 'plain',
       styles: {
@@ -142,30 +148,32 @@ export class IndividualClientReportComponent implements OnInit {
         cellPadding: { top: 3, right: 4, bottom: 3, left: 4 },
         lineColor: [210, 210, 210],
         lineWidth: 0.15,
-        overflow: 'linebreak'
+        overflow: 'linebreak',
       },
       headStyles: {
         fontStyle: 'bold',
         fillColor: [255, 255, 255],
         textColor: [25, 25, 25],
         lineColor: [110, 110, 110],
-        lineWidth: { top: 0.25, bottom: 0.25, left: 0, right: 0 }
+        lineWidth: { top: 0.25, bottom: 0.25, left: 0, right: 0 },
       },
       columnStyles: {
         0: { cellWidth: 65 },
         1: { cellWidth: 25 },
         2: { cellWidth: 30 },
         3: { cellWidth: 25 },
-        4: { cellWidth: 25, halign: 'right' }
-      }
+        4: { cellWidth: 25, halign: 'right' },
+      },
     });
 
     const safeName = this.username.trim().replace(/[<>:"/\\|?*\s]/g, '-');
-    doc.save(`relatorio-cliente-${safeName}-${this.getPeriodLabel().replace(/ /g, '-')}.pdf`);
+    doc.save(
+      `relatorio-cliente-${safeName}-${this.getPeriodLabel().replace(/ /g, '-')}.pdf`,
+    );
   }
 
   private loadImage(src: string): Promise<HTMLImageElement | null> {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => resolve(img);
       img.onerror = () => resolve(null);
@@ -183,11 +191,18 @@ export class IndividualClientReportComponent implements OnInit {
     return `${day}/${month}/${year}`;
   }
 
-  loadReport():void{
-    this.apiService.getIndividualClientReport(this.startDate,this.endDate,this.user_id,this.department).subscribe({
-      next: (data)=>{
-        this.tasks=data;
-      }
-    })
+  loadReport(): void {
+    this.apiService
+      .getIndividualClientReport(
+        this.startDate,
+        this.endDate,
+        this.user_id,
+        this.department,
+      )
+      .subscribe({
+        next: (data) => {
+          this.tasks = data;
+        },
+      });
   }
 }

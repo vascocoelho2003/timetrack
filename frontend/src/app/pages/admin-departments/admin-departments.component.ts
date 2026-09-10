@@ -3,14 +3,14 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AdminDepartment } from '../../core/models';
-import {MatCheckboxModule} from '@angular/material/checkbox';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatCheckboxChange } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-admin-departments',
   imports: [FormsModule, RouterLink, MatCheckboxModule],
   templateUrl: './admin-departments.component.html',
-  styleUrl: './admin-departments.component.css'
+  styleUrl: './admin-departments.component.css',
 })
 export class AdminDepartmentsComponent implements OnInit {
   items: AdminDepartment[] = [];
@@ -32,11 +32,11 @@ export class AdminDepartmentsComponent implements OnInit {
       next: (data) => {
         this.items = data;
         this.applyFilter();
-      }
+      },
     });
   }
 
-  createDepartment(){
+  createDepartment() {
     const name = this.NewDepartmentName.trim();
     if (!name) return;
     this.apiService.createDepartment(name).subscribe({
@@ -44,14 +44,14 @@ export class AdminDepartmentsComponent implements OnInit {
         this.NewDepartmentName = '';
         this.showNewDepartmentForm = false;
         this.loadDepartments();
-      }
+      },
     });
   }
 
   applyFilter(): void {
     const search = this.searchText.trim().toLowerCase();
     this.filtered = search
-      ? this.items.filter(d => d.name.toLowerCase().includes(search))
+      ? this.items.filter((d) => d.name.toLowerCase().includes(search))
       : [...this.items];
     this.page = 1;
   }

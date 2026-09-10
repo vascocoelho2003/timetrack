@@ -948,3 +948,7 @@ html, body { height: 100%; }
 :root.dark-mode .mat-mdc-checkbox .mdc-label {
   color: var(--text);
 }
+
+.cdk-overlay-backdrop.assignee-select-backdrop {
+  background: transparent;
+}

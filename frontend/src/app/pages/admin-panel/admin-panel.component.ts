@@ -7,7 +7,7 @@ import { AdminDashboard } from '../../core/models';
   selector: 'app-admin-panel',
   imports: [RouterLink],
   templateUrl: './admin-panel.component.html',
-  styleUrl: './admin-panel.component.css'
+  styleUrl: './admin-panel.component.css',
 })
 export class AdminPanelComponent implements OnInit {
   stats: AdminDashboard = {
@@ -25,7 +25,7 @@ export class AdminPanelComponent implements OnInit {
     this.apiService.getAdminDashboard().subscribe({
       next: (data) => {
         this.stats = data;
-      }
+      },
     });
   }
 }

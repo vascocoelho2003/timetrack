@@ -10,9 +10,9 @@ import { ApiService } from '../../core/api.service';
   standalone: true,
   imports: [FormsModule, RouterLink],
   templateUrl: './register.component.html',
-  styleUrl: './register.component.css'
+  styleUrl: './register.component.css',
 })
-export class RegisterComponent implements OnInit{
+export class RegisterComponent implements OnInit {
   username = '';
   email = '';
   password = '';
@@ -22,7 +22,11 @@ export class RegisterComponent implements OnInit{
   loading = false;
   departments: Department[] = [];
 
-  constructor(private auth: AuthService, private router: Router, private apiService: ApiService) {}
+  constructor(
+    private auth: AuthService,
+    private router: Router,
+    private apiService: ApiService,
+  ) {}
 
   get passwordsMatch(): boolean {
     return this.password.length > 0 && this.password === this.passwordConfirm;
@@ -30,8 +34,12 @@ export class RegisterComponent implements OnInit{
 
   ngOnInit(): void {
     this.apiService.getDepartments().subscribe({
-      next: (data) => { this.departments = data; },
-      error: () => { this.error = 'Não foi possível carregar os departamentos.'; },
+      next: (data) => {
+        this.departments = data;
+      },
+      error: () => {
+        this.error = 'Não foi possível carregar os departamentos.';
+      },
     });
   }
 
@@ -41,7 +49,8 @@ export class RegisterComponent implements OnInit{
     const usernameRegex = /^[a-zA-Z0-9._]+$/;
 
     if (!usernameRegex.test(this.username)) {
-      this.error = 'O username não pode conter espaços nem caracteres especiais.';
+      this.error =
+        'O username não pode conter espaços nem caracteres especiais.';
       return;
     }
 
@@ -62,12 +71,20 @@ export class RegisterComponent implements OnInit{
 
     this.loading = true;
 
-    this.auth.register(this.email, this.password, this.passwordConfirm, this.username, this.departmentId).subscribe({
-      next: () => this.router.navigate([this.auth.homePath]),
-      error: (err) => {
-        this.loading = false;
-        this.error = err.error?.error || 'Erro ao registar';
-      },
-    });
+    this.auth
+      .register(
+        this.email,
+        this.password,
+        this.passwordConfirm,
+        this.username,
+        this.departmentId,
+      )
+      .subscribe({
+        next: () => this.router.navigate([this.auth.homePath]),
+        error: (err) => {
+          this.loading = false;
+          this.error = err.error?.error || 'Erro ao registar';
+        },
+      });
   }
 }

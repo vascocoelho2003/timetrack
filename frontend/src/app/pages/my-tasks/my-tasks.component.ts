@@ -4,25 +4,42 @@ import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { TimerService, formatDuration } from '../../core/timer.service';
-import { Comment, Task, Task_proj, TeamMember, TimeEntry, RecurrenceRule, Client, TaskDependency, DependencyType } from '../../core/models';
+import {
+  Comment,
+  Task,
+  Task_proj,
+  TeamMember,
+  TimeEntry,
+  RecurrenceRule,
+  Client,
+  TaskDependency,
+  DependencyType,
+} from '../../core/models';
 import { forkJoin } from 'rxjs';
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { CalendarOptions, EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import ptLocale from '@fullcalendar/core/locales/pt';
+import { AssigneeSelectComponent } from '../../shared/assignee-select/assignee-select.component';
 
 @Component({
   selector: 'app-my-tasks',
   standalone: true,
-  imports: [FormsModule,FullCalendarModule],
+  imports: [FormsModule, FullCalendarModule, AssigneeSelectComponent],
   templateUrl: './my-tasks.component.html',
-  styleUrl: './my-tasks.component.css'
+  styleUrl: './my-tasks.component.css',
 })
-
 export class MyTasksComponent implements OnInit {
   tasks: Task_proj[] = [];
-  selectedTask: (Task & { project_id?: number | null; project_name?: string | null; task_list_name?: string | null; comments?: Comment[] }) | null = null;
+  selectedTask:
+    | (Task & {
+        project_id?: number | null;
+        project_name?: string | null;
+        task_list_name?: string | null;
+        comments?: Comment[];
+      })
+    | null = null;
   members: TeamMember[] = [];
   clients: Client[] = [];
   clientId: number | null = null;
@@ -77,24 +94,24 @@ export class MyTasksComponent implements OnInit {
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
-      right: ''
+      right: '',
     },
     events: [],
     eventClick: (info) => {
       const task = info.event.extendedProps['task'] as Task_proj | undefined;
       if (task) this.openTask(task);
-    }
+    },
   };
 
   constructor(
     private api: ApiService,
     private route: ActivatedRoute,
     public auth: AuthService,
-    public timer: TimerService
+    public timer: TimerService,
   ) {}
 
   ngOnInit(): void {
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params) => {
       this.filterStatus = params['status'] || '';
       this.filterDueDate = params['dueDate'] || '';
       this.filterPriority = params['priority'] || '';
@@ -102,13 +119,13 @@ export class MyTasksComponent implements OnInit {
     });
     this.loadTasks();
     this.timer.refresh();
-    this.api.getClients().subscribe(clients => {
+    this.api.getClients().subscribe((clients) => {
       this.clients = clients;
     });
   }
 
   loadTasks() {
-    this.api.getUserTasks().subscribe(tasks => {
+    this.api.getUserTasks().subscribe((tasks) => {
       this.tasks = tasks;
       this.page = 1;
       this.syncCalendarEvents();
@@ -123,14 +140,16 @@ export class MyTasksComponent implements OnInit {
   syncCalendarEvents() {
     this.calendarOptions = {
       ...this.calendarOptions,
-      events: this.buildCalendarEvents()
+      events: this.buildCalendarEvents(),
     };
   }
 
   buildCalendarEvents(): EventInput[] {
     return this.filteredTasks
-      .filter((task): task is Task_proj & { due_date: string } => !!task.due_date)
-      .map(task => {
+      .filter(
+        (task): task is Task_proj & { due_date: string } => !!task.due_date,
+      )
+      .map((task) => {
         const color = this.getTaskColor(task);
         return {
           id: String(task.id),
@@ -139,65 +158,84 @@ export class MyTasksComponent implements OnInit {
           allDay: true,
           backgroundColor: color,
           borderColor: color,
-          extendedProps: { task }
+          extendedProps: { task },
         };
       });
   }
 
   getTaskColor(task: Task_proj) {
+    if (task.status === 'done') return '#16a34a';
 
-    if (task.status === 'done')
-      return '#16a34a';
-  
-    if (task.priority === 'high')
-      return '#dc2626';
-  
-    if (task.priority === 'medium')
-      return '#f59e0b';
-  
+    if (task.priority === 'high') return '#dc2626';
+
+    if (task.priority === 'medium') return '#f59e0b';
+
     return '#3b82f6';
   }
 
   get projects() {
-    return [...new Map(this.tasks.map(task => [
-      task.project_id ?? 'personal',
-      task.project_name || 'Pessoal'
-    ])).entries()];
+    return [
+      ...new Map(
+        this.tasks.map((task) => [
+          task.project_id ?? 'personal',
+          task.project_name || 'Pessoal',
+        ]),
+      ).entries(),
+    ];
   }
 
   get lists() {
-    return [...new Map(this.tasks
-      .filter(task => task.task_list_id != null)
-      .map(task => [task.task_list_id, task.task_list_name])
-    ).entries()];
+    return [
+      ...new Map(
+        this.tasks
+          .filter((task) => task.task_list_id != null)
+          .map((task) => [task.task_list_id, task.task_list_name]),
+      ).entries(),
+    ];
   }
 
   get filteredTasks(): Task_proj[] {
     const search = this.search.trim().toLowerCase();
     const today = new Date();
-    const startToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const startToday = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
     const startTomorrow = new Date(startToday);
     startTomorrow.setDate(startToday.getDate() + 1);
     const startWeek = new Date(startToday);
     startWeek.setDate(startToday.getDate() - startToday.getDay());
-    return this.tasks.filter(task => {
+    return this.tasks.filter((task) => {
       const due = task.due_date ? new Date(task.due_date) : null;
-      const matchesSearch = !search ||
+      const matchesSearch =
+        !search ||
         task.title.toLowerCase().includes(search) ||
         (task.project_name || 'pessoal').toLowerCase().includes(search) ||
         (task.task_list_name || '').toLowerCase().includes(search);
-      const matchesDue = !this.filterDueDate || (!!due && (
-        this.filterDueDate === 'today' ? due >= startToday && due < new Date(startToday.getTime() + 86400000) :
-        this.filterDueDate === 'week' ? due >= startWeek && due < new Date(startWeek.getTime() + 7 * 86400000) :
-        due < startTomorrow
-      ));
-      return matchesSearch &&
-        (!this.filterProject || String(task.project_id ?? 'personal') === this.filterProject) &&
+      const matchesDue =
+        !this.filterDueDate ||
+        (!!due &&
+          (this.filterDueDate === 'today'
+            ? due >= startToday &&
+              due < new Date(startToday.getTime() + 86400000)
+            : this.filterDueDate === 'week'
+              ? due >= startWeek &&
+                due < new Date(startWeek.getTime() + 7 * 86400000)
+              : due < startTomorrow));
+      return (
+        matchesSearch &&
+        (!this.filterProject ||
+          String(task.project_id ?? 'personal') === this.filterProject) &&
         (!this.filterList || String(task.task_list_id) === this.filterList) &&
         (!this.filterStatus || task.status === this.filterStatus) &&
         (!this.filterPriority || task.priority === this.filterPriority) &&
-        (!this.filterClient || (this.filterClient === 'none' ? !task.client_id : String(task.client_id) === this.filterClient)) &&
-        matchesDue;
+        (!this.filterClient ||
+          (this.filterClient === 'none'
+            ? !task.client_id
+            : String(task.client_id) === this.filterClient)) &&
+        matchesDue
+      );
     });
   }
 
@@ -217,17 +255,24 @@ export class MyTasksComponent implements OnInit {
   }
 
   statusLabel(status: string) {
-    return { todo: 'Por fazer', doing: 'Em progresso', done: 'Concluída' }[status] || status;
+    return (
+      { todo: 'Por fazer', doing: 'Em progresso', done: 'Concluída' }[status] ||
+      status
+    );
   }
 
   formatDate(value: string | null) {
     if (!value) return 'Sem prazo';
     const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? 'Sem prazo' : date.toLocaleDateString('pt-PT');
+    return Number.isNaN(date.getTime())
+      ? 'Sem prazo'
+      : date.toLocaleDateString('pt-PT');
   }
 
   get canTrackTime() {
-    return !!this.selectedTask?.assigneeIds.includes(this.auth.currentUser()?.id || 0);
+    return !!this.selectedTask?.assigneeIds.includes(
+      this.auth.currentUser()?.id || 0,
+    );
   }
 
   get canChangeStatus() {
@@ -242,8 +287,13 @@ export class MyTasksComponent implements OnInit {
     this.saveError = '';
     this.blockingPredecessorId = null;
     this.resetDependencyPicker();
-    this.api.getTask(row.id).subscribe(task => {
-      this.selectedTask = { ...task, project_id: row.project_id, project_name: row.project_name, task_list_name: row.task_list_name };
+    this.api.getTask(row.id).subscribe((task) => {
+      this.selectedTask = {
+        ...task,
+        project_id: row.project_id,
+        project_name: row.project_name,
+        task_list_name: row.task_list_name,
+      };
       this.editTitle = task.title;
       this.editDescription = task.description;
       this.editStatus = task.status;
@@ -258,13 +308,24 @@ export class MyTasksComponent implements OnInit {
       this.resetRecurrenceForm(task.recurrence);
       this.loadPredecessorCandidates(row);
       if (row.team_id) {
-        this.api.getTeamMembers(row.team_id).subscribe(members => this.members = members);
-        this.api.getTeams().subscribe(teams => this.isAdmin = teams.some(team => team.id === row.team_id && team.role === 'admin'));
+        this.api
+          .getTeamMembers(row.team_id)
+          .subscribe((members) => (this.members = members));
+        this.api
+          .getTeams()
+          .subscribe(
+            (teams) =>
+              (this.isAdmin = teams.some(
+                (team) => team.id === row.team_id && team.role === 'admin',
+              )),
+          );
       } else {
         this.members = [];
         this.isAdmin = true;
       }
-      this.api.getTaskTimeEntries(row.id).subscribe(entries => this.timeEntries = entries);
+      this.api
+        .getTaskTimeEntries(row.id)
+        .subscribe((entries) => (this.timeEntries = entries));
     });
   }
 
@@ -281,43 +342,43 @@ export class MyTasksComponent implements OnInit {
     this.resetDependencyPicker();
   }
 
-  toggleAssignee(id: number, event: Event) {
-    const checked = (event.target as HTMLInputElement).checked;
-    this.editAssignees = checked ? [...this.editAssignees, id] : this.editAssignees.filter(x => x !== id);
-  }
-
   saveTask() {
     if (!this.selectedTask) return;
     const docsUrl = this.normalizeDocsUrl(this.editDocsUrl);
     if (docsUrl === false) {
-      this.docsUrlError = 'Indique um URL válido, por exemplo https://exemplo.com';
+      this.docsUrlError =
+        'Indique um URL válido, por exemplo https://exemplo.com';
       return;
     }
     this.docsUrlError = '';
     this.editDocsUrl = docsUrl;
     this.saveError = '';
     this.blockingPredecessorId = null;
-    this.api.updateTask(this.selectedTask.id, {
-      title: this.editTitle,
-      description: this.editDescription,
-      status: this.editStatus,
-      priority: this.editPriority,
-      dueDate: this.editDueDate || null,
-      next_alert_date: this.editAlertDate || null,
-      assigneeIds: this.editAssignees,
-      clientId: this.clientId,
-      docs_url: docsUrl,
-    }).subscribe({
-      next: () => {
-        this.loadTasks();
-        this.closeTask();
-      },
-      error: err => {
-        this.saveError = err.error?.error || 'Não foi possível guardar a tarefa';
-        this.blockingPredecessorId = err.error?.blockingDependency?.predecessor ?? null;
-        this.revealSaveError();
-      }
-    });
+    this.api
+      .updateTask(this.selectedTask.id, {
+        title: this.editTitle,
+        description: this.editDescription,
+        status: this.editStatus,
+        priority: this.editPriority,
+        dueDate: this.editDueDate || null,
+        next_alert_date: this.editAlertDate || null,
+        assigneeIds: this.editAssignees,
+        clientId: this.clientId,
+        docs_url: docsUrl,
+      })
+      .subscribe({
+        next: () => {
+          this.loadTasks();
+          this.closeTask();
+        },
+        error: (err) => {
+          this.saveError =
+            err.error?.error || 'Não foi possível guardar a tarefa';
+          this.blockingPredecessorId =
+            err.error?.blockingDependency?.predecessor ?? null;
+          this.revealSaveError();
+        },
+      });
   }
 
   onDocsUrlChange() {
@@ -327,11 +388,14 @@ export class MyTasksComponent implements OnInit {
   private normalizeDocsUrl(value: string): string | false {
     const trimmed = value.trim();
     if (!trimmed) return '';
-    const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    const withProtocol = /^https?:\/\//i.test(trimmed)
+      ? trimmed
+      : `https://${trimmed}`;
     try {
       const url = new URL(withProtocol);
       if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
-      if (url.hostname !== 'localhost' && !url.hostname.includes('.')) return false;
+      if (url.hostname !== 'localhost' && !url.hostname.includes('.'))
+        return false;
       return url.toString();
     } catch {
       return false;
@@ -342,30 +406,36 @@ export class MyTasksComponent implements OnInit {
     if (!this.selectedTask) return;
     this.saveError = '';
     this.blockingPredecessorId = null;
-    this.api.updateTask(this.selectedTask.id, { status: this.editStatus }).subscribe({
-      next: () => this.loadTasks(),
-      error: err => {
-        this.saveError = err.error?.error || 'Não foi possível alterar o estado';
-        this.blockingPredecessorId = err.error?.blockingDependency?.predecessor ?? null;
-        this.editStatus = this.selectedTask?.status || this.editStatus;
-        this.revealSaveError();
-      }
-    });
+    this.api
+      .updateTask(this.selectedTask.id, { status: this.editStatus })
+      .subscribe({
+        next: () => this.loadTasks(),
+        error: (err) => {
+          this.saveError =
+            err.error?.error || 'Não foi possível alterar o estado';
+          this.blockingPredecessorId =
+            err.error?.blockingDependency?.predecessor ?? null;
+          this.editStatus = this.selectedTask?.status || this.editStatus;
+          this.revealSaveError();
+        },
+      });
   }
 
   private loadPredecessorCandidates(row: Task_proj) {
     this.predecessorCandidates = [];
     if (!row.project_id) {
       this.predecessorCandidates = this.tasks
-        .filter(task => task.id !== row.id)
-        .map(task => ({ id: task.id, title: task.title } as Task));
+        .filter((task) => task.id !== row.id)
+        .map((task) => ({ id: task.id, title: task.title }) as Task);
       return;
     }
-    this.api.getTaskLists(row.project_id).subscribe(lists => {
+    this.api.getTaskLists(row.project_id).subscribe((lists) => {
       if (!lists.length) return;
-      forkJoin(lists.map(list => this.api.getTasks(list.id))).subscribe(groups => {
-        this.predecessorCandidates = groups.flat();
-      });
+      forkJoin(lists.map((list) => this.api.getTasks(list.id))).subscribe(
+        (groups) => {
+          this.predecessorCandidates = groups.flat();
+        },
+      );
     });
   }
 
@@ -374,17 +444,22 @@ export class MyTasksComponent implements OnInit {
     if (!search || this.selectedPredecessor) return [];
     const currentId = this.selectedTask?.id;
     return this.predecessorCandidates
-      .filter(task => task.id !== currentId && task.title.toLowerCase().includes(search))
+      .filter(
+        (task) =>
+          task.id !== currentId && task.title.toLowerCase().includes(search),
+      )
       .slice(0, 8);
   }
 
   dependencyTypeLabel(type: string) {
-    return {
-      FS: 'FS — Finish to Start',
-      SS: 'SS — Start to Start',
-      FF: 'FF — Finish to Finish',
-      SF: 'SF — Start to Finish',
-    }[type] || type;
+    return (
+      {
+        FS: 'FS — Finish to Start',
+        SS: 'SS — Start to Start',
+        FF: 'FF — Finish to Finish',
+        SF: 'SF — Start to Finish',
+      }[type] || type
+    );
   }
 
   selectPredecessor(task: Task) {
@@ -394,7 +469,10 @@ export class MyTasksComponent implements OnInit {
   }
 
   onDependencySearchChange() {
-    if (this.selectedPredecessor && this.dependencySearch !== this.selectedPredecessor.title) {
+    if (
+      this.selectedPredecessor &&
+      this.dependencySearch !== this.selectedPredecessor.title
+    ) {
       this.selectedPredecessor = null;
     }
     this.dependencyError = '';
@@ -414,25 +492,28 @@ export class MyTasksComponent implements OnInit {
     }
     const predecessor = this.selectedPredecessor;
     const type = this.dependencyType;
-    const existing = this.taskDependencies.find(d => d.predecessor === predecessor.id);
+    const existing = this.taskDependencies.find(
+      (d) => d.predecessor === predecessor.id,
+    );
     const request = existing
       ? this.api.updateDependency(this.selectedTask.id, predecessor.id, type)
       : this.api.createDependency(this.selectedTask.id, predecessor.id, type);
 
     request.subscribe({
-      next: dep => {
+      next: (dep) => {
         if (existing) {
-          this.taskDependencies = this.taskDependencies.map(d =>
-            d.predecessor === dep.predecessor ? { ...d, ...dep } : d
+          this.taskDependencies = this.taskDependencies.map((d) =>
+            d.predecessor === dep.predecessor ? { ...d, ...dep } : d,
           );
         } else {
           this.taskDependencies = [...this.taskDependencies, dep];
         }
         this.resetDependencyPicker();
       },
-      error: err => {
-        this.dependencyError = err.error?.error || 'Não foi possível guardar a dependência';
-      }
+      error: (err) => {
+        this.dependencyError =
+          err.error?.error || 'Não foi possível guardar a dependência';
+      },
     });
   }
 
@@ -463,23 +544,31 @@ export class MyTasksComponent implements OnInit {
       interval: this.recurrenceInterval,
       start_date: this.recurrenceStartDate || this.editDueDate || null,
       end_date: this.recurrenceEndDate || null,
-      rule_type: this.recurrenceRuleType
+      rule_type: this.recurrenceRuleType,
     };
-    if (this.recurrenceFrequency === 'weekly') payload['weekday'] = this.recurrenceWeekday;
+    if (this.recurrenceFrequency === 'weekly')
+      payload['weekday'] = this.recurrenceWeekday;
     const request = this.recurrenceRule
       ? this.api.updateRecurrence(this.selectedTask.id, payload)
       : this.api.createRecurrence(this.selectedTask.id, payload);
     request.subscribe({
       next: (response) => {
-        this.recurrenceRule = (response as { recurrence?: RecurrenceRule }).recurrence || this.recurrenceRule;
+        this.recurrenceRule =
+          (response as { recurrence?: RecurrenceRule }).recurrence ||
+          this.recurrenceRule;
         this.recurrenceMessage = this.recurrenceRule
           ? 'Recorrência atualizada com sucesso.'
           : 'Recorrência criada com sucesso.';
         if (this.selectedTask) {
-          this.selectedTask = { ...this.selectedTask, recurrence: this.recurrenceRule };
+          this.selectedTask = {
+            ...this.selectedTask,
+            recurrence: this.recurrenceRule,
+          };
         }
       },
-      error: error => this.recurrenceMessage = error?.error?.message || 'Não foi possível criar a recorrência.'
+      error: (error) =>
+        (this.recurrenceMessage =
+          error?.error?.message || 'Não foi possível criar a recorrência.'),
     });
   }
 
@@ -490,28 +579,42 @@ export class MyTasksComponent implements OnInit {
   stopTimer() {
     this.timer.stop().subscribe(() => {
       if (this.selectedTask) {
-        this.api.getTaskTimeEntries(this.selectedTask.id).subscribe(entries => this.timeEntries = entries);
+        this.api
+          .getTaskTimeEntries(this.selectedTask.id)
+          .subscribe((entries) => (this.timeEntries = entries));
       }
     });
   }
 
   postComment() {
     if (!this.selectedTask || !this.newComment.trim()) return;
-    this.api.addComment(this.selectedTask.id, this.newComment.trim()).subscribe(comment => {
-      this.selectedTask!.comments = [...(this.selectedTask!.comments || []), comment];
-      this.newComment = '';
-    });
+    this.api
+      .addComment(this.selectedTask.id, this.newComment.trim())
+      .subscribe((comment) => {
+        this.selectedTask!.comments = [
+          ...(this.selectedTask!.comments || []),
+          comment,
+        ];
+        this.newComment = '';
+      });
   }
 
   deleteComment(commentId: number) {
     if (!this.selectedTask || !confirm('Eliminar este comentário?')) return;
     this.api.deleteComment(this.selectedTask.id, commentId).subscribe(() => {
-      this.selectedTask!.comments = (this.selectedTask!.comments || []).filter(comment => comment.id !== commentId);
+      this.selectedTask!.comments = (this.selectedTask!.comments || []).filter(
+        (comment) => comment.id !== commentId,
+      );
     });
   }
 
   deleteTask() {
-    if (!this.selectedTask || !this.isAdmin || !confirm('Eliminar esta tarefa?')) return;
+    if (
+      !this.selectedTask ||
+      !this.isAdmin ||
+      !confirm('Eliminar esta tarefa?')
+    )
+      return;
     this.api.deleteTask(this.selectedTask.id).subscribe(() => {
       this.loadTasks();
       this.closeTask();

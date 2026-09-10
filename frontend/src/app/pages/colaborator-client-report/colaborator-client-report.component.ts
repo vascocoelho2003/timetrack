@@ -11,7 +11,7 @@ import autoTable from 'jspdf-autotable';
   selector: 'app-colaborator-client-report',
   imports: [FormsModule],
   templateUrl: './colaborator-client-report.component.html',
-  styleUrl: './colaborator-client-report.component.css'
+  styleUrl: './colaborator-client-report.component.css',
 })
 export class ColaboratorClientReportComponent implements OnInit {
   client_id = 0;
@@ -26,11 +26,12 @@ export class ColaboratorClientReportComponent implements OnInit {
   constructor(
     private router: Router,
     private apiService: ApiService,
-    private authService: AuthService
+    private authService: AuthService,
   ) {}
 
   ngOnInit(): void {
-    const state = this.router.getCurrentNavigation()?.extras.state ?? history.state;
+    const state =
+      this.router.getCurrentNavigation()?.extras.state ?? history.state;
     this.client_id = state?.['id'] ?? 0;
     this.cliente_username = state?.['name'] ?? '';
     this.username = this.authService.currentUser()?.username ?? '';
@@ -64,7 +65,9 @@ export class ColaboratorClientReportComponent implements OnInit {
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text('JC Ribeiro Task Management', pageWidth - margin, 20, { align: 'right' });
+    doc.text('JC Ribeiro Task Management', pageWidth - margin, 20, {
+      align: 'right',
+    });
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
@@ -79,13 +82,15 @@ export class ColaboratorClientReportComponent implements OnInit {
     autoTable(doc, {
       startY: 77,
       margin: { left: margin, right: margin },
-      head: [['Tarefa', 'Estado', 'Última Atualização', 'Prazo', 'Tempo Despendido']],
-      body: this.tasks.map(t => [
+      head: [
+        ['Tarefa', 'Estado', 'Última Atualização', 'Prazo', 'Tempo Despendido'],
+      ],
+      body: this.tasks.map((t) => [
         t.title,
         this.statusLabel(t.status),
         this.formatDate(t.ultima_atualizacao),
         this.formatDate(t.due_date),
-        this.formatDuration(t.duration)
+        this.formatDuration(t.duration),
       ]),
       theme: 'plain',
       styles: {
@@ -95,30 +100,34 @@ export class ColaboratorClientReportComponent implements OnInit {
         cellPadding: { top: 3, right: 4, bottom: 3, left: 4 },
         lineColor: [210, 210, 210],
         lineWidth: 0.15,
-        overflow: 'linebreak'
+        overflow: 'linebreak',
       },
       headStyles: {
         fontStyle: 'bold',
         fillColor: [255, 255, 255],
         textColor: [25, 25, 25],
         lineColor: [110, 110, 110],
-        lineWidth: { top: 0.25, bottom: 0.25, left: 0, right: 0 }
+        lineWidth: { top: 0.25, bottom: 0.25, left: 0, right: 0 },
       },
       columnStyles: {
         0: { cellWidth: 65 },
         1: { cellWidth: 25 },
         2: { cellWidth: 30 },
         3: { cellWidth: 25 },
-        4: { cellWidth: 25, halign: 'right' }
-      }
+        4: { cellWidth: 25, halign: 'right' },
+      },
     });
 
-    const safeName = (this.cliente_username || this.username).trim().replace(/[<>:"/\\|?*\s]/g, '-');
-    doc.save(`relatorio-pessoal-${safeName}-${this.getPeriodLabel().replace(/ /g, '-')}.pdf`);
+    const safeName = (this.cliente_username || this.username)
+      .trim()
+      .replace(/[<>:"/\\|?*\s]/g, '-');
+    doc.save(
+      `relatorio-pessoal-${safeName}-${this.getPeriodLabel().replace(/ /g, '-')}.pdf`,
+    );
   }
 
   private loadImage(src: string): Promise<HTMLImageElement | null> {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => resolve(img);
       img.onerror = () => resolve(null);
@@ -148,18 +157,20 @@ export class ColaboratorClientReportComponent implements OnInit {
   }
 
   loadReport(): void {
-    this.apiService.getColaboratorClientReport(this.startDate, this.endDate, this.client_id).subscribe({
-      next: (data) => {
-        this.tasks = data;
-      }
-    });
+    this.apiService
+      .getColaboratorClientReport(this.startDate, this.endDate, this.client_id)
+      .subscribe({
+        next: (data) => {
+          this.tasks = data;
+        },
+      });
   }
 
   statusLabel(status: string): string {
     const map: Record<string, string> = {
       todo: 'Por Fazer',
       doing: 'In Progress',
-      done: 'Concluído'
+      done: 'Concluído',
     };
     return map[status] ?? status;
   }
@@ -176,6 +187,6 @@ export class ColaboratorClientReportComponent implements OnInit {
     const h = Math.floor(total / 3600);
     const m = Math.floor((total % 3600) / 60);
     const s = total % 60;
-    return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
+    return [h, m, s].map((v) => String(v).padStart(2, '0')).join(':');
   }
 }

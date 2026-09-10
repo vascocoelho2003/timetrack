@@ -11,10 +11,9 @@ import { Project, TaskList, Task_proj } from './core/models';
   standalone: true,
   imports: [RouterOutlet, RouterLink, FormsModule],
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  styleUrls: ['./app.component.css'],
 })
 export class AppComponent implements OnInit {
-
   fmt = formatDuration;
 
   menuOpen = false;
@@ -46,7 +45,7 @@ export class AppComponent implements OnInit {
     public auth: AuthService,
     public timer: TimerService,
     private api: ApiService,
-    private router: Router
+    private router: Router,
   ) {}
 
   ngOnInit() {
@@ -70,9 +69,9 @@ export class AppComponent implements OnInit {
 
   stopHeaderTimer() {
     this.timer.stop().subscribe({
-      next: entry => {
+      next: (entry) => {
         if (entry && !entry.task_id) this.openTaskModal();
-      }
+      },
     });
   }
 
@@ -85,13 +84,13 @@ export class AppComponent implements OnInit {
   }
 
   loadProjects() {
-    this.api.getUserProjects().subscribe(projects => {
+    this.api.getUserProjects().subscribe((projects) => {
       this.projects = projects;
     });
   }
 
   loadExistingTasks() {
-    this.api.getUserTasks().subscribe(tasks => {
+    this.api.getUserTasks().subscribe((tasks) => {
       this.existingTasks = tasks;
     });
   }
@@ -105,7 +104,7 @@ export class AppComponent implements OnInit {
     this.taskListId = null;
     this.lists = [];
     if (!this.taskProjectId) return;
-    this.api.getTaskLists(this.taskProjectId).subscribe(lists => {
+    this.api.getTaskLists(this.taskProjectId).subscribe((lists) => {
       this.lists = lists;
     });
   }
@@ -121,15 +120,18 @@ export class AppComponent implements OnInit {
       }
       this.savingTask = true;
       this.taskError = '';
-      this.api.assignUnassignedTimer(pending.id, {
-        existingTaskId: this.existingTaskId,
-      }).subscribe({
-        next: () => this.finishAssign(),
-        error: (err) => {
-          this.savingTask = false;
-          this.taskError = err?.error?.error || 'Não foi possível atribuir o tempo.';
-        }
-      });
+      this.api
+        .assignUnassignedTimer(pending.id, {
+          existingTaskId: this.existingTaskId,
+        })
+        .subscribe({
+          next: () => this.finishAssign(),
+          error: (err) => {
+            this.savingTask = false;
+            this.taskError =
+              err?.error?.error || 'Não foi possível atribuir o tempo.';
+          },
+        });
       return;
     }
 
@@ -144,17 +146,20 @@ export class AppComponent implements OnInit {
 
     this.savingTask = true;
     this.taskError = '';
-    this.api.assignUnassignedTimer(pending.id, {
-      title: this.taskTitle.trim(),
-      description: this.taskDescription.trim(),
-      taskListId: this.taskListId,
-    }).subscribe({
-      next: () => this.finishAssign(),
-      error: (err) => {
-        this.savingTask = false;
-        this.taskError = err?.error?.error || 'Não foi possível criar a tarefa.';
-      }
-    });
+    this.api
+      .assignUnassignedTimer(pending.id, {
+        title: this.taskTitle.trim(),
+        description: this.taskDescription.trim(),
+        taskListId: this.taskListId,
+      })
+      .subscribe({
+        next: () => this.finishAssign(),
+        error: (err) => {
+          this.savingTask = false;
+          this.taskError =
+            err?.error?.error || 'Não foi possível criar a tarefa.';
+        },
+      });
   }
 
   private finishAssign() {
@@ -178,8 +183,9 @@ export class AppComponent implements OnInit {
         this.showTaskModal = false;
       },
       error: (err) => {
-        this.taskError = err?.error?.error || 'Não foi possível descartar o tempo.';
-      }
+        this.taskError =
+          err?.error?.error || 'Não foi possível descartar o tempo.';
+      },
     });
   }
 

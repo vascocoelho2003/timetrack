@@ -37,6 +37,8 @@ router.get("/getAllClients", authMiddleware, (req, res) => {
         FROM clients c
         LEFT JOIN users u ON c.client_type = 'person' AND u.id = c.user_id
         LEFT JOIN departments d ON c.client_type = 'department' AND d.id = c.department_id
+        WHERE COALESCE(u.username, d.name) IS NOT NULL
+          AND TRIM(COALESCE(u.username, d.name)) != ''
     `,
     )
     .all();

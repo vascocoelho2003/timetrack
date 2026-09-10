@@ -9,7 +9,7 @@ import { AdminUser, Department } from '../../core/models';
   selector: 'app-admin-users',
   imports: [FormsModule, RouterLink],
   templateUrl: './admin-users.component.html',
-  styleUrl: './admin-users.component.css'
+  styleUrl: './admin-users.component.css',
 })
 export class AdminUsersComponent implements OnInit {
   items: AdminUser[] = [];
@@ -40,8 +40,12 @@ export class AdminUsersComponent implements OnInit {
     this.currentUserId = this.authService.currentUser()?.id ?? 0;
     this.loadUsers();
     this.apiService.getDepartments().subscribe({
-      next: (data) => { this.departments = data; },
-      error: () => { this.error = 'Não foi possível carregar os departamentos.'; },
+      next: (data) => {
+        this.departments = data;
+      },
+      error: () => {
+        this.error = 'Não foi possível carregar os departamentos.';
+      },
     });
   }
 
@@ -53,7 +57,7 @@ export class AdminUsersComponent implements OnInit {
       },
       error: () => {
         this.error = 'Não foi possível carregar os utilizadores.';
-      }
+      },
     });
   }
 
@@ -70,10 +74,11 @@ export class AdminUsersComponent implements OnInit {
   private applyFilterInternal(resetPage: boolean): void {
     const search = this.searchText.trim().toLowerCase();
     this.filtered = search
-      ? this.items.filter(u =>
-          u.username.toLowerCase().includes(search)
-          || u.email.toLowerCase().includes(search)
-          || (u.department_name ?? '').toLowerCase().includes(search)
+      ? this.items.filter(
+          (u) =>
+            u.username.toLowerCase().includes(search) ||
+            u.email.toLowerCase().includes(search) ||
+            (u.department_name ?? '').toLowerCase().includes(search),
         )
       : [...this.items];
     if (resetPage) this.page = 1;
@@ -88,12 +93,13 @@ export class AdminUsersComponent implements OnInit {
     this.error = '';
     this.apiService.setAdminUserActive(user.id, active).subscribe({
       next: (updated) => {
-        this.items = this.items.map(u => u.id === updated.id ? updated : u);
+        this.items = this.items.map((u) => (u.id === updated.id ? updated : u));
         this.applyFilterInternal(false);
       },
       error: (err) => {
-        this.error = err.error?.error || 'Não foi possível atualizar o utilizador.';
-      }
+        this.error =
+          err.error?.error || 'Não foi possível atualizar o utilizador.';
+      },
     });
   }
 
@@ -103,7 +109,8 @@ export class AdminUsersComponent implements OnInit {
     const email = this.newEmail.trim();
 
     if (!/^[a-zA-Z0-9._]+$/.test(username)) {
-      this.formError = 'O username só pode conter letras, números, ponto e underscore.';
+      this.formError =
+        'O username só pode conter letras, números, ponto e underscore.';
       return;
     }
     if (!email) {
@@ -124,25 +131,28 @@ export class AdminUsersComponent implements OnInit {
     }
 
     this.creating = true;
-    this.apiService.createAdminUser({
-      username,
-      email,
-      password: this.newPassword,
-      passwordConfirm: this.newPasswordConfirm,
-      department_id: this.newDepartmentId,
-      profile: this.newProfile,
-    }).subscribe({
-      next: () => {
-        this.creating = false;
-        this.showNewUserForm = false;
-        this.resetNewUserForm();
-        this.loadUsers();
-      },
-      error: (err) => {
-        this.creating = false;
-        this.formError = err.error?.error || 'Não foi possível criar o utilizador.';
-      }
-    });
+    this.apiService
+      .createAdminUser({
+        username,
+        email,
+        password: this.newPassword,
+        passwordConfirm: this.newPasswordConfirm,
+        department_id: this.newDepartmentId,
+        profile: this.newProfile,
+      })
+      .subscribe({
+        next: () => {
+          this.creating = false;
+          this.showNewUserForm = false;
+          this.resetNewUserForm();
+          this.loadUsers();
+        },
+        error: (err) => {
+          this.creating = false;
+          this.formError =
+            err.error?.error || 'Não foi possível criar o utilizador.';
+        },
+      });
   }
 
   private resetNewUserForm(): void {

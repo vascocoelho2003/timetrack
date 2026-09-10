@@ -8,7 +8,7 @@ import { AdminProject } from '../../core/models';
   selector: 'app-admin-projects',
   imports: [FormsModule, RouterLink],
   templateUrl: './admin-projects.component.html',
-  styleUrl: './admin-projects.component.css'
+  styleUrl: './admin-projects.component.css',
 })
 export class AdminProjectsComponent implements OnInit {
   items: AdminProject[] = [];
@@ -24,16 +24,17 @@ export class AdminProjectsComponent implements OnInit {
       next: (data) => {
         this.items = data;
         this.applyFilter();
-      }
+      },
     });
   }
 
   applyFilter(): void {
     const search = this.searchText.trim().toLowerCase();
     this.filtered = search
-      ? this.items.filter(p =>
-          p.name.toLowerCase().includes(search)
-          || p.team_name.toLowerCase().includes(search)
+      ? this.items.filter(
+          (p) =>
+            p.name.toLowerCase().includes(search) ||
+            p.team_name.toLowerCase().includes(search),
         )
       : [...this.items];
     this.page = 1;

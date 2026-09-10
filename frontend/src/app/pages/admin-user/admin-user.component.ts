@@ -10,7 +10,7 @@ import { AdminUser, Department, User } from '../../core/models';
   standalone: true,
   imports: [FormsModule, RouterLink],
   templateUrl: './admin-user.component.html',
-  styleUrl: './admin-user.component.css'
+  styleUrl: './admin-user.component.css',
 })
 export class AdminUserComponent implements OnInit {
   userId = 0;
@@ -44,8 +44,12 @@ export class AdminUserComponent implements OnInit {
     }
 
     this.apiService.getDepartments().subscribe({
-      next: (data) => { this.departments = data; },
-      error: () => { this.error = 'Não foi possível carregar os departamentos.'; },
+      next: (data) => {
+        this.departments = data;
+      },
+      error: () => {
+        this.error = 'Não foi possível carregar os departamentos.';
+      },
     });
 
     this.apiService.getAdminUser(this.userId).subscribe({
@@ -55,8 +59,9 @@ export class AdminUserComponent implements OnInit {
       },
       error: (err) => {
         this.loading = false;
-        this.error = err.error?.error || 'Não foi possível carregar o utilizador.';
-      }
+        this.error =
+          err.error?.error || 'Não foi possível carregar o utilizador.';
+      },
     });
   }
 
@@ -68,7 +73,8 @@ export class AdminUserComponent implements OnInit {
     const email = this.email.trim();
 
     if (!/^[a-zA-Z0-9._]+$/.test(username)) {
-      this.error = 'O username só pode conter letras, números, ponto e underscore.';
+      this.error =
+        'O username só pode conter letras, números, ponto e underscore.';
       return;
     }
     if (!email) {
@@ -91,26 +97,29 @@ export class AdminUserComponent implements OnInit {
     }
 
     this.saving = true;
-    this.apiService.updateAdminUser(this.userId, {
-      username,
-      email,
-      department_id: this.departmentId,
-      profile: this.profile,
-      ...(this.newPassword ? { password: this.newPassword } : {}),
-    }).subscribe({
-      next: (res) => {
-        this.saving = false;
-        this.applyUser(res.user);
-        this.newPassword = '';
-        this.passwordConfirm = '';
-        this.success = 'Utilizador atualizado com sucesso.';
-        this.authService.syncCurrentUser(res.user as User, res.token);
-      },
-      error: (err) => {
-        this.saving = false;
-        this.error = err.error?.error || 'Não foi possível atualizar o utilizador.';
-      }
-    });
+    this.apiService
+      .updateAdminUser(this.userId, {
+        username,
+        email,
+        department_id: this.departmentId,
+        profile: this.profile,
+        ...(this.newPassword ? { password: this.newPassword } : {}),
+      })
+      .subscribe({
+        next: (res) => {
+          this.saving = false;
+          this.applyUser(res.user);
+          this.newPassword = '';
+          this.passwordConfirm = '';
+          this.success = 'Utilizador atualizado com sucesso.';
+          this.authService.syncCurrentUser(res.user as User, res.token);
+        },
+        error: (err) => {
+          this.saving = false;
+          this.error =
+            err.error?.error || 'Não foi possível atualizar o utilizador.';
+        },
+      });
   }
 
   private applyUser(user: AdminUser): void {

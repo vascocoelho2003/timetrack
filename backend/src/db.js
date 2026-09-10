@@ -199,6 +199,12 @@ function initDb() {
     }
     db.pragma("foreign_keys = ON");
   }
+
+  db.prepare(`
+    DELETE FROM clients
+    WHERE (client_type = 'person' AND (user_id IS NULL OR user_id NOT IN (SELECT id FROM users)))
+       OR (client_type = 'department' AND (department_id IS NULL OR department_id NOT IN (SELECT id FROM departments)))
+  `).run();
 }
 
 module.exports = { db, initDb };

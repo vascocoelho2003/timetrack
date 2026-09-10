@@ -71,7 +71,7 @@ router.get("/", (req, res) => {
     JOIN task_assignees ta ON ta.task_id = t.id
     LEFT JOIN task_lists tl ON tl.id = t.task_list_id
     LEFT JOIN projects p ON p.id = tl.project_id
-    WHERE ta.user_id = ? ORDER BY t.due_date DESC`,
+    WHERE ta.user_id = ? ORDER BY t.created_at DESC`,
     )
     .all(user_id);
   return res.status(200).json(tasks);
@@ -296,6 +296,9 @@ router.get("/:taskId", (req, res) => {
   });
 });
 
+/**
+ * Endpoint para verificar se uma tarefa tem uma regra de recorrência
+ */
 router.get("/recurrenceexists/:taskId/", (req, res) => {
   const taskId = +req.params.taskId;
   const exists = recurrenceRuleExists(taskId);

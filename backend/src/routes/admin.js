@@ -120,7 +120,6 @@ router.post("/users", (req, res) => {
   if (parsed.error) {
     return res.status(400).json({ error: parsed.error });
   }
-
   const existingEmail = db
     .prepare("SELECT id FROM users WHERE email = ?")
     .get(parsed.email);

@@ -112,16 +112,9 @@
               <label>Data de Alerta</label>
               <input type="date" [(ngModel)]="editAlertDate" />
               <label>Atribuídos</label>
-              <div class="assignee-checks">
-                @for (m of members; track m.id) {
-                  <label class="checkbox-label">
-                    <input type="checkbox"
-                      [checked]="editAssignees.includes(m.id)"
-                      (change)="toggleAssignee(m.id, $event)" />
-                    {{ m.username }}
-                  </label>
-                }
-              </div>
+              <app-assignee-select
+                [members]="members"
+                [(selectedIds)]="editAssignees" />
             </div>
           </details>
         } @else {
@@ -261,6 +254,21 @@
         </details>
 
         <details class="form-section">
+          <summary>Docs</summary>
+          <div class="form-section-body">
+            <label>Docs (URL)</label>
+            <input
+              type="url"
+              [(ngModel)]="editDocsUrl"
+              placeholder="https://exemplo.com"
+              (ngModelChange)="onDocsUrlChange()" />
+            @if (docsUrlError) {
+              <p class="field-error">{{ docsUrlError }}</p>
+            }
+          </div>
+        </details>
+
+        <details class="form-section">
           <summary>Comentários</summary>
           <div class="form-section-body">
             @for (comment of selectedTask.comments || []; track comment.id) {
@@ -277,17 +285,6 @@
             <div class="inline-form">
               <input [(ngModel)]="newComment" placeholder="Adicionar comentário..." />
               <button class="btn btn-primary" (click)="postComment()">Enviar</button>
-            </div>
-            <div>
-              <label>Docs (URL)</label>
-              <input
-                type="url"
-                [(ngModel)]="editDocsUrl"
-                placeholder="https://exemplo.com"
-                (ngModelChange)="onDocsUrlChange()" />
-              @if (docsUrlError) {
-                <p class="field-error">{{ docsUrlError }}</p>
-              }
             </div>
           </div>
         </details>

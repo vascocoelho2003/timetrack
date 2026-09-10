@@ -8,7 +8,7 @@ import { AdminTeam } from '../../core/models';
   selector: 'app-admin-teams',
   imports: [FormsModule, RouterLink],
   templateUrl: './admin-teams.component.html',
-  styleUrl: './admin-teams.component.css'
+  styleUrl: './admin-teams.component.css',
 })
 export class AdminTeamsComponent implements OnInit {
   items: AdminTeam[] = [];
@@ -24,16 +24,17 @@ export class AdminTeamsComponent implements OnInit {
       next: (data) => {
         this.items = data;
         this.applyFilter();
-      }
+      },
     });
   }
 
   applyFilter(): void {
     const search = this.searchText.trim().toLowerCase();
     this.filtered = search
-      ? this.items.filter(t =>
-          t.name.toLowerCase().includes(search)
-          || (t.created_by_name ?? '').toLowerCase().includes(search)
+      ? this.items.filter(
+          (t) =>
+            t.name.toLowerCase().includes(search) ||
+            (t.created_by_name ?? '').toLowerCase().includes(search),
         )
       : [...this.items];
     this.page = 1;

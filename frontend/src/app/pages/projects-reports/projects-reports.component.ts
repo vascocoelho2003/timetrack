@@ -10,23 +10,22 @@ import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 @Component({
   selector: 'app-projects-reports',
-  imports: [RouterLink,MatFormFieldModule,MatInputModule, FormsModule],
+  imports: [RouterLink, MatFormFieldModule, MatInputModule, FormsModule],
   templateUrl: './projects-reports.component.html',
-  styleUrl: './projects-reports.component.css'
+  styleUrl: './projects-reports.component.css',
 })
-export class ProjectsReportsComponent implements OnInit{
-  projects : userProjectsDetails [] = [];
+export class ProjectsReportsComponent implements OnInit {
+  projects: userProjectsDetails[] = [];
   filteredProjects: userProjectsDetails[] = [];
-  teams : TeamModel [] = [];
+  teams: TeamModel[] = [];
   selectedTeamId = '';
   searchText = '';
 
   constructor(
     private auth: AuthService,
     private apiService: ApiService,
-    private location: Location
-  ){
-  }
+    private location: Location,
+  ) {}
 
   ngOnInit(): void {
     this.apiService.getUserProjectDetails().subscribe({
@@ -34,7 +33,7 @@ export class ProjectsReportsComponent implements OnInit{
         this.projects = data;
         this.filteredProjects = data;
         this.loadTeams();
-      }
+      },
     });
   }
 
@@ -45,13 +44,12 @@ export class ProjectsReportsComponent implements OnInit{
   applyFilters(): void {
     const search = this.searchText.trim().toLowerCase();
 
-    this.filteredProjects = this.projects.filter(project => {
+    this.filteredProjects = this.projects.filter((project) => {
       const matchesTeam =
         this.selectedTeamId === '' ||
         project.team_id === Number(this.selectedTeamId);
 
-      const matchesName =
-        project.name.toLowerCase().includes(search);
+      const matchesName = project.name.toLowerCase().includes(search);
 
       return matchesTeam && matchesName;
     });
@@ -61,18 +59,17 @@ export class ProjectsReportsComponent implements OnInit{
     this.selectedTeamId = teamId;
     this.applyFilters();
   }
-  
+
   loadTeams(): void {
     const teamsMap = new Map<number, TeamModel>();
-  
-    this.projects.forEach(project => {
+
+    this.projects.forEach((project) => {
       teamsMap.set(project.team_id, {
         id: project.team_id,
-        name: project.team_name
+        name: project.team_name,
       });
     });
-  
+
     this.teams = Array.from(teamsMap.values());
   }
-
 }

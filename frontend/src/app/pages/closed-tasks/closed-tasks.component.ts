@@ -1,5 +1,13 @@
 import { Component } from '@angular/core';
-import { Project, Task, Comment, TimeEntry, Team, TaskList, User } from '../../core/models';
+import {
+  Project,
+  Task,
+  Comment,
+  TimeEntry,
+  Team,
+  TaskList,
+  User,
+} from '../../core/models';
 import { CommonModule, Location } from '@angular/common';
 import { ApiService } from '../../core/api.service';
 import { RouterLink } from '@angular/router';
@@ -11,7 +19,7 @@ import { formatDuration } from '../../core/timer.service';
   selector: 'app-closed-tasks',
   imports: [RouterLink, CommonModule, FormsModule],
   templateUrl: './closed-tasks.component.html',
-  styleUrl: './closed-tasks.component.css'
+  styleUrl: './closed-tasks.component.css',
 })
 export class ClosedTasksComponent {
   closed_tasks: Task[] = [];
@@ -34,36 +42,44 @@ export class ClosedTasksComponent {
   fmt = formatDuration;
 
   get totalTime() {
-    return this.timeEntries.reduce((sum, entry) => sum + (entry.duration || 0), 0);
+    return this.timeEntries.reduce(
+      (sum, entry) => sum + (entry.duration || 0),
+      0,
+    );
   }
 
-  constructor(private location: Location, private apiService: ApiService, private route: ActivatedRoute) {
-  }
+  constructor(
+    private location: Location,
+    private apiService: ApiService,
+    private route: ActivatedRoute,
+  ) {}
 
   ngOnInit() {
-    this.route.paramMap.subscribe(params => {
+    this.route.paramMap.subscribe((params) => {
       this.projectId = Number(params.get('id'));
       this.loadClosedTasks();
       this.loadTaskLists();
-      this.apiService.getProject(this.projectId).subscribe(project => {
-        this.apiService.getTeams().subscribe(teams => {
-          const team = teams.find(t => t.id === project.team_id);
+      this.apiService.getProject(this.projectId).subscribe((project) => {
+        this.apiService.getTeams().subscribe((teams) => {
+          const team = teams.find((t) => t.id === project.team_id);
           this.isAdmin = team?.role === 'admin';
         });
       });
-      this.apiService.getProjectMembers(this.projectId).subscribe(users => {this.users_projects = users;})
+      this.apiService.getProjectMembers(this.projectId).subscribe((users) => {
+        this.users_projects = users;
+      });
     });
   }
 
-  closeTask(){
+  closeTask() {
     this.selectedTask = null;
   }
 
   openTask(taskId: number) {
-    this.apiService.getTask(taskId).subscribe(task => {
+    this.apiService.getTask(taskId).subscribe((task) => {
       this.selectedTask = task;
       this.newComment = '';
-      this.apiService.getTaskTimeEntries(taskId).subscribe(entries => {
+      this.apiService.getTaskTimeEntries(taskId).subscribe((entries) => {
         this.timeEntries = entries;
       });
     });
@@ -71,26 +87,37 @@ export class ClosedTasksComponent {
 
   reopenTask() {
     if (!this.selectedTask) return;
-    this.apiService.updateTask(this.selectedTask.id, { status: 'todo' }).subscribe(updated => {
-      this.closed_tasks = this.closed_tasks.filter(t => t.id !== updated.id);
-      this.closeTask();
-    });
+    this.apiService
+      .updateTask(this.selectedTask.id, { status: 'todo' })
+      .subscribe((updated) => {
+        this.closed_tasks = this.closed_tasks.filter(
+          (t) => t.id !== updated.id,
+        );
+        this.closeTask();
+      });
   }
 
   deleteTask() {
     if (!this.selectedTask || !confirm('Eliminar esta tarefa?')) return;
     this.apiService.deleteTask(this.selectedTask.id).subscribe(() => {
-      this.closed_tasks = this.closed_tasks.filter(t => t.id !== this.selectedTask!.id);
+      this.closed_tasks = this.closed_tasks.filter(
+        (t) => t.id !== this.selectedTask!.id,
+      );
       this.closeTask();
     });
   }
 
   postComment() {
     if (!this.selectedTask || !this.newComment.trim()) return;
-    this.apiService.addComment(this.selectedTask.id, this.newComment.trim()).subscribe(comment => {
-      this.selectedTask!.comments = [...(this.selectedTask!.comments || []), comment];
-      this.newComment = '';
-    });
+    this.apiService
+      .addComment(this.selectedTask.id, this.newComment.trim())
+      .subscribe((comment) => {
+        this.selectedTask!.comments = [
+          ...(this.selectedTask!.comments || []),
+          comment,
+        ];
+        this.newComment = '';
+      });
   }
 
   goBack() {
@@ -98,7 +125,9 @@ export class ClosedTasksComponent {
   }
 
   statusLabel(s: string) {
-    return { todo: 'Por fazer', doing: 'Em progresso', done: 'Concluída' }[s] || s;
+    return (
+      { todo: 'Por fazer', doing: 'Em progresso', done: 'Concluída' }[s] || s
+    );
   }
 
   formatDateDMY(dateString: string | null | undefined) {
@@ -112,7 +141,9 @@ export class ClosedTasksComponent {
   }
 
   getTaskListName(taskListId?: number | null) {
-    return this.taskLists.find(list => list.id === taskListId)?.name || 'Sem lista';
+    return (
+      this.taskLists.find((list) => list.id === taskListId)?.name || 'Sem lista'
+    );
   }
 
   get displayedTasks() {
@@ -121,14 +152,17 @@ export class ClosedTasksComponent {
 
     const searchText = this.searchTitle.trim().toLowerCase();
 
-    return this.closed_tasks.filter(task => {
+    return this.closed_tasks.filter((task) => {
       if (
         this.selectedAssignedUserId > 0 &&
-        !task.assignees.some(a => a.id === this.selectedAssignedUserId)
+        !task.assignees.some((a) => a.id === this.selectedAssignedUserId)
       ) {
         return false;
       }
-      if (this.selectedTaskListId > 0 && task.task_list_id !== this.selectedTaskListId) {
+      if (
+        this.selectedTaskListId > 0 &&
+        task.task_list_id !== this.selectedTaskListId
+      ) {
         return false;
       }
 
@@ -155,9 +189,14 @@ export class ClosedTasksComponent {
           return true;
         }
 
-        const rangeStart = this.fromDate ? new Date(this.fromDate) : new Date(0);
+        const rangeStart = this.fromDate
+          ? new Date(this.fromDate)
+          : new Date(0);
         const rangeEnd = this.toDate ? new Date(this.toDate) : today;
-        if (Number.isNaN(rangeStart.getTime()) || Number.isNaN(rangeEnd.getTime())) {
+        if (
+          Number.isNaN(rangeStart.getTime()) ||
+          Number.isNaN(rangeEnd.getTime())
+        ) {
           return false;
         }
         return taskDate >= rangeStart && taskDate <= rangeEnd;
@@ -187,13 +226,13 @@ export class ClosedTasksComponent {
   }
 
   loadTaskLists() {
-    this.apiService.getTaskLists(this.projectId).subscribe(lists => {
+    this.apiService.getTaskLists(this.projectId).subscribe((lists) => {
       this.taskLists = lists;
     });
   }
 
   loadClosedTasks() {
-    this.apiService.getClosedTasks(this.projectId).subscribe(tasks => {
+    this.apiService.getClosedTasks(this.projectId).subscribe((tasks) => {
       this.closed_tasks = tasks;
     });
   }

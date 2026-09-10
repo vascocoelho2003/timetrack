@@ -9,7 +9,7 @@ import { Department } from '../../core/models';
   standalone: true,
   imports: [FormsModule],
   templateUrl: './my-profile.component.html',
-  styleUrl: './my-profile.component.css'
+  styleUrl: './my-profile.component.css',
 })
 export class MyProfileComponent implements OnInit {
   username = '';
@@ -25,7 +25,10 @@ export class MyProfileComponent implements OnInit {
   error = '';
   success = '';
 
-  constructor(private auth: AuthService, private apiService: ApiService) {}
+  constructor(
+    private auth: AuthService,
+    private apiService: ApiService,
+  ) {}
 
   ngOnInit() {
     const user = this.auth.currentUser();
@@ -50,7 +53,9 @@ export class MyProfileComponent implements OnInit {
             },
           });
         },
-        error: () => { this.error = 'Não foi possível carregar os departamentos.'; },
+        error: () => {
+          this.error = 'Não foi possível carregar os departamentos.';
+        },
       });
     }
   }
@@ -64,33 +69,41 @@ export class MyProfileComponent implements OnInit {
       return;
     }
 
+    if (!/^[a-zA-Z0-9._]+$/.test(this.username.trim())) {
+      this.error = 'O username não pode conter espaços nem caracteres especiais.';
+      return;
+    }
+
     if (this.newPassword !== this.confirmationPassword) {
       this.error = 'As passwords novas não coincidem.';
       return;
     }
 
     this.loading = true;
-    this.auth.updateProfile(
-      this.username.trim(),
-      this.email.trim(),
-      this.departmentId,
-      this.newPassword || undefined
-    ).subscribe({
-      next: (res) => {
-        this.loading = false;
-        this.username = res.user.username;
-        this.email = res.user.email;
-        this.departmentId = res.user.department_id ?? this.departmentId;
-        this.newPassword = '';
-        this.confirmationPassword = '';
-        this.showNewPassword = false;
-        this.showConfirmationPassword = false;
-        this.success = 'Perfil atualizado com sucesso.';
-      },
-      error: (err) => {
-        this.loading = false;
-        this.error = err.error?.error || 'Não foi possível atualizar o perfil.';
-      },
-    });
+    this.auth
+      .updateProfile(
+        this.username.trim(),
+        this.email.trim(),
+        this.departmentId,
+        this.newPassword || undefined,
+      )
+      .subscribe({
+        next: (res) => {
+          this.loading = false;
+          this.username = res.user.username;
+          this.email = res.user.email;
+          this.departmentId = res.user.department_id ?? this.departmentId;
+          this.newPassword = '';
+          this.confirmationPassword = '';
+          this.showNewPassword = false;
+          this.showConfirmationPassword = false;
+          this.success = 'Perfil atualizado com sucesso.';
+        },
+        error: (err) => {
+          this.loading = false;
+          this.error =
+            err.error?.error || 'Não foi possível atualizar o perfil.';
+        },
+      });
   }
 }

@@ -16,7 +16,7 @@ router.use(authMiddleware);
  * /api/task-lists/project/{projectId}:
  *   get:
  *     tags: [Task Lists]
- *     summary: Lista listas de um projeto
+ *     summary: Obtem as listas de um projeto
  *     description: Devolve as listas de tarefas de um projeto.
  *     security:
  *       - bearerAuth: []
@@ -81,9 +81,10 @@ router.post("/project/:projectId", (req, res) => {
   if (!teamId || !isTeamAdmin(req.user.id, teamId)) {
     return res.status(403).json({ error: "Apenas admins podem criar listas" });
   }
-
   const { name } = req.body;
-  if (!name?.trim()) {
+  const listName = typeof name === "string" ? name.trim() : "";
+
+  if (!listName) {
     return res.status(400).json({ error: "Nome é obrigatório" });
   }
 
@@ -97,7 +98,7 @@ router.post("/project/:projectId", (req, res) => {
     .prepare(
       "INSERT INTO task_lists (project_id, name, position) VALUES (?, ?, ?)",
     )
-    .run(projectId, name.trim(), maxPos + 1);
+    .run(projectId, listName, maxPos + 1);
 
   res
     .status(201)

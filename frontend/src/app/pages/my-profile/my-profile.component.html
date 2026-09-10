@@ -7,7 +7,17 @@
     <form class="profile-form" (ngSubmit)="submit()">
       <div class="field">
         <label for="username">Username</label>
-        <input id="username" name="username" type="text" [(ngModel)]="username" required />
+        <input
+          id="username"
+          name="username"
+          type="text"
+          [(ngModel)]="username"
+          required
+          pattern="^[a-zA-Z0-9._]+$"
+          #usernameField="ngModel" />
+        @if (usernameField.invalid && usernameField.touched) {
+          <small class="field-error">O username não pode conter espaços nem caracteres especiais.</small>
+        }
       </div>
 
       <div class="field">

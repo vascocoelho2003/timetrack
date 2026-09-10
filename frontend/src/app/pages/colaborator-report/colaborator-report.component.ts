@@ -10,11 +10,15 @@ import autoTable from 'jspdf-autotable';
   selector: 'app-colaborator-report',
   imports: [RouterLink, FormsModule],
   templateUrl: './colaborator-report.component.html',
-  styleUrl: './colaborator-report.component.css'
+  styleUrl: './colaborator-report.component.css',
 })
-export class ColaboratorReportComponent implements OnInit{
-  colaboradores : ColaboratorReportDetails [] = [];
-  groupedColaboradores: { projectName: string; taskListName: string; tasks: ColaboratorReportDetails[] }[] = [];
+export class ColaboratorReportComponent implements OnInit {
+  colaboradores: ColaboratorReportDetails[] = [];
+  groupedColaboradores: {
+    projectName: string;
+    taskListName: string;
+    tasks: ColaboratorReportDetails[];
+  }[] = [];
   totalTime = 0;
   username = '';
   colaboratorId = 0;
@@ -22,8 +26,11 @@ export class ColaboratorReportComponent implements OnInit{
   startDate = '';
   endDate = '';
 
-  constructor(private route: ActivatedRoute, private apiService: ApiService) {
-    this.route.queryParamMap.subscribe(params => {
+  constructor(
+    private route: ActivatedRoute,
+    private apiService: ApiService,
+  ) {
+    this.route.queryParamMap.subscribe((params) => {
       this.username = params.get('username') || '';
     });
     this.colaboratorId = Number(this.route.snapshot.paramMap.get('id')) || 0;
@@ -37,22 +44,25 @@ export class ColaboratorReportComponent implements OnInit{
   }
 
   loadReport(): void {
-    const dates = this.selectedPeriod === 'custom'
-      ? { startDate: this.startDate, endDate: this.endDate }
-      : this.getPeriodDates(this.selectedPeriod);
+    const dates =
+      this.selectedPeriod === 'custom'
+        ? { startDate: this.startDate, endDate: this.endDate }
+        : this.getPeriodDates(this.selectedPeriod);
 
-    this.apiService.getColaboratorReportDetails(
-      this.colaboratorId,
-      dates.startDate,
-      dates.endDate
-    ).subscribe(data => {
-      this.colaboradores = data;
-      this.totalTime = data.reduce(
-        (total, entry) => total + Number(entry.duration || 0),
-        0
-      );
-      this.groupedColaboradores = this.groupByProjectAndTaskList(data);
-    });
+    this.apiService
+      .getColaboratorReportDetails(
+        this.colaboratorId,
+        dates.startDate,
+        dates.endDate,
+      )
+      .subscribe((data) => {
+        this.colaboradores = data;
+        this.totalTime = data.reduce(
+          (total, entry) => total + Number(entry.duration || 0),
+          0,
+        );
+        this.groupedColaboradores = this.groupByProjectAndTaskList(data);
+      });
   }
 
   onPeriodChange(): void {
@@ -70,14 +80,20 @@ export class ColaboratorReportComponent implements OnInit{
     }
   }
 
-  private getPeriodDates(period: string): { startDate: string; endDate: string } {
+  private getPeriodDates(period: string): {
+    startDate: string;
+    endDate: string;
+  } {
     const now = new Date();
     let start: Date;
 
     if (period === 'last-month') {
       start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const end = new Date(now.getFullYear(), now.getMonth(), 0);
-      return { startDate: this.toDateInput(start), endDate: this.toDateInput(end) };
+      return {
+        startDate: this.toDateInput(start),
+        endDate: this.toDateInput(end),
+      };
     }
 
     if (period === 'year') {
@@ -86,7 +102,10 @@ export class ColaboratorReportComponent implements OnInit{
       start = new Date(now.getFullYear(), now.getMonth(), 1);
     }
 
-    return { startDate: this.toDateInput(start), endDate: this.toDateInput(now) };
+    return {
+      startDate: this.toDateInput(start),
+      endDate: this.toDateInput(now),
+    };
   }
 
   private toDateInput(date: Date): string {
@@ -94,16 +113,25 @@ export class ColaboratorReportComponent implements OnInit{
   }
 
   private groupByProjectAndTaskList(tasks: ColaboratorReportDetails[]) {
-    const groups = new Map<string, { projectName: string; taskListName: string; tasks: ColaboratorReportDetails[] }>();
+    const groups = new Map<
+      string,
+      {
+        projectName: string;
+        taskListName: string;
+        tasks: ColaboratorReportDetails[];
+      }
+    >();
 
-    tasks.forEach(task => {
+    tasks.forEach((task) => {
       const projectName = task.project_name || 'Projeto sem nome';
       const taskListName = task.task_list_name || 'Lista sem nome';
       const key = `${projectName}\u0000${taskListName}`;
       const group = groups.get(key);
 
       if (group) {
-        const existingTask = group.tasks.find(groupTask => groupTask.task_id === task.task_id);
+        const existingTask = group.tasks.find(
+          (groupTask) => groupTask.task_id === task.task_id,
+        );
         if (existingTask) {
           existingTask.duration += Number(task.duration || 0);
         } else {
@@ -125,7 +153,7 @@ export class ColaboratorReportComponent implements OnInit{
     return [
       String(hours).padStart(2, '0'),
       String(minutes).padStart(2, '0'),
-      String(remainingSeconds).padStart(2, '0')
+      String(remainingSeconds).padStart(2, '0'),
     ].join(':');
   }
 
@@ -137,7 +165,7 @@ export class ColaboratorReportComponent implements OnInit{
     const day = String(date.getDate()).padStart(2, '0');
 
     return `${year}/${month}/${day}`;
-}
+  }
 
   async exportPdf(): Promise<void> {
     const document = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -153,14 +181,20 @@ export class ColaboratorReportComponent implements OnInit{
 
     document.setFont('helvetica', 'normal');
     document.setFontSize(9);
-    document.text('JC Ribeiro Task Management', pageWidth - margin, 20, { align: 'right' });
+    document.text('JC Ribeiro Task Management', pageWidth - margin, 20, {
+      align: 'right',
+    });
 
     document.setFont('helvetica', 'bold');
     document.setFontSize(12);
     document.text('Relatório de Registos de Tempo de Colaborador', margin, 43);
     document.setFontSize(8);
     document.text(`Colaborador: ${this.username || '—'}`, margin, 52);
-    document.text(`Total de Tempo Registado: ${this.formatDuration(this.totalTime)}`, margin, 59);
+    document.text(
+      `Total de Tempo Registado: ${this.formatDuration(this.totalTime)}`,
+      margin,
+      59,
+    );
     document.text(`Período: ${this.getReportPeriodLabel()}`, margin, 66);
 
     let currentY = 81;
@@ -184,17 +218,19 @@ export class ColaboratorReportComponent implements OnInit{
       autoTable(document, {
         startY: currentY,
         margin: { left: margin + 16, right: margin + 12 },
-        head: [[
-          `Lista de Tarefas: ${group.taskListName}`,
-          'Colaborador/Tempo',
-          'Estado',
-          'Prazo'
-        ]],
-        body: group.tasks.map(task => [
+        head: [
+          [
+            `Lista de Tarefas: ${group.taskListName}`,
+            'Colaborador/Tempo',
+            'Estado',
+            'Prazo',
+          ],
+        ],
+        body: group.tasks.map((task) => [
           task.title,
           `${this.username || '—'} (${this.formatDuration(task.duration)})`,
           this.getStatusLabel(task.status),
-          this.formatPdfDate(task.start)
+          this.formatPdfDate(task.start),
         ]),
         theme: 'plain',
         styles: {
@@ -204,43 +240,56 @@ export class ColaboratorReportComponent implements OnInit{
           cellPadding: { top: 2.5, right: 2, bottom: 2.5, left: 2 },
           lineColor: [210, 210, 210],
           lineWidth: 0.15,
-          overflow: 'linebreak'
+          overflow: 'linebreak',
         },
         headStyles: {
           fontStyle: 'bold',
           fillColor: [255, 255, 255],
           textColor: [25, 25, 25],
           lineColor: [110, 110, 110],
-          lineWidth: { top: 0.25, bottom: 0, left: 0, right: 0 }
+          lineWidth: { top: 0.25, bottom: 0, left: 0, right: 0 },
         },
         columnStyles: {
           0: { cellWidth: 63 },
           1: { cellWidth: 43 },
           2: { cellWidth: 24 },
-          3: { cellWidth: 27 }
+          3: { cellWidth: 27 },
         },
-        didParseCell: data => {
+        didParseCell: (data) => {
           if (data.section === 'body' && data.column.index === 0) {
-            data.cell.styles.cellPadding = { top: 2.5, right: 2, bottom: 2.5, left: 10 };
+            data.cell.styles.cellPadding = {
+              top: 2.5,
+              right: 2,
+              bottom: 2.5,
+              left: 10,
+            };
           }
-        }
+        },
       });
 
-      currentY = (document as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY
-        ? (document as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6
+      currentY = (document as jsPDF & { lastAutoTable?: { finalY: number } })
+        .lastAutoTable?.finalY
+        ? (document as jsPDF & { lastAutoTable: { finalY: number } })
+            .lastAutoTable.finalY + 6
         : currentY + 15;
     }
 
     if (!this.groupedColaboradores.length) {
       document.setFont('helvetica', 'normal');
-      document.text('Não foram encontrados registos de tempo.', margin + 2, currentY);
+      document.text(
+        'Não foram encontrados registos de tempo.',
+        margin + 2,
+        currentY,
+      );
     }
 
-    document.save(`relatorio-colaborador-${this.sanitizeFileName(this.username || 'sem-nome')}.pdf`);
+    document.save(
+      `relatorio-colaborador-${this.sanitizeFileName(this.username || 'sem-nome')}.pdf`,
+    );
   }
 
   private loadImage(source: string): Promise<HTMLImageElement | null> {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       const image = new Image();
       image.onload = () => resolve(image);
       image.onerror = () => resolve(null);
@@ -266,14 +315,19 @@ export class ColaboratorReportComponent implements OnInit{
   }
 
   private getStatusLabel(status: string): string {
-    return {
-      todo: 'Por Fazer',
-      doing: 'Em Progresso',
-      done: 'Concluído'
-    }[status] || status;
+    return (
+      {
+        todo: 'Por Fazer',
+        doing: 'Em Progresso',
+        done: 'Concluído',
+      }[status] || status
+    );
   }
 
   private sanitizeFileName(name: string): string {
-    return name.trim().replace(/[<>:"/\\|?*\u0000-\u001F]/g, '-').replace(/\s+/g, '-');
+    return name
+      .trim()
+      .replace(/[<>:"/\\|?*\u0000-\u001F]/g, '-')
+      .replace(/\s+/g, '-');
   }
 }
