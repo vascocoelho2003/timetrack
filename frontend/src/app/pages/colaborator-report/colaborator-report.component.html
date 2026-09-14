@@ -36,7 +36,7 @@
           </div>
           <div>Tempo Registado</div>
           <div>Estado da Tarefa</div>
-          <div>Prazo</div>
+          <div>Data do Registo</div>
         </div>
         @for(col of group.tasks; track col.id){
         <div class="task-row">
@@ -51,7 +51,7 @@
           @if (col.status === 'done') {
           <div class="task-status" data-label="Estado"><span class="status status-{{col.status}}">Concluído</span></div>
           }
-          <div class="task-deadline" data-label="Data">{{formatDate(col.start)}}</div>
+          <div class="task-deadline" data-label="Data">{{formatDate(col.end)}}</div>
         </div>
       }
       </div>

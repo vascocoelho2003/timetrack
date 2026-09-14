@@ -20,6 +20,10 @@ export class ProjectReportComponent implements OnInit {
   startDate = '';
   endDate = '';
 
+  get listsWithTasks() {
+    return this.dados?.task_lists.filter((list) => list.tasks.length > 0) ?? [];
+  } 
+
   constructor(
     private route: ActivatedRoute,
     private apiService: ApiService,
@@ -142,38 +146,53 @@ export class ProjectReportComponent implements OnInit {
     document.text(`Período: ${this.getReportPeriodLabel()}`, margin, 66);
 
     let currentY = 79;
-    const lists = this.dados.task_lists.filter((list) => list.tasks.length > 0);
+    const lists = this.listsWithTasks;
 
     if (!lists.length) {
       document.setFont('helvetica', 'normal');
       document.text('Sem tarefas', margin + 8, currentY);
-    }
+    } else {
+      const body: (
+        | string
+        | { content: string; colSpan: number; styles?: Record<string, unknown> }
+      )[][] = [];
+      for (const list of lists) {
+        body.push([
+          {
+            content: `Lista de Tarefas: ${list.name}`,
+            colSpan: 5,
+            styles: { fontStyle: 'bold', fillColor: [250, 250, 250] },
+          },
+        ]);
+        for (const task of list.tasks) {
+          body.push([
+            task.title,
+            task.assignees
+              .map(
+                (assignee) =>
+                  `${assignee.username} (${this.formatDuration(assignee.time)})`,
+              )
+              .join('\n') || '—',
+            this.getStatusLabel(task.status),
+            this.formatPdfDate(task.due_date),
+            this.formatDuration(task.total_time),
+          ]);
+        }
+      }
 
-    for (const list of lists) {
       autoTable(document, {
         startY: currentY,
         margin: { left: margin, right: margin },
         head: [
           [
-            `Lista de Tarefas: ${list.name}`,
+            '',
             'Colaborador/Tempo',
             'Estado',
-            'Prazo',
+            'Data do Registo',
             'Tempo Total',
           ],
         ],
-        body: list.tasks.map((task) => [
-          task.title,
-          task.assignees
-            .map(
-              (assignee) =>
-                `${assignee.username} (${this.formatDuration(assignee.time)})`,
-            )
-            .join('\n') || '—',
-          this.getStatusLabel(task.status),
-          this.formatPdfDate(task.due_date),
-          this.formatDuration(task.total_time),
-        ]),
+        body,
         theme: 'plain',
         styles: {
           font: 'helvetica',
@@ -199,7 +218,11 @@ export class ProjectReportComponent implements OnInit {
           4: { cellWidth: 27 },
         },
         didParseCell: (data) => {
-          if (data.section === 'body' && data.column.index === 0) {
+          if (
+            data.section === 'body' &&
+            data.column.index === 0 &&
+            data.cell.colSpan === 1
+          ) {
             data.cell.styles.cellPadding = {
               top: 2.5,
               right: 2,
@@ -209,12 +232,6 @@ export class ProjectReportComponent implements OnInit {
           }
         },
       });
-
-      currentY = (document as jsPDF & { lastAutoTable?: { finalY: number } })
-        .lastAutoTable?.finalY
-        ? (document as jsPDF & { lastAutoTable: { finalY: number } })
-            .lastAutoTable.finalY + 8
-        : currentY + 15;
     }
 
     document.save(

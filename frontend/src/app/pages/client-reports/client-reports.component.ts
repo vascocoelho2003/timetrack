@@ -27,6 +27,7 @@ export class ClientReportsComponent implements OnInit {
   pageSize = 10;
   selected_user_id = 0;
   department = false;
+  departmentName = '';
 
   constructor(
     private authService: AuthService,
@@ -38,6 +39,11 @@ export class ClientReportsComponent implements OnInit {
     const now = new Date();
     this.startDate = `${now.getFullYear()}-01-01`;
     this.endDate = this.toDateInput(now);
+    this.apiService.getMyDepartment().subscribe({
+      next: (dept) => {
+        this.departmentName = dept?.name ?? '';
+      },
+    });
     this.loadReport();
   }
 
@@ -97,6 +103,13 @@ export class ClientReportsComponent implements OnInit {
     return this.filteredReports.slice(start, start + this.pageSize);
   }
 
+  get clientLabel(): string {
+    const name = this.department
+      ? this.departmentName
+      : (this.authService.currentUser()?.username ?? '');
+    return `Cliente: ${name || '—'}`;
+  }
+
   async exportPdf(): Promise<void> {
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -121,10 +134,11 @@ export class ClientReportsComponent implements OnInit {
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text(`Período: ${this.getPeriodLabel()}`, margin, 52);
+    doc.text(this.clientLabel, margin, 52);
+    doc.text(`Período: ${this.getPeriodLabel()}`, margin, 59);
 
     autoTable(doc, {
-      startY: 62,
+      startY: 69,
       margin: { left: margin, right: margin },
       head: [['Colaborador', 'Nº de Tarefas', 'Tempo Despendido']],
       body: this.filteredReports.map((r) => [

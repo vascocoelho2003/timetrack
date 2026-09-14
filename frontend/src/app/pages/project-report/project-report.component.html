@@ -29,43 +29,48 @@
     <div class="card">
       <div class="table-wrapper">
         <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Colaborador/Tempo</th>
+              <th>Estado</th>
+              <th>Data do Registo</th>
+              <th>Tempo Total</th>
+            </tr>
+          </thead>
           <tbody>
-            @for(list of dados.task_lists;track list.id){
-              @if(list.tasks.length>0){
-            <tr class="group-header group-divider">
-              <td>Lista de Tarefas: {{list.name}}</td>
-              <td>Colaborador/Tempo</td>
-              <td>Estado</td>
-              <td>Prazo</td>
-              <td>Tempo Total</td>
-            </tr>
-            @for(task of list.tasks; track task.id){
-            <tr class="task-row">
-              <td class="task-name">{{task.title}}</td>
-              <td>
-                @for(user of task.assignees; track user.id){
-                {{user.username}} <span class="time">{{ formatDuration(user.time) }}</span><br/>
-                }
-              </td>
-              @if (task.status === 'todo') {
-              <td>  
-                <span class="status status-{{task.status}}">Por Fazer</span>
-              </td>
+            @for (list of listsWithTasks; track list.id) {
+              <tr class="group-header group-divider">
+                <td colspan="5">Lista de Tarefas: {{ list.name }}</td>
+              </tr>
+              @for (task of list.tasks; track task.id) {
+                <tr class="task-row">
+                  <td class="task-name">{{ task.title }}</td>
+                  <td>
+                    @for (user of task.assignees; track user.id) {
+                      {{ user.username }}<br><span class="time">{{ formatDuration(user.time) }}</span><br/>
+                    }
+                  </td>
+                  @if (task.status === 'todo') {
+                    <td>
+                      <span class="status status-{{ task.status }}">Por Fazer</span>
+                    </td>
+                  }
+                  @if (task.status === 'done') {
+                    <td>
+                      <span class="status status-{{ task.status }}">Concluída</span>
+                    </td>
+                  }
+                  @if (task.status === 'doing') {
+                    <td>
+                      <span class="status status-{{ task.status }}">Em Progresso</span>
+                    </td>
+                  }
+                  <td>{{ task.due_date?.substring(0, 10) }}</td>
+                  <td class="time">{{ formatDuration(task.total_time) }}</td>
+                </tr>
               }
-              @if (task.status === 'done') {
-              <td> 
-                <span class="status status-{{task.status}}">Concluída</span>
-              </td>
-            }@if (task.status === 'doing') {
-              <td>  
-                <span class="status status-{{task.status}}">Em Progresso</span>
-              </td> }
-              <td>{{ task.due_date?.substring(0, 10) }}</td>
-              <td class="time">{{ formatDuration(task.total_time) }}</td>
-            </tr>
             }
-          }
-          }
           </tbody>
         </table>
       </div>

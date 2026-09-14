@@ -2,4 +2,3 @@ backend/node_modules
 backend/data
 .env
 frontend/.angular
-supabase_cred

@@ -188,13 +188,15 @@
   th {
     font-weight: 700;
     color: var(--text);
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
   }
   td {
     color: var(--text);
   }
   .group-header {
-    background: #fafafa;
-    border-top: 1px solid #e5e5e5;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
   }
   .group-header td {
     font-weight: 700;

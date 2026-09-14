@@ -223,7 +223,7 @@ export class ColaboratorReportComponent implements OnInit {
             `Lista de Tarefas: ${group.taskListName}`,
             'Colaborador/Tempo',
             'Estado',
-            'Prazo',
+            'Data do Registo',
           ],
         ],
         body: group.tasks.map((task) => [

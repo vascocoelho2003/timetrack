@@ -159,7 +159,7 @@ router.get("/project_report/:projectId", authMiddleware, async (req, res) => {
             t.id AS task_id,
             t.title,
             t.status,
-            t.due_date,
+            te.created_at as due_date, 
 
             u.id AS user_id,
             u.username,
