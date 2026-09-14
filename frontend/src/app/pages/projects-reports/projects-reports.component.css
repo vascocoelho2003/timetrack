@@ -1,4 +1,8 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 .page {
   width: 100%;
@@ -18,7 +22,7 @@
   display: inline-flex;
   align-items: center;
   color: #1a1a1a;
-   text-decoration: none;
+  text-decoration: none;
   font-size: 14px;
   margin-bottom: 20px;
   cursor: pointer;
@@ -95,7 +99,8 @@ table {
   border-collapse: collapse;
 }
 
-th, td {
+th,
+td {
   padding: 22px 24px;
   text-align: center;
   vertical-align: middle;
@@ -111,12 +116,27 @@ th {
   white-space: nowrap;
 }
 
-th:first-child, td:first-child { text-align: left; }
-tbody tr { cursor: pointer; }
-tbody tr:hover { background: rgba(0, 0, 0, 0.03); }
-tbody tr + tr td { border-top: 1px solid #eee; }
-.team-name { margin-bottom: 6px; font-weight: 700; }
-.team-members { color: #1a1a1a; line-height: 1.7; }
+th:first-child,
+td:first-child {
+  text-align: left;
+}
+tbody tr {
+  cursor: pointer;
+}
+tbody tr:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+tbody tr + tr td {
+  border-top: 1px solid #eee;
+}
+.team-name {
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+.team-members {
+  color: #1a1a1a;
+  line-height: 1.7;
+}
 .team-members a,
 .team-members span {
   display: block;
@@ -128,15 +148,24 @@ tbody tr + tr td { border-top: 1px solid #eee; }
 }
 
 @media (max-width: 640px) {
-  .page { padding: 20px 16px 40px; }
-  h1 { font-size: 20px; }
+  .page {
+    padding: 20px 16px 40px;
+  }
+  h1 {
+    font-size: 20px;
+  }
   .toolbar {
     align-items: stretch;
     flex-direction: column;
   }
-  .search { width: 100%; }
-  .filter { width: 100%; }
-  th, td {
+  .search {
+    width: 100%;
+  }
+  .filter {
+    width: 100%;
+  }
+  th,
+  td {
     padding: 16px 14px;
     font-size: 13px;
   }

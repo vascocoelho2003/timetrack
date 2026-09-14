@@ -1,4 +1,8 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 .page {
   max-width: 720px;
@@ -107,8 +111,12 @@
 }
 
 @media (max-width: 640px) {
-  .page { padding: 20px 16px 40px; }
-  .edit-grid { grid-template-columns: 1fr; }
+  .page {
+    padding: 20px 16px 40px;
+  }
+  .edit-grid {
+    grid-template-columns: 1fr;
+  }
   .edit-actions {
     flex-direction: column-reverse;
   }

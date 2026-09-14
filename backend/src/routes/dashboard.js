@@ -151,52 +151,38 @@ router.get("/project_report/:projectId", authMiddleware, async (req, res) => {
             p.id AS project_id,
             p.name AS project_name,
             team.name AS team_name,
-
             tl.id AS list_id,
             tl.name AS list_name,
             tl.position,
-
             t.id AS task_id,
             t.title,
             t.status,
             te.created_at as due_date, 
-
             u.id AS user_id,
             u.username,
-
             COALESCE(SUM(te.duration), 0) AS user_time
-
         FROM projects p
-
         JOIN teams team
             ON team.id = p.team_id
-
         LEFT JOIN task_lists tl
             ON tl.project_id = p.id
             AND tl.active = 'TRUE'
-
         LEFT JOIN tasks t
             ON t.task_list_id = tl.id
-
         LEFT JOIN task_assignees ta
             ON ta.task_id = t.id
-
         LEFT JOIN users u
             ON u.id = ta.user_id
-
         LEFT JOIN time_entries te
             ON te.task_id = t.id
             AND te.user_id = u.id
             ${hasDateRange ? "AND date(te.start) >= date(@startDate) AND date(te.start) < date(@endDate, '+1 day')" : ""}
-
         WHERE p.id = @projectId
-
         GROUP BY
             p.id,
             tl.id,
             t.id,
             u.id
-
         ORDER BY
             tl.position,
             t.due_date,
@@ -275,40 +261,36 @@ router.get("/colaborators_reports/", authMiddleware, async (req, res) => {
         SELECT
             u.id AS user_id,
             u.username,
-
-            COUNT(DISTINCT t.id) AS nr_tasks,
-
             COUNT(DISTINCT CASE
-                WHEN t.status = 'done' THEN t.id
+                WHEN t.created_at >= datetime('now', 'start of month')
+                 AND t.created_at < datetime('now', 'start of month', '+1 month')
+                THEN t.id
+            END) AS nr_tasks,
+            COUNT(DISTINCT CASE
+                WHEN t.status = 'done'
+                 AND t.completed_at >= datetime('now', 'start of month')
+                 AND t.completed_at < datetime('now', 'start of month', '+1 month')
+                THEN t.id
             END) AS nr_closed_tasks
-
         FROM team_members tm
-
         JOIN users u
             ON u.id = tm.user_id
-
         LEFT JOIN task_assignees ta
             ON ta.user_id = u.id
-
         LEFT JOIN tasks t
             ON t.id = ta.task_id
-
         LEFT JOIN task_lists tl
             ON tl.id = t.task_list_id
-
         LEFT JOIN projects p
             ON p.id = tl.project_id
-
         WHERE tm.team_id IN (
             SELECT team_id
             FROM team_members
             WHERE user_id = ?
         )
-
         GROUP BY
             u.id,
             u.username
-
         ORDER BY
             u.username;
     `,

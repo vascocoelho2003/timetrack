@@ -1,4 +1,8 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 .page {
   max-width: 1200px;
@@ -145,7 +149,7 @@
 .table-wrap {
   background: var(--surface);
   border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   overflow-x: auto;
 }
 
@@ -209,8 +213,13 @@ tbody tr:last-child td {
 }
 
 @media (max-width: 640px) {
-  .page { padding: 20px 16px 40px; }
-  .search { width: 100%; max-width: 100%; }
+  .page {
+    padding: 20px 16px 40px;
+  }
+  .search {
+    width: 100%;
+    max-width: 100%;
+  }
   .toolbar .btn-primary,
   .create-form-actions .btn {
     width: 100%;
@@ -223,5 +232,9 @@ tbody tr:last-child td {
   .create-form-actions {
     flex-direction: column-reverse;
   }
-  thead th, tbody td { padding: 16px 14px; font-size: 13px; }
+  thead th,
+  tbody td {
+    padding: 16px 14px;
+    font-size: 13px;
+  }
 }

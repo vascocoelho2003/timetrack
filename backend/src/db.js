@@ -160,6 +160,9 @@ function initDb() {
       `ALTER TABLE tasks ADD COLUMN client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL`,
     );
   }
+  if (!taskColumns.some((column) => column.name === "completed_at")) {
+    db.exec(`ALTER TABLE tasks ADD COLUMN completed_at TEXT`);
+  }
 
   const timeEntryColumns = db.prepare(`PRAGMA table_info(time_entries)`).all();
   const taskIdColumn = timeEntryColumns.find(

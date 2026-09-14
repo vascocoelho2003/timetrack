@@ -12,7 +12,7 @@
 }
 
 .list-table-row {
-  display: grid; 
+  display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
   gap: 8px;
   padding: 10px 0;
@@ -43,7 +43,6 @@
   gap: 1rem 1.5rem;
   margin: 0.5rem 0 1rem;
 }
-
 
 @media (max-width: 1024px) {
   .list-table-header {
@@ -93,8 +92,8 @@
     padding: 6px 0;
   }
 
-  .list-table-row > :nth-child(n+2),
-  .list-table-header > :nth-child(n+2) {
+  .list-table-row > :nth-child(n + 2),
+  .list-table-header > :nth-child(n + 2) {
     display: none;
   }
 
@@ -193,14 +192,14 @@
 }
 
 .form-section > summary::after {
-  content: '▸';
+  content: "▸";
   color: var(--muted);
   font-weight: 400;
   font-size: 0.9rem;
 }
 
 .form-section[open] > summary::after {
-  content: '▾';
+  content: "▾";
 }
 
 .form-section-body {

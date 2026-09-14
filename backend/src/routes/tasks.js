@@ -34,6 +34,17 @@ function setAssignees(taskId, assigneeIds) {
   }
 }
 
+function syncCompletedAt(taskId, previousStatus, nextStatus) {
+  if (!nextStatus || nextStatus === previousStatus) return;
+  if (nextStatus === "done") {
+    db.prepare(
+      "UPDATE tasks SET completed_at = datetime('now') WHERE id = ?",
+    ).run(taskId);
+  } else if (previousStatus === "done") {
+    db.prepare("UPDATE tasks SET completed_at = NULL WHERE id = ?").run(taskId);
+  }
+}
+
 const DEPENDENCY_TYPES = ["SS", "FS", "FF", "SF"];
 
 /**
@@ -188,6 +199,7 @@ router.post("/", (req, res) => {
 
   const taskId = result.lastInsertRowid;
   setAssignees(taskId, assigneeIds);
+  syncCompletedAt(taskId, "todo", status);
 
   const task = db.prepare("SELECT * FROM tasks WHERE id = ?").get(taskId);
   res.status(201).json({ ...task, assigneeIds: assigneeIds || [] });
@@ -468,6 +480,8 @@ router.put("/:taskId", (req, res) => {
       createRecurrency(taskId, req.user.id);
     }
   }
+
+  syncCompletedAt(taskId, ctx.status, status);
 
   const task = db.prepare("SELECT * FROM tasks WHERE id = ?").get(taskId);
   const ids = db
