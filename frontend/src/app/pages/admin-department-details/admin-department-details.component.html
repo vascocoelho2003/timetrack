@@ -1,0 +1,47 @@
+<div class="page">
+  <a class="back" routerLink="/admin-panel/departments">← Departamentos</a>
+
+  @if (loading) {
+    <p class="muted">A carregar...</p>
+  } @else if (error) {
+    <h1 class="page-title">Detalhes do departamento</h1>
+    <p class="error">{{ error }}</p>
+  } @else {
+    <h1 class="page-title">{{ departmentName }}</h1>
+    <p class="section-title">
+      Utilizadores
+      <span class="muted">({{ members.length }})</span>
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Perfil</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of members; track user.id) {
+            <tr class="clickable" (click)="openUser(user.id)">
+              <td>{{ user.username }}</td>
+              <td>{{ user.email }}</td>
+              <td>{{ profileLabel(user.profile) }}</td>
+              <td>
+                <span class="status-pill" [attr.data-status]="user.active ? 'done' : 'todo'">
+                  {{ user.active ? 'Ativo' : 'Inativo' }}
+                </span>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4">Não foram encontrados utilizadores neste departamento.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

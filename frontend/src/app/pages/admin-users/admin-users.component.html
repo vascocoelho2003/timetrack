@@ -38,21 +38,23 @@
           <input id="newEmail" name="newEmail" type="email" [(ngModel)]="newEmail" placeholder="email@exemplo.com" />
         </div>
         <div class="field">
-          <label for="newDepartmentId">Departamento</label>
-          <select id="newDepartmentId" name="newDepartmentId" [(ngModel)]="newDepartmentId">
-            <option [ngValue]="null" disabled>Selecionar departamento</option>
-            @for (dept of departments; track dept.id) {
-              <option [ngValue]="dept.id">{{ dept.name }}</option>
-            }
-          </select>
-        </div>
-        <div class="field">
           <label for="newProfile">Perfil</label>
           <select id="newProfile" name="newProfile" [(ngModel)]="newProfile">
             <option value="user">Utilizador</option>
             <option value="admin">Administrador</option>
           </select>
         </div>
+        @if (newProfile === 'user') {
+          <div class="field">
+            <label for="newDepartmentId">Departamento</label>
+            <select id="newDepartmentId" name="newDepartmentId" [(ngModel)]="newDepartmentId">
+              <option [ngValue]="null" disabled>Selecionar departamento</option>
+              @for (dept of departments; track dept.id) {
+                <option [ngValue]="dept.id">{{ dept.name }}</option>
+              }
+            </select>
+          </div>
+        }
         <div class="field">
           <label for="newPassword">Password</label>
           <input id="newPassword" name="newPassword" type="password" [(ngModel)]="newPassword" autocomplete="new-password" />

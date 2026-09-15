@@ -117,7 +117,7 @@ export class AdminUsersComponent implements OnInit {
       this.formError = 'O email é obrigatório.';
       return;
     }
-    if (this.newDepartmentId == null) {
+    if (this.newProfile === 'user' && this.newDepartmentId == null) {
       this.formError = 'Selecione um departamento.';
       return;
     }
@@ -137,7 +137,7 @@ export class AdminUsersComponent implements OnInit {
         email,
         password: this.newPassword,
         passwordConfirm: this.newPasswordConfirm,
-        department_id: this.newDepartmentId,
+        department_id: this.newProfile === 'admin' ? null : this.newDepartmentId,
         profile: this.newProfile,
       })
       .subscribe({

@@ -26,7 +26,8 @@ export class AdminUserComponent implements OnInit {
   saving = false;
   error = '';
   success = '';
-  currentUserId = 0;
+  backLink: (string | number)[] = ['/admin-panel/users'];
+  backLabel = 'Utilizadores';
 
   constructor(
     private route: ActivatedRoute,
@@ -35,7 +36,13 @@ export class AdminUserComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.currentUserId = this.authService.currentUser()?.id ?? 0;
+    const fromDepartment = Number(
+      this.route.snapshot.queryParamMap.get('department'),
+    );
+    if (fromDepartment) {
+      this.backLink = ['/admin-department-details', fromDepartment];
+      this.backLabel = 'Departamento';
+    }
     this.userId = Number(this.route.snapshot.paramMap.get('id'));
     if (!this.userId) {
       this.loading = false;
@@ -81,7 +88,7 @@ export class AdminUserComponent implements OnInit {
       this.error = 'O email é obrigatório.';
       return;
     }
-    if (this.departmentId == null) {
+    if (this.profile === 'user' && this.departmentId == null) {
       this.error = 'Selecione um departamento.';
       return;
     }
@@ -101,8 +108,7 @@ export class AdminUserComponent implements OnInit {
       .updateAdminUser(this.userId, {
         username,
         email,
-        department_id: this.departmentId,
-        profile: this.profile,
+        department_id: this.profile === 'admin' ? null : this.departmentId,
         ...(this.newPassword ? { password: this.newPassword } : {}),
       })
       .subscribe({

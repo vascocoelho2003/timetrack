@@ -6,7 +6,21 @@ const router = express.Router();
 router.use(authMiddleware);
 
 /**
- * Obtém todos os Clientes Departamento
+ * @openapi
+ * /api/client/getDepartmentClients:
+ *   get:
+ *     tags: [Client]
+ *     summary: Obter todos os Clientes Departamento
+ *     description: Obter todos os Clientes Departamento.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Clientes Departamento retornados com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       500:
+ *         description: Erro ao obter Clientes Departamento
  */
 router.get("/getDepartmentClients", authMiddleware, async (req, res) => {
   const clients = db
@@ -16,7 +30,21 @@ router.get("/getDepartmentClients", authMiddleware, async (req, res) => {
 });
 
 /**
- * Obtém todos os clientes Individuais
+ * @openapi
+ * /api/client/getIndividualClients:
+ *   get:
+ *     tags: [Client]
+ *     summary: Obter todos os Clientes Individuais
+ *     description: Obter todos os Clientes Individuais.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Clientes Individuais retornados com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       500:
+ *         description: Erro ao obter Clientes Individuais
  */
 router.get("/getIndividualClients", authMiddleware, async (req, res) => {
   const clients = db
@@ -26,7 +54,21 @@ router.get("/getIndividualClients", authMiddleware, async (req, res) => {
 });
 
 /**
- * Obtém todos os Clientes
+ * @openapi
+ * /api/client/getAllClients:
+ *   get:
+ *     tags: [Client]
+ *     summary: Obter todos os Clientes
+ *     description: Obter todos os Clientes.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Clientes retornados com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       500:
+ *         description: Erro ao obter Clientes
  */
 router.get("/getAllClients", authMiddleware, (req, res) => {
   const clients = db
@@ -46,7 +88,23 @@ router.get("/getAllClients", authMiddleware, (req, res) => {
 });
 
 /**
- * Criar Clientes
+ * @openapi
+ * /api/client/createClient:
+ *   post:
+ *     tags: [Client]
+ *     summary: Criar Clientes
+ *     description: Criar Clientes.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Cliente criado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       404:
+ *         description: Utilizador ou departamento não encontrado
+ *       500:
+ *         description: Erro ao criar cliente
  */
 router.post("/createClient", authMiddleware, async (req, res) => {
   const { client_type, user_id, department_id } = req.body;

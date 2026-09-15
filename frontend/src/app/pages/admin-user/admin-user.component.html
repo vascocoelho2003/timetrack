@@ -1,5 +1,5 @@
 <div class="page">
-  <a class="back" routerLink="/admin-panel/users">← Utilizadores</a>
+  <a class="back" [routerLink]="backLink">← {{ backLabel }}</a>
   <h1 class="page-title">Editar utilizador</h1>
 
   @if (loading) {
@@ -24,25 +24,20 @@
             <label for="email">Email</label>
             <input id="email" name="email" type="email" [(ngModel)]="email" required />
           </div>
+          @if (profile === 'user') {
+            <div class="field">
+              <label for="departmentId">Departamento</label>
+              <select id="departmentId" name="departmentId" [(ngModel)]="departmentId" required>
+                <option [ngValue]="null" disabled>Selecionar departamento</option>
+                @for (dept of departments; track dept.id) {
+                  <option [ngValue]="dept.id">{{ dept.name }}</option>
+                }
+              </select>
+            </div>
+          }
           <div class="field">
-            <label for="departmentId">Departamento</label>
-            <select id="departmentId" name="departmentId" [(ngModel)]="departmentId" required>
-              <option [ngValue]="null" disabled>Selecionar departamento</option>
-              @for (dept of departments; track dept.id) {
-                <option [ngValue]="dept.id">{{ dept.name }}</option>
-              }
-            </select>
-          </div>
-          <div class="field">
-            <label for="profile">Perfil</label>
-            <select
-              id="profile"
-              name="profile"
-              [(ngModel)]="profile"
-              [disabled]="userId === currentUserId">
-              <option value="user">Utilizador</option>
-              <option value="admin">Administrador</option>
-            </select>
+            <label>Perfil</label>
+            <input [value]="profile === 'admin' ? 'Administrador' : 'Utilizador'" disabled />
           </div>
           <div class="field">
             <label for="newPassword">Nova password</label>
@@ -75,7 +70,7 @@
         }
 
         <div class="edit-actions">
-          <a class="btn btn-ghost" routerLink="/admin-panel/users">Cancelar</a>
+          <a class="btn btn-ghost" [routerLink]="backLink">Cancelar</a>
           <button class="btn btn-primary" type="submit" [disabled]="saving">
             {{ saving ? 'A guardar...' : 'Guardar' }}
           </button>

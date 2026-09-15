@@ -151,10 +151,20 @@ tbody td {
   color: var(--text);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
+  transition: background 0.15s;
 }
 
-tbody tr:hover {
-  background: rgba(0, 0, 0, 0.03);
+tbody tr.clickable,
+tbody tr.clickable td {
+  cursor: pointer;
+}
+
+tbody tr:hover td {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+:host-context(.dark-mode) tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 tbody tr:last-child td {

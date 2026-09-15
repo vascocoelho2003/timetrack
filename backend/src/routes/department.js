@@ -4,8 +4,21 @@ const { authMiddleware } = require("../middleware/auth");
 const router = express.Router();
 
 /**
- * Obtém todos os departamentos registados no sistema
- * Público: necessário na página de registo, sem sessão.
+ * @openapi
+ * /api/department/getDepartments:
+ *   get:
+ *     tags: [Department]
+ *     summary: Obter todos os departamentos registados no sistema
+ *     description: Obter todos os departamentos registados no sistema.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Departamentos retornados com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       500:
+ *         description: Erro ao obter departamentos
  */
 router.get("/getDepartments", async (req, res) => {
   const departments = db.prepare(`SELECT * FROM departments`).all();
@@ -15,7 +28,23 @@ router.get("/getDepartments", async (req, res) => {
 router.use(authMiddleware);
 
 /**
- * Cria um novo departamento no sistema
+ * @openapi
+ * /api/department/createDepartment:
+ *   post:
+ *     tags: [Department]
+ *     summary: Criar um novo departamento no sistema
+ *     description: Criar um novo departamento no sistema.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Departamento criado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       401:
+ *         description: Departamento já registado
+ *       500:
+ *         description: Erro ao criar departamento
  */
 router.post("/createDepartment", authMiddleware, async (req, res) => {
   const { name } = req.body;
@@ -42,7 +71,23 @@ router.post("/createDepartment", authMiddleware, async (req, res) => {
 });
 
 /**
- * Obtém um departamento registado no sistema através do id
+ * @openapi
+ * /api/department/getDepartment/:department_id:
+ *   get:
+ *     tags: [Department]
+ *     summary: Obter um departamento registado no sistema através do id
+ *     description: Obter um departamento registado no sistema através do id.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Departamento retornado com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       404:
+ *         description: Departamento não encontrado
+ *       500:
+ *         description: Erro ao obter departamento
  */
 router.get(
   "/getDepartment/:department_id",
@@ -50,14 +95,33 @@ router.get(
   async (req, res) => {
     const { department_id } = req.params;
     const department = db
-      .prepare(`SELECT * FROM departments WHERE id = ?`)
+      .prepare(`SELECT id, name FROM departments WHERE id = ?`)
       .get(department_id);
+    if (!department) {
+      return res.status(404).json({ error: "Departamento não encontrado" });
+    }
     return res.status(200).json(department);
   },
 );
 
 /**
- * Elimina um departamento registado no sistema através do id
+ * @openapi
+ * /api/department/deleteDepartment/:department_id:
+ *   delete:
+ *     tags: [Department]
+ *     summary: Eliminar um departamento registado no sistema através do id
+ *     description: Eliminar um departamento registado no sistema através do id.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Departamento eliminado com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       404:
+ *         description: Departamento não encontrado
+ *       500:
+ *         description: Erro ao eliminar departamento
  */
 router.delete(
   "/deleteDepartment/:department_id",
@@ -72,7 +136,23 @@ router.delete(
 );
 
 /**
- * Obtém o departamento do utilizador logado
+ * @openapi
+ * /api/department/getMyDepartment:
+ *   get:
+ *     tags: [Department]
+ *     summary: Obter o departamento do utilizador logado
+ *     description: Obter o departamento do utilizador logado.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Departamento retornado com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       404:
+ *         description: Departamento não encontrado
+ *       500:
+ *         description: Erro ao obter departamento
  */
 router.get("/getMyDepartment", authMiddleware, async (req, res) => {
   const dept = db
@@ -81,6 +161,51 @@ router.get("/getMyDepartment", authMiddleware, async (req, res) => {
     )
     .get(req.user.id);
   return res.status(200).json(dept || null);
+});
+
+/**
+ * @openapi
+ * /api/departments/getDepartmentMembers/:department_id:
+ *   get:
+ *     tags: [Department]
+ *     summary: Obter os utilizadores de um departamento
+ *     description: Obter os utilizadores de um departamento.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Utilizadores retornados com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       404:
+ *         description: Departamento não encontrado
+ *       500:
+ *         description: Erro ao obter utilizadores do departamento
+ */
+router.get("/getDepartmentMembers/:department_id", authMiddleware, async (req, res) => {
+  const { department_id } = req.params;
+  const department = db
+    .prepare(`SELECT id FROM departments WHERE id = ?`)
+    .get(department_id);
+  if (!department) {
+    return res.status(404).json({ error: "Departamento não encontrado" });
+  }
+  const members = db
+    .prepare(
+      `SELECT id, username, email, profile, active
+       FROM users
+       WHERE department_id = ?
+       ORDER BY username COLLATE NOCASE`,
+    )
+    .all(department_id)
+    .map((user) => ({
+      ...user,
+      active:
+        user.active === 1 ||
+        user.active === true ||
+        String(user.active).toLowerCase() === "true",
+    }));
+  return res.status(200).json(members);
 });
 
 module.exports = router;

@@ -6,7 +6,21 @@ const router = express.Router();
 router.use(authMiddleware);
 
 /**
- * Obtém os dados necessários para a Dashboard da Home Page
+ * @openapi
+ * /api/dashboard/dashboard:
+ *   get:
+ *     tags: [Dashboard]
+ *     summary: Obter os dados necessários para a Dashboard da Home Page
+ *     description: Obter os dados necessários para a Dashboard da Home Page.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard retornada com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       500:
+ *         description: Erro ao obter dashboard
  */
 router.get("/dashboard", authMiddleware, async (req, res) => {
   const dashboard = db
@@ -81,7 +95,21 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
 });
 
 /**
- * Obtém as tarefas atribuídas ao utilizador logado para apresentar na página my-tasks
+ * @openapi
+ * /api/dashboard/my-todo-tasks:
+ *   get:
+ *     tags: [Dashboard]
+ *     summary: Obter as tarefas atribuídas ao utilizador logado para apresentar na página my-tasks
+ *     description: Obter as tarefas atribuídas ao utilizador logado para apresentar na página my-tasks.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Tarefas retornadas com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       500:
+ *         description: Erro ao obter tarefas
  */
 router.get("/my-todo-tasks", authMiddleware, async (req, res) => {
   const tasks = db
@@ -111,7 +139,21 @@ router.get("/my-todo-tasks", authMiddleware, async (req, res) => {
 });
 
 /**
- * Obtém os projetos a que o utilizador logado pertence para apresentar na página Projects
+ * @openapi
+ * /api/dashboard/my-projects:
+ *   get:
+ *     tags: [Dashboard]
+ *     summary: Obter os projetos a que o utilizador logado pertence para apresentar na página Projects
+ *     description: Obter os projetos a que o utilizador logado pertence para apresentar na página Projects.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Projetos retornados com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       500:
+ *         description: Erro ao obter projetos
  */
 router.get("/my-projects", authMiddleware, async (req, res) => {
   const projects = db
@@ -137,7 +179,23 @@ router.get("/my-projects", authMiddleware, async (req, res) => {
 });
 
 /**
- * Obtém os dados necessários para o relatório de projeto
+ * @openapi
+ * /api/dashboard/project_report/:projectId:
+ *   get:
+ *     tags: [Dashboard]
+ *     summary: Obter os dados necessários para o relatório de projeto
+ *     description: Obter os dados necessários para o relatório de projeto.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Relatório de projeto retornado com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       404:
+ *         description: Projeto não encontrado
+ *       500:
+ *         description: Erro ao obter relatório de projeto
  */
 router.get("/project_report/:projectId", authMiddleware, async (req, res) => {
   const { projectId } = req.params;
@@ -251,7 +309,21 @@ router.get("/project_report/:projectId", authMiddleware, async (req, res) => {
 });
 
 /**
- * Obtém os dados necessários para o relatório geral de colaboradores
+ * @openapi
+ * /api/dashboard/colaborators_reports/:id:
+ *   get:
+ *     tags: [Dashboard]
+ *     summary: Obter os dados necessários para o relatório geral de colaboradores
+ *     description: Obter os dados necessários para o relatório geral de colaboradores.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Relatório de colaboradores retornado com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       500:
+ *         description: Erro ao obter relatório de colaboradores
  */
 router.get("/colaborators_reports/", authMiddleware, async (req, res) => {
   const id = req.user.id;
@@ -334,7 +406,23 @@ router.get("/colaborators_reports/", authMiddleware, async (req, res) => {
 });
 
 /**
- * Obtém os dados necessários para o relatório de colaborador
+ * @openapi
+ * /api/dashboard/colaborator_report/:id:
+ *   get:
+ *     tags: [Dashboard]
+ *     summary: Obter os dados necessários para o relatório de colaborador
+ *     description: Obter os dados necessários para o relatório de colaborador.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Relatório de colaborador retornado com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       404:
+ *         description: Colaborador não encontrado
+ *       500:
+ *         description: Erro ao obter relatório de colaborador
  */
 router.get("/colaborator_report/:id", authMiddleware, (req, res) => {
   const userId = req.params.id;

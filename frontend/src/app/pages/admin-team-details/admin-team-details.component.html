@@ -1,0 +1,82 @@
+<div class="page">
+  <a class="back" routerLink="/admin-panel/teams">← Equipas</a>
+
+  @if (loading) {
+    <p class="muted">A carregar...</p>
+  } @else if (!teamName && error) {
+    <h1 class="page-title">Detalhes da equipa</h1>
+    <p class="error">{{ error }}</p>
+  } @else {
+    <h1 class="page-title">{{ teamName }}</h1>
+
+    <div class="create-form">
+      <p class="create-form-label">Adicionar membro</p>
+      @if (formError) {
+        <p class="error">{{ formError }}</p>
+      }
+      <div class="create-form-row">
+        <input
+          id="memberEmail"
+          name="memberEmail"
+          type="email"
+          [(ngModel)]="memberEmail"
+          placeholder="Email do utilizador"
+          (keyup.enter)="addMember()"
+        />
+        <select id="memberRole" name="memberRole" [(ngModel)]="memberRole">
+          <option value="member">Membro</option>
+          <option value="admin">Administrador</option>
+        </select>
+        <button class="btn btn-primary" type="button" [disabled]="adding" (click)="addMember()">
+          {{ adding ? 'A adicionar...' : 'Adicionar' }}
+        </button>
+      </div>
+    </div>
+
+    <p class="section-title">
+      Membros
+      <span class="muted">({{ members.length }})</span>
+    </p>
+    @if (error) {
+      <p class="error">{{ error }}</p>
+    }
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Departamento</th>
+            <th>Role</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (member of members; track member.id) {
+            <tr>
+              <td>{{ member.username }}</td>
+              <td>{{ member.email }}</td>
+              <td>{{ member.department_name || '—' }}</td>
+              <td>
+                <select [name]="'role-' + member.id" [ngModel]="member.role" [disabled]="updatingUserId === member.id || !canChangeRole(member)" (ngModelChange)="changeRole(member, $event)">
+                  <option value="member">Membro</option>
+                  <option value="admin">Administrador</option>
+                </select>
+              </td>
+              <td>
+                <button class="btn btn-danger btn-sm" type="button" [disabled]="removingUserId === member.id || !canRemove(member)" (click)="removeMember(member)">
+                  {{ removingUserId === member.id ? 'A remover...' : 'Remover' }}
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5">Não foram encontrados membros nesta equipa.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

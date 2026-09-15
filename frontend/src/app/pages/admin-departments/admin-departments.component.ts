@@ -1,14 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AdminDepartment } from '../../core/models';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatCheckboxChange } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-admin-departments',
-  imports: [FormsModule, RouterLink, MatCheckboxModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './admin-departments.component.html',
   styleUrl: './admin-departments.component.css',
 })
@@ -21,7 +19,7 @@ export class AdminDepartmentsComponent implements OnInit {
   showNewDepartmentForm = false;
   NewDepartmentName = '';
 
-  constructor(private apiService: ApiService) {}
+  constructor(private apiService: ApiService, private router: Router) {}
 
   ngOnInit(): void {
     this.loadDepartments();
@@ -54,6 +52,10 @@ export class AdminDepartmentsComponent implements OnInit {
       ? this.items.filter((d) => d.name.toLowerCase().includes(search))
       : [...this.items];
     this.page = 1;
+  }
+
+  openDepartment(departmentId: number): void {
+    this.router.navigate(['/admin-department-details', departmentId]);
   }
 
   get totalPages(): number {

@@ -21,7 +21,7 @@
       </thead>
       <tbody>
         @for (team of pagedItems; track team.id) {
-        <tr>
+        <tr class="clickable" (click)="openTeam(team.id)">
           <td>{{ team.name }}</td>
           <td>{{ team.nr_members }}</td>
           <td>{{ team.created_by_name || '—' }}</td>

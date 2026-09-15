@@ -64,7 +64,7 @@ export class AuthService {
   updateProfile(
     username: string,
     email: string,
-    departmentId: number,
+    departmentId: number | null,
     password?: string,
   ) {
     return this.http

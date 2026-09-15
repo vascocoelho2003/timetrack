@@ -160,7 +160,23 @@ router.get("/active", (req, res) => {
 });
 
 /**
- * Obtém o último registo de tempo que ainda não foi atribuído a nenhuma tarefa.
+ * @openapi
+ * /api/time/unassigned/pending:
+ *   get:
+ *     tags: [Time Entries]
+ *     summary: Obter o último registo de tempo que ainda não foi atribuído a nenhuma tarefa.
+ *     description: Obter o último registo de tempo que ainda não foi atribuído a nenhuma tarefa.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Registo de tempo encontrado ou nulo
+ *       401:
+ *         description: Token inválido ou ausente
+ *       404:
+ *         description: Registo de tempo não encontrado
+ *       500:
+ *         description: Erro ao obter o registo de tempo
  */
 router.get("/unassigned/pending", (req, res) => {
   const entry = db
@@ -179,7 +195,29 @@ router.get("/unassigned/pending", (req, res) => {
 });
 
 /**
- * Associa um timer sem tarefa a uma tarefa
+ * @openapi
+ * /api/time/unassigned/:id/assign:
+ *   post:
+ *     tags: [Time Entries]
+ *     summary: Associa um timer sem tarefa a uma tarefa
+ *     description: Associa um timer sem tarefa a uma tarefa.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Timer associado a tarefa com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       401:
+ *         description: Token inválido ou ausente
+ *       403:
+ *         description: Sem acesso à tarefa
+ *       404:
+ *         description: Registo de tempo não encontrado
+ *       409:
+ *         description: Este tempo já tem uma tarefa
+ *       500:
+ *         description: Erro ao associar o timer a tarefa
  */
 router.post("/unassigned/:id/assign", (req, res) => {
   const entryId = +req.params.id;
@@ -271,7 +309,25 @@ router.post("/unassigned/:id/assign", (req, res) => {
 });
 
 /**
- * Eliminar um timer sem tarefa
+ * @openapi
+ * /api/time/unassigned/:id:
+ *   delete:
+ *     tags: [Time Entries]
+ *     summary: Eliminar um timer sem tarefa
+ *     description: Eliminar um timer sem tarefa.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       204:
+ *         description: Timer eliminado com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       404:
+ *         description: Registo de tempo não encontrado
+ *       409:
+ *         description: Não é possível descartar tempo já associado a uma tarefa
+ *       500:
+ *         description: Erro ao eliminar o timer
  */
 router.delete("/unassigned/:id", (req, res) => {
   const entryId = +req.params.id;

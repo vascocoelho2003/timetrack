@@ -10,6 +10,7 @@ import { AdminProject } from '../../core/models';
   templateUrl: './admin-projects.component.html',
   styleUrl: './admin-projects.component.css',
 })
+
 export class AdminProjectsComponent implements OnInit {
   items: AdminProject[] = [];
   filtered: AdminProject[] = [];

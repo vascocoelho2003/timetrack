@@ -30,33 +30,73 @@
   margin-bottom: 24px;
 }
 
-.search {
-  position: relative;
-  max-width: 280px;
-  margin-bottom: 20px;
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
 }
 
-.search input {
-  width: 100%;
-  padding: 10px 36px 10px 14px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--text);
-  font-size: 13px;
-  outline: none;
-}
-
-.search input::placeholder {
+.muted {
   color: var(--muted);
+  font-size: 14px;
+  font-weight: 400;
 }
 
-.search svg {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #999;
+.error {
+  color: var(--danger);
+  font-size: 13px;
+  margin: 0 0 12px;
+}
+
+.create-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 20px 22px;
+  margin-bottom: 24px;
+}
+
+.create-form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 10px;
+}
+
+.create-form-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.create-form-row input,
+.create-form-row select {
+  height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.create-form-row input {
+  flex: 1;
+  min-width: 220px;
+}
+
+.create-form-row select {
+  min-width: 180px;
+}
+
+.create-form-row .btn {
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-size: 14px;
 }
 
 .table-wrap {
@@ -91,11 +131,6 @@ tbody td {
   transition: background 0.15s;
 }
 
-tbody tr.clickable,
-tbody tr.clickable td {
-  cursor: pointer;
-}
-
 tbody tr:hover td {
   background: rgba(0, 0, 0, 0.04);
 }
@@ -108,35 +143,31 @@ tbody tr:last-child td {
   border-bottom: none;
 }
 
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  margin: 16px 0;
+tbody select {
+  height: 36px;
+  min-width: 160px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
   font-size: 13px;
 }
 
-.pagination button {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.pagination button:disabled {
-  cursor: default;
-  opacity: 0.5;
+tbody select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 @media (max-width: 640px) {
   .page {
     padding: 20px 16px 40px;
   }
-  .search {
-    max-width: 100%;
+  .create-form-row input,
+  .create-form-row select,
+  .create-form-row .btn {
+    width: 100%;
+    min-width: 0;
   }
   thead th,
   tbody td {

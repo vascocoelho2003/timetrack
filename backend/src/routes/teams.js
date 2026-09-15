@@ -6,6 +6,22 @@ const { isTeamAdmin, isTeamMember } = require("../utils/permissions");
 const router = express.Router();
 router.use(authMiddleware);
 
+function isSystemAdmin(req) {
+  return req.user?.profile === "admin";
+}
+
+function canManageTeamMembers(req, teamId) {
+  return isSystemAdmin(req) || isTeamAdmin(req.user.id, teamId);
+}
+
+function countTeamAdmins(teamId) {
+  return db
+    .prepare(
+      "SELECT COUNT(*) AS n FROM team_members WHERE team_id = ? AND role = 'admin'",
+    )
+    .get(teamId).n;
+}
+
 /**
  * @openapi
  * /api/teams:
@@ -104,7 +120,7 @@ router.post("/", (req, res) => {
  */
 router.get("/:teamId/members", (req, res) => {
   const teamId = +req.params.teamId;
-  if (!isTeamMember(req.user.id, teamId)) {
+  if (!isTeamMember(req.user.id, teamId) && req.user.profile !== 'admin') {
     return res.status(403).json({ error: "Sem acesso à equipa" });
   }
 
@@ -130,7 +146,7 @@ router.get("/:teamId/members", (req, res) => {
  *   post:
  *     tags: [Teams]
  *     summary: Adiciona membro à equipa
- *     description: Adiciona um utilizador a uma equipa, disponível apenas para administradores.
+ *     description: Adiciona um utilizador a uma equipa, disponível apenas para administradores da equipa.
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -160,7 +176,7 @@ router.post("/:teamId/members", (req, res) => {
   const teamId = +req.params.teamId;
   const { email, role = "member" } = req.body;
 
-  if (!isTeamAdmin(req.user.id, teamId)) {
+  if (!canManageTeamMembers(req, teamId)) {
     return res
       .status(403)
       .json({ error: "Apenas admins podem adicionar membros" });
@@ -173,12 +189,15 @@ router.post("/:teamId/members", (req, res) => {
   }
 
   const user = db
-    .prepare("SELECT id, email, username FROM users WHERE email = ?")
+    .prepare("SELECT id, email, username, profile FROM users WHERE email = ?")
     .get(email.trim().toLowerCase());
   if (!user) {
     return res
       .status(404)
       .json({ error: "Utilizador não encontrado. Deve registar-se primeiro." });
+  }
+  if(user.profile==='admin'){
+    return res.status(403).json({ error: "Utilizadores do tipo Admin não podem ser membros de uma equipa" });
   }
 
   const existing = db
@@ -223,23 +242,126 @@ router.delete("/:teamId/members/:userId", (req, res) => {
   const teamId = +req.params.teamId;
   const userId = +req.params.userId;
 
-  if (!isTeamAdmin(req.user.id, teamId)) {
+  if (!canManageTeamMembers(req, teamId)) {
     return res
       .status(403)
       .json({ error: "Apenas admins podem remover membros" });
   }
-  if (userId === req.user.id) {
+  if (userId === req.user.id && !isSystemAdmin(req)) {
     return res.status(400).json({ error: "Não pode remover-se a si próprio" });
   }
 
-  const result = db
-    .prepare("DELETE FROM team_members WHERE team_id = ? AND user_id = ?")
-    .run(teamId, userId);
-
-  if (result.changes === 0) {
+  const member = db
+    .prepare(
+      "SELECT role FROM team_members WHERE team_id = ? AND user_id = ?",
+    )
+    .get(teamId, userId);
+  if (!member) {
     return res.status(404).json({ error: "Membro não encontrado" });
   }
+  if (member.role === "admin" && countTeamAdmins(teamId) <= 1) {
+    return res
+      .status(400)
+      .json({ error: "A equipa tem de ter pelo menos um administrador" });
+  }
+
+  db.prepare("DELETE FROM team_members WHERE team_id = ? AND user_id = ?").run(
+    teamId,
+    userId,
+  );
   res.status(204).send();
+});
+
+/**
+ * @openapi
+ * /api/teams/{teamId}/members/{userId}:
+ *   put:
+ *     tags: [Teams]
+ *     summary: Atualizar o role de um membro da equipa
+ *     description: Atualizar o role de um membro da equipa, disponível para administradores da equipa ou do sistema.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: teamId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [role]
+ *             properties:
+ *               role:
+ *                 type: string
+ *                 enum: [admin, member]
+ *     responses:
+ *       200:
+ *         description: Role atualizado
+ *       400:
+ *         description: Dados inválidos
+ *       403:
+ *         description: Sem permissão
+ *       404:
+ *         description: Membro não encontrado
+ */
+router.put("/:teamId/members/:userId", (req, res) => {
+  const teamId = +req.params.teamId;
+  const userId = +req.params.userId;
+  const role = req.body.role;
+
+  if (!canManageTeamMembers(req, teamId)) {
+    return res
+      .status(403)
+      .json({ error: "Apenas admins podem alterar o role dos membros" });
+  }
+  if (!["admin", "member"].includes(role)) {
+    return res.status(400).json({ error: "Role inválida" });
+  }
+
+  const member = db
+    .prepare(
+      "SELECT role FROM team_members WHERE team_id = ? AND user_id = ?",
+    )
+    .get(teamId, userId);
+  if (!member) {
+    return res.status(404).json({ error: "Membro não encontrado" });
+  }
+  if (
+    member.role === "admin" &&
+    role !== "admin" &&
+    countTeamAdmins(teamId) <= 1
+  ) {
+    return res
+      .status(400)
+      .json({ error: "A equipa tem de ter pelo menos um administrador" });
+  }
+
+  db.prepare(
+    "UPDATE team_members SET role = ? WHERE team_id = ? AND user_id = ?",
+  ).run(role, teamId, userId);
+
+  const updated = db
+    .prepare(
+      `
+    SELECT u.id, u.email, u.username, u.department_id, d.name AS department_name, tm.role
+    FROM team_members tm
+    JOIN users u ON u.id = tm.user_id
+    LEFT JOIN departments d ON d.id = u.department_id
+    WHERE tm.team_id = ? AND tm.user_id = ?
+  `,
+    )
+    .get(teamId, userId);
+
+  return res.status(200).json(updated);
 });
 
 /**
@@ -273,6 +395,13 @@ router.delete("/:teamId", (req, res) => {
 
   db.prepare("DELETE FROM teams WHERE id = ?").run(teamId);
   res.status(204).send();
+});
+
+router.get("/:teamId", (req, res) => {
+  const teamId = +req.params.teamId;
+  const team = db.prepare(`SELECT id, name FROM teams WHERE id = ?`).get(teamId);
+  if (!team) return res.status(404).json({ error: "Equipa não encontrada" });
+  res.json(team);
 });
 
 module.exports = router;

@@ -14,6 +14,7 @@ import { Department } from '../../core/models';
 export class MyProfileComponent implements OnInit {
   username = '';
   email = '';
+  isadmin : boolean = false;
   departmentId: number | null = null;
   departments: Department[] = [];
   newPassword = '';
@@ -28,7 +29,9 @@ export class MyProfileComponent implements OnInit {
   constructor(
     private auth: AuthService,
     private apiService: ApiService,
-  ) {}
+  ) {
+    this.isadmin=auth.isAdmin;
+  }
 
   ngOnInit() {
     const user = this.auth.currentUser();
@@ -64,7 +67,7 @@ export class MyProfileComponent implements OnInit {
     this.error = '';
     this.success = '';
 
-    if (this.departmentId == null) {
+    if (!this.auth.isAdmin && this.departmentId == null) {
       this.error = 'Selecione um departamento.';
       return;
     }

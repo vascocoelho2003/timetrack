@@ -43,7 +43,7 @@
       </thead>
       <tbody>
         @for (dept of pagedItems; track dept.id) {
-        <tr>
+        <tr class="clickable" (click)="openDepartment(dept.id)">
           <td>{{ dept.name }}</td>
           <td>{{ dept.nr_users }}</td>
         </tr>

@@ -311,3 +311,11 @@ export interface ColaboratorReportDetails {
   duration: number;
   created_at: string;
 }
+
+export interface DepartmentMember {
+  id: number;
+  username: string;
+  email: string;
+  profile: 'admin' | 'user' | string;
+  active: boolean;
+}

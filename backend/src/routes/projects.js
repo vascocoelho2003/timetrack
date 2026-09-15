@@ -305,7 +305,29 @@ router.delete("/:projectId", (req, res) => {
 });
 
 /**
- * Obtém os dados dos utilizadores de um projeto
+ * @openapi
+ * /api/projects/{projectId}/users:
+ *   get:
+ *     tags: [Projects]
+ *     summary: Obter os dados dos utilizadores de um projeto
+ *     description: Obter os dados dos utilizadores de um projeto.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Utilizadores retornados com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       404:
+ *         description: Projeto não encontrado
+ *       500:
+ *         description: Erro ao obter utilizadores
  */
 router.get("/:projectId/users", (req, res) => {
   const { projectId } = req.params;
@@ -328,7 +350,21 @@ router.get("/:projectId/users", (req, res) => {
 });
 
 /**
- * Obtém todos os projetos ao qual o utilizador pertence
+ * @openapi
+ * /api/projects:
+ *   get:
+ *     tags: [Projects]
+ *     summary: Obter todos os projetos ao qual o utilizador pertence
+ *     description: Obter todos os projetos ao qual o utilizador pertence.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Projetos retornados com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       500:
+ *         description: Erro ao obter projetos
  */
 router.get("/", (req, res) => {
   const user_id = req.user.id;

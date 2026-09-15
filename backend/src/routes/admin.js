@@ -41,7 +41,7 @@ function validateUserPayload(body, { requirePassword }) {
   const password = body.password;
   const passwordConfirm = body.passwordConfirm;
   const profile = body.profile === "admin" ? "admin" : "user";
-  const departmentId = Number(body.department_id);
+  let departmentId = null;
 
   if (!username || !email) {
     return { error: "Username e email são obrigatórios" };
@@ -54,14 +54,17 @@ function validateUserPayload(body, { requirePassword }) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return { error: "Email inválido" };
   }
-  if (!body.department_id || Number.isNaN(departmentId)) {
-    return { error: "Departamento é obrigatório" };
-  }
-  const department = db
-    .prepare("SELECT id FROM departments WHERE id = ?")
-    .get(departmentId);
-  if (!department) {
-    return { error: "Departamento inválido" };
+  if (profile === "user") {
+    departmentId = Number(body.department_id);
+    if (!body.department_id || Number.isNaN(departmentId)) {
+      return { error: "Departamento é obrigatório" };
+    }
+    const department = db
+      .prepare("SELECT id FROM departments WHERE id = ?")
+      .get(departmentId);
+    if (!department) {
+      return { error: "Departamento inválido" };
+    }
   }
   if (requirePassword || (password !== undefined && password !== "")) {
     if (!password || password.length < 6) {
@@ -87,7 +90,21 @@ router.use((req, res, next) => {
 });
 
 /**
- * Endpoint para obter os dados da Dashboard
+ * @openapi
+ * /api/admin/dashboard:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Obter os dados da Dashboard
+ *     description: Obter os dados da Dashboard.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard retornada com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       500:
+ *         description: Erro ao obter dashboard
  */
 router.get("/dashboard", (_req, res) => {
   const count = (sql) => db.prepare(sql).get().n;
@@ -102,7 +119,21 @@ router.get("/dashboard", (_req, res) => {
 });
 
 /**
- * Endpoint para obter os utilizadores registados no sistema
+ * @openapi
+ * /api/admin/users:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Obter os utilizadores registados no sistema
+ *     description: Obter os utilizadores registados no sistema.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Utilizadores retornados com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       500:
+ *         description: Erro ao obter utilizadores
  */
 router.get("/users", (_req, res) => {
   const users = db
@@ -113,7 +144,23 @@ router.get("/users", (_req, res) => {
 });
 
 /**
- * Endpoint para registar um utilizador no sistema
+ * @openapi
+ * /api/admin/users:
+ *   post:
+ *     tags: [Admin]
+ *     summary: Registar um utilizador no sistema
+ *     description: Registar um utilizador no sistema.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Utilizador registado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       409:
+ *         description: Email ou username já registado
+ *       500:
+ *         description: Erro ao registar utilizador
  */
 router.post("/users", (req, res) => {
   const parsed = validateUserPayload(req.body, { requirePassword: true });
@@ -145,16 +192,34 @@ router.post("/users", (req, res) => {
       parsed.departmentId,
       parsed.profile,
     );
-  db.prepare("INSERT INTO clients (client_type, user_id) VALUES (?, ?)").run(
-    "person",
-    result.lastInsertRowid,
-  );
+  if (parsed.profile === "user") {
+    db.prepare("INSERT INTO clients (client_type, user_id) VALUES (?, ?)").run(
+      "person",
+      result.lastInsertRowid,
+    );
+  }
 
   return res.status(201).json(getMappedUser(result.lastInsertRowid));
 });
 
 /**
- * Endpoint para obter o utilizador através do ID
+ * @openapi
+ * /api/admin/users/:id:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Obter o utilizador através do ID
+ *     description: Obter o utilizador através do ID.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Utilizador retornado com sucesso
+ *       400:
+ *         description: Utilizador inválido
+ *       404:
+ *         description: Utilizador não encontrado
+ *       500:
+ *         description: Erro ao obter utilizador
  */
 router.get("/users/:id", (req, res) => {
   const userId = parseUserId(req.params.id);
@@ -169,7 +234,25 @@ router.get("/users/:id", (req, res) => {
 });
 
 /**
- * Endpoint para atualizar o utilizador do id
+ * @openapi
+ * /api/admin/users/:id:
+ *   put:
+ *     tags: [Admin]
+ *     summary: Atualizar o utilizador do id
+ *     description: Atualizar o utilizador do id. O perfil não pode ser alterado.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Utilizador atualizado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       409:
+ *         description: Email ou username já registado
+ *       404:
+ *         description: Utilizador não encontrado
+ *       500:
+ *         description: Erro ao atualizar utilizador
  */
 router.put("/users/:id", (req, res) => {
   const userId = parseUserId(req.params.id);
@@ -183,16 +266,12 @@ router.put("/users/:id", (req, res) => {
     return res.status(404).json({ error: "Utilizador não encontrado" });
   }
 
-  const parsed = validateUserPayload(req.body, { requirePassword: false });
+  const parsed = validateUserPayload(
+    { ...req.body, profile: existing.profile },
+    { requirePassword: false },
+  );
   if (parsed.error) {
     return res.status(400).json({ error: parsed.error });
-  }
-  if (userId === Number(req.user.id) && parsed.profile !== "admin") {
-    return res
-      .status(400)
-      .json({
-        error: "Não pode remover o seu próprio perfil de administrador",
-      });
   }
 
   const emailTaken = db
@@ -213,25 +292,18 @@ router.put("/users/:id", (req, res) => {
   if (parsed.password) {
     const passwordHash = bcrypt.hashSync(parsed.password, 10);
     db.prepare(
-      "UPDATE users SET username = ?, email = ?, password_hash = ?, department_id = ?, profile = ? WHERE id = ?",
+      "UPDATE users SET username = ?, email = ?, password_hash = ?, department_id = ? WHERE id = ?",
     ).run(
       parsed.username,
       parsed.email,
       passwordHash,
       parsed.departmentId,
-      parsed.profile,
       userId,
     );
   } else {
     db.prepare(
-      "UPDATE users SET username = ?, email = ?, department_id = ?, profile = ? WHERE id = ?",
-    ).run(
-      parsed.username,
-      parsed.email,
-      parsed.departmentId,
-      parsed.profile,
-      userId,
-    );
+      "UPDATE users SET username = ?, email = ?, department_id = ? WHERE id = ?",
+    ).run(parsed.username, parsed.email, parsed.departmentId, userId);
   }
 
   const user = getMappedUser(userId);
@@ -243,7 +315,23 @@ router.put("/users/:id", (req, res) => {
 });
 
 /**
- * Endpoint para ativar/desativar utilizador
+ * @openapi
+ * /api/admin/users/:id/active:
+ *   put:
+ *     tags: [Admin]
+ *     summary: Ativar/desativar utilizador
+ *     description: Ativar/desativar utilizador.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Utilizador ativado/desativado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       404:
+ *         description: Utilizador não encontrado
+ *       500:
+ *         description: Erro ao ativar/desativar utilizador
  */
 router.put("/users/:id/active", (req, res) => {
   const userId = parseUserId(req.params.id);
@@ -268,7 +356,21 @@ router.put("/users/:id/active", (req, res) => {
 });
 
 /**
- * Endpoint para obter os departamento registados no sistema e conta o numero de utilizadores por departamento
+ * @openapi
+ * /api/admin/departments:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Obter os departamentos registados no sistema e conta o numero de utilizadores por departamento
+ *     description: Obter os departamentos registados no sistema e conta o numero de utilizadores por departamento.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Departamentos retornados com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       500:
+ *         description: Erro ao obter departamentos
  */
 router.get("/departments", (_req, res) => {
   const departments = db
@@ -285,7 +387,21 @@ router.get("/departments", (_req, res) => {
 });
 
 /**
- * Endpoint para obter o nome das equipas registadas e o numero de membros
+ * @openapi
+ * /api/admin/teams:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Obter o nome das equipas registadas e o numero de membros
+ *     description: Obter o nome das equipas registadas e o numero de membros.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Equipas retornadas com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       500:
+ *         description: Erro ao obter equipas
  */
 router.get("/teams", (_req, res) => {
   const teams = db
@@ -303,7 +419,21 @@ router.get("/teams", (_req, res) => {
 });
 
 /**
- * Endpoint para obter os projetos
+ * @openapi
+ * /api/admin/projects:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Obter os projetos
+ *     description: Obter os projetos.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Projetos retornados com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       500:
+ *         description: Erro ao obter projetos
  */
 router.get("/projects", (_req, res) => {
   const projects = db

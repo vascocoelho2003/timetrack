@@ -67,7 +67,21 @@ function getTaskDependencies(taskId) {
 }
 
 /**
- * Obtém as tarefas do utilizador
+ * @openapi
+ * /api/tasks:
+ *   get:
+ *     tags: [Tasks]
+ *     summary: Obter as tarefas do utilizador
+ *     description: Obter as tarefas do utilizador.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Tarefas retornadas com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       500:
+ *         description: Erro ao obter tarefas
  */
 router.get("/", (req, res) => {
   const user_id = req.user.id;
@@ -206,7 +220,21 @@ router.post("/", (req, res) => {
 });
 
 /**
- * Obtém as tarefas do utiilizador logado
+ * @openapi
+ * /api/tasks/my_tasks:
+ *   get:
+ *     tags: [Tasks]
+ *     summary: Obter as tarefas do utiilizador logado
+ *     description: Obter as tarefas do utiilizador logado.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Tarefas retornadas com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       500:
+ *         description: Erro ao obter tarefas
  */
 router.get("/my_tasks", (req, res) => {
   const tasks = db
@@ -309,7 +337,23 @@ router.get("/:taskId", (req, res) => {
 });
 
 /**
- * Endpoint para verificar se uma tarefa tem uma regra de recorrência
+ * @openapi
+ * /api/tasks/recurrenceexists/:taskId:
+ *   get:
+ *     tags: [Tasks]
+ *     summary: Verificar se uma tarefa tem uma regra de recorrência
+ *     description: Verificar se uma tarefa tem uma regra de recorrência.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Regra de recorrência encontrada
+ *       401:
+ *         description: Token inválido ou ausente
+ *       404:
+ *         description: Regra de recorrência não encontrada
+ *       500:
+ *         description: Erro ao verificar a regra de recorrência
  */
 router.get("/recurrenceexists/:taskId/", (req, res) => {
   const taskId = +req.params.taskId;
@@ -492,7 +536,25 @@ router.put("/:taskId", (req, res) => {
 });
 
 /**
- * Obtém as dependencias da tarefa com o ID enviado por parâmetro
+ * @openapi
+ * /api/tasks/{taskId}/dependencies:
+ *   get:
+ *     tags: [Tasks]
+ *     summary: Obter as dependencias da tarefa com o ID enviado por parâmetro
+ *     description: Obter as dependencias da tarefa com o ID enviado por parâmetro.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dependências encontradas
+ *       401:
+ *         description: Token inválido ou ausente
+ *       403:
+ *         description: Sem acesso à tarefa
+ *       404:
+ *         description: Tarefa não encontrada
+ *       500:
+ *         description: Erro ao obter as dependências
  */
 router.get("/:taskId/dependencies", (req, res) => {
   const taskId = +req.params.taskId;
@@ -503,7 +565,27 @@ router.get("/:taskId/dependencies", (req, res) => {
 });
 
 /**
- * Cria uma dependência para a tarefa com o id enviado por parâmetro
+ * @openapi
+ * /api/tasks/create_dependency/:taskId:
+ *   post:
+ *     tags: [Tasks]
+ *     summary: Cria uma dependência para a tarefa com o id enviado por parâmetro
+ *     description: Cria uma dependência para a tarefa com o id enviado por parâmetro.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dependência criada
+ *       401:
+ *         description: Token inválido ou ausente
+ *       403:
+ *         description: Sem acesso à tarefa
+ *       404:
+ *         description: Tarefa não encontrada
+ *       409:
+ *         description: Dependência já existe
+ *       500:
+ *         description: Erro ao criar a dependência
  */
 router.post("/create_dependency/:taskId", (req, res) => {
   const taskId = +req.params.taskId;
@@ -560,7 +642,27 @@ router.post("/create_dependency/:taskId", (req, res) => {
 });
 
 /**
- * Atualiza a dependência da tarefa com o id enviado por parâmetro
+ * @openapi
+ * /api/tasks/update_dependency/:taskId:
+ *   put:
+ *     tags: [Tasks]
+ *     summary: Atualiza a dependência da tarefa com o id enviado por parâmetro
+ *     description: Atualiza a dependência da tarefa com o id enviado por parâmetro.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dependência atualizada
+ *       401:
+ *         description: Token inválido ou ausente
+ *       403:
+ *         description: Sem acesso à tarefa
+ *       404:
+ *         description: Tarefa não encontrada
+ *       409:
+ *         description: Dependência não encontrada
+ *       500:
+ *         description: Erro ao atualizar a dependência
  */
 router.put("/update_dependency/:taskId", (req, res) => {
   const taskId = +req.params.taskId;
@@ -778,6 +880,23 @@ router.get("/:projectId/get_closed_tasks", (req, res) => {
   return res.status(200).json(result);
 });
 
+/**
+ * @openapi
+ * /api/tasks:
+ *   get:
+ *     tags: [Tasks]
+ *     summary: Obter todas as tarefas
+ *     description: Obter todas as tarefas.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Tarefas encontradas
+ *       401:
+ *         description: Token inválido ou ausente
+ *       500:
+ *         description: Erro ao obter as tarefas
+ */
 router.get("", (req, res) => {
   const tasks = db.prepare(`SELECT * FROM tasks`).all();
 
@@ -898,7 +1017,27 @@ router.post("/recurrence/:taskId", (req, res) => {
 });
 
 /**
- * Atualiza a recurrência da tarefa com o id enviado por parâmetro
+ * @openapi
+ * /api/tasks/recurrence/:taskId:
+ *   put:
+ *     tags: [Tasks]
+ *     summary: Atualiza a recurrência da tarefa com o id enviado por parâmetro
+ *     description: Atualiza a recurrência da tarefa com o id enviado por parâmetro.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Regra de recorrência atualizada com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       403:
+ *         description: Sem acesso à tarefa
+ *       404:
+ *         description: Tarefa não encontrada
+ *       409:
+ *         description: Regra de recorrência não encontrada
+ *       500:
+ *         description: Erro ao atualizar a regra de recorrência
  */
 router.put("/recurrence/:taskId", (req, res) => {
   const taskId = +req.params.taskId;
@@ -971,7 +1110,25 @@ router.put("/recurrence/:taskId", (req, res) => {
 });
 
 /**
- * Altera o estado da recurrência de uma tarefa (Ativo ou Inativo)
+ * @openapi
+ * /api/tasks/change_recurrence_status/:taskId:
+ *   put:
+ *     tags: [Tasks]
+ *     summary: Altera o estado da recurrência de uma tarefa (Ativo ou Inativo)
+ *     description: Altera o estado da recurrência de uma tarefa (Ativo ou Inativo).
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Regra de recorrência ativada com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       403:
+ *         description: Sem acesso à tarefa
+ *       404:
+ *         description: Regra de recorrência não encontrada
+ *       500:
+ *         description: Erro ao ativar a regra de recorrência
  */
 router.put("/change_recurrence_status/:taskId", (req, res) => {
   const taskId = +req.params.taskId;

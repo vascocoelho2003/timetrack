@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AdminTeam } from '../../core/models';
 
@@ -17,7 +17,7 @@ export class AdminTeamsComponent implements OnInit {
   page = 1;
   pageSize = 10;
 
-  constructor(private apiService: ApiService) {}
+  constructor(private apiService: ApiService, private router: Router) {}
 
   ngOnInit(): void {
     this.apiService.getAdminTeams().subscribe({
@@ -38,6 +38,10 @@ export class AdminTeamsComponent implements OnInit {
         )
       : [...this.items];
     this.page = 1;
+  }
+  
+  openTeam(departmentId : number):void{
+    this.router.navigate(['/admin-team-details',departmentId])
   }
 
   get totalPages(): number {

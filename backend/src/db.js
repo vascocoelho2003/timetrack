@@ -143,8 +143,6 @@ function initDb() {
     CREATE INDEX IF NOT EXISTS idx_time_entries_task ON time_entries(task_id);
     CREATE INDEX IF NOT EXISTS idx_dependencies_predecessor ON dependencies(predecessor);
     CREATE INDEX IF NOT EXISTS idx_dependencies_successor ON dependencies(successor);
-    CREATE INDEX IF NOT EXISTS idx_project_guests_user ON project_guests(user_id);
-    CREATE INDEX IF NOT EXISTS idx_project_guests_project ON project_guests(project_id);
   `);
 
   const userColumns = db.prepare(`PRAGMA table_info(users)`).all();

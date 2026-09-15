@@ -32,6 +32,8 @@ import {
   AdminDepartment,
   AdminTeam,
   AdminProject,
+  DepartmentMember,
+  TeamModel
 } from './models';
 import { environment } from '../../environments/environments';
 
@@ -99,6 +101,23 @@ export class ApiService {
    */
   removeTeamMember(teamId: number, userId: number) {
     return this.http.delete(`${API}/teams/${teamId}/members/${userId}`);
+  }
+
+  /**
+   * Atualiza o role de um membro da equipa
+   * @param teamId
+   * @param userId
+   * @param role
+   */
+  updateTeamMemberRole(
+    teamId: number,
+    userId: number,
+    role: 'admin' | 'member',
+  ) {
+    return this.http.put<TeamMember>(
+      `${API}/teams/${teamId}/members/${userId}`,
+      { role },
+    );
   }
 
   // Projects
@@ -523,6 +542,10 @@ export class ApiService {
     );
   }
 
+  getDepartment(department_id: number){
+    return this.http.get<Department>(`${API}/departments/getDepartment/${department_id}`);
+  }
+
   // Carregar Departments
   /**
    * Obtém os Departamentos
@@ -676,7 +699,7 @@ export class ApiService {
     email: string;
     password: string;
     passwordConfirm: string;
-    department_id: number;
+    department_id: number | null;
     profile: 'admin' | 'user';
   }) {
     return this.http.post<AdminUser>(`${API}/admin/users`, data);
@@ -693,8 +716,7 @@ export class ApiService {
     data: {
       username: string;
       email: string;
-      department_id: number;
-      profile: 'admin' | 'user';
+      department_id: number | null;
       password?: string;
     },
   ) {
@@ -747,5 +769,18 @@ export class ApiService {
    */
   createDepartment(name: string) {
     return this.http.post(`${API}/departments/createDepartment`, { name });
+  }
+
+  /**
+   * Endpoint para obter os membros de um Departamento
+   * @param department_id 
+   * @returns 
+   */
+  getDepartmentMembers(department_id: number){
+    return this.http.get<DepartmentMember[]>(`${API}/departments/getDepartmentMembers/${department_id}`);
+  }
+
+  getTeam(team_id: number){
+    return this.http.get<TeamModel>(`${API}/teams/${team_id}`);
   }
 }

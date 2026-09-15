@@ -10,6 +10,8 @@ export const routes: Routes = [
   { path: 'admin-panel', loadComponent: () => import('./pages/admin-panel/admin-panel.component').then(m => m.AdminPanelComponent), canActivate: [authGuard, adminGuard] },
   { path: 'admin-panel/users', loadComponent: () => import('./pages/admin-users/admin-users.component').then(m => m.AdminUsersComponent), canActivate: [authGuard, adminGuard] },
   { path: 'admin-panel/users/:id', loadComponent: () => import('./pages/admin-user/admin-user.component').then(m => m.AdminUserComponent), canActivate: [authGuard, adminGuard] },
+  { path: 'admin-team-details/:id', loadComponent: () => import('./pages/admin-team-details/admin-team-details.component').then(m => m.AdminTeamDetailsComponent), canActivate: [authGuard, adminGuard] },
+  { path: 'admin-department-details/:id', loadComponent: () => import('./pages/admin-department-details/admin-department-details.component').then(m => m.AdminDepartmentDetailsComponent), canActivate: [authGuard, adminGuard] },
 
   { path: 'admin-panel/departments', loadComponent: () => import('./pages/admin-departments/admin-departments.component').then(m => m.AdminDepartmentsComponent), canActivate: [authGuard, adminGuard] },
   { path: 'admin-panel/teams', loadComponent: () => import('./pages/admin-teams/admin-teams.component').then(m => m.AdminTeamsComponent), canActivate: [authGuard, adminGuard] },

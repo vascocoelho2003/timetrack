@@ -36,8 +36,23 @@ function toEndOfDay(date) {
 }
 
 /**
- * Relatório Geral do Clientes:
- * Relatório com o nome dos colaboradores, nr_tarefas e tempo despendido em tarefas onde eu(ou o meu departamento) sou o cliente
+ * @openapi
+ * /api/report/generalClientReport:
+ *   get:
+ *     tags: [Report]
+ *     summary: Obter o relatório geral dos clientes
+ *     description: Obter o relatório geral dos clientes.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Relatório geral dos clientes retornado com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       404:
+ *         description: Cliente ou departamento não encontrado
+ *       500:
+ *         description: Erro ao obter relatório geral dos clientes
  */
 router.get("/generalClientReport", authMiddleware, async (req, res) => {
   const user_id = req.user.id;
@@ -101,8 +116,23 @@ router.get("/generalClientReport", authMiddleware, async (req, res) => {
 });
 
 /**
- * Individual Client Report
- * Relatório de um colaborador individual com tarefas onde eu(ou o meu departamento) sou o cliente
+ * @openapi
+ * /api/report/ClientReport/:user_id:
+ *   get:
+ *     tags: [Report]
+ *     summary: Obter o relatório de um cliente individual
+ *     description: Obter o relatório de um cliente individual.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Relatório de cliente individual retornado com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       404:
+ *         description: Cliente ou departamento não encontrado
+ *       500:
+ *         description: Erro ao obter relatório de cliente individual
  */
 router.get("/ClientReport/:user_id", authMiddleware, async (req, res) => {
   const user_logged = req.user.id;
@@ -160,8 +190,23 @@ router.get("/ClientReport/:user_id", authMiddleware, async (req, res) => {
 });
 
 /**
- * Relatório Pessoal
- * nr de tarefas e tempo despendido pelo colaborador para cada cliente
+ * @openapi
+ * /api/report/ColaboratorReport:
+ *   get:
+ *     tags: [Report]
+ *     summary: Obter o relatório do colaborador
+ *     description: Obter o relatório do colaborador.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Relatório do colaborador retornado com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       404:
+ *         description: Colaborador não encontrado
+ *       500:
+ *         description: Erro ao obter relatório do colaborador
  */
 router.get("/ColaboratorReport", authMiddleware, async (req, res) => {
   logged_user_id = req.user.id;
@@ -193,7 +238,23 @@ router.get("/ColaboratorReport", authMiddleware, async (req, res) => {
 });
 
 /**
- * Relatório do Cliente para o Colaborador
+ * @openapi
+ * /api/report/ColaboratorClientReport/:client_id:
+ *   get:
+ *     tags: [Report]
+ *     summary: Obter o relatório do cliente para o colaborador
+ *     description: Obter o relatório do cliente para o colaborador.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Relatório do cliente para o colaborador retornado com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       404:
+ *         description: Cliente ou departamento não encontrado
+ *       500:
+ *         description: Erro ao obter relatório do cliente para o colaborador
  */
 router.get(
   "/ColaboratorClientReport/:client_id",

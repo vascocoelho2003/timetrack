@@ -60,10 +60,7 @@ function passwordsMatch(password, passwordConfirm) {
 router.post("/register", (req, res) => {
   const { email, password, passwordConfirm, username, department_id, profile } =
     req.body;
-  prof = "user";
-  if (profile) {
-    prof = profile;
-  }
+  const prof = profile === "admin" ? "admin" : "user";
   if (!email?.trim() || !password || !passwordConfirm || !username?.trim()) {
     return res
       .status(400)
@@ -83,15 +80,18 @@ router.post("/register", (req, res) => {
     return res.status(400).json({ error: "As passwords não coincidem" });
   }
 
-  const departmentId = Number(department_id);
-  if (!department_id || Number.isNaN(departmentId)) {
-    return res.status(400).json({ error: "Departamento é obrigatório" });
-  }
-  const department = db
-    .prepare("SELECT id FROM departments WHERE id = ?")
-    .get(departmentId);
-  if (!department) {
-    return res.status(400).json({ error: "Departamento inválido" });
+  let departmentId = null;
+  if (prof === "user") {
+    departmentId = Number(department_id);
+    if (!department_id || Number.isNaN(departmentId)) {
+      return res.status(400).json({ error: "Departamento é obrigatório" });
+    }
+    const department = db
+      .prepare("SELECT id FROM departments WHERE id = ?")
+      .get(departmentId);
+    if (!department) {
+      return res.status(400).json({ error: "Departamento inválido" });
+    }
   }
 
   const existingusername = db.prepare(`SELECT id FROM users WHERE username = ?`).get(username);
@@ -113,9 +113,10 @@ router.post("/register", (req, res) => {
     )
     .run(email.trim().toLowerCase(), hash, username.trim(), departmentId, prof);
 
-  const client = db
-    .prepare(`INSERT INTO clients (client_type, user_id) VALUES (?, ?)`)
-    .run("person", result.lastInsertRowid);
+  if (prof === "user") {
+    db.prepare(`INSERT INTO clients (client_type, user_id) VALUES (?, ?)`)
+      .run("person", result.lastInsertRowid);
+  }
 
   const user = {
     id: result.lastInsertRowid,
@@ -215,7 +216,41 @@ router.get("/me", authMiddleware, (req, res) => {
 });
 
 /**
- * Obtém os dados do utilizador logado
+ * @openapi
+ * /api/auth/me:
+ *   put:
+ *     tags: [Auth]
+ *     summary: Atualiza os dados do utilizador logado
+ *     description: Atualiza os dados do utilizador logado.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [username, email, password, department_id]
+ *             properties:
+ *               username:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               department_id:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Utilizador atualizado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       401:
+ *         description: Token inválido ou ausente
+ *       404:
+ *         description: Utilizador não encontrado
+ *       409:
+ *         description: Email já registado
  */
 router.put("/me", authMiddleware, (req, res) => {
   const { username, email, password, department_id } = req.body;
@@ -239,15 +274,20 @@ router.put("/me", authMiddleware, (req, res) => {
       .json({ error: "Password deve ter pelo menos 6 caracteres" });
   }
 
-  const departmentId = Number(department_id);
-  if (!department_id || Number.isNaN(departmentId)) {
-    return res.status(400).json({ error: "Departamento é obrigatório" });
-  }
-  const department = db
-    .prepare("SELECT id FROM departments WHERE id = ?")
-    .get(departmentId);
-  if (!department) {
-    return res.status(400).json({ error: "Departamento inválido" });
+  const isAdmin = req.user?.profile === "admin";
+  let savedDepartmentId = null;
+  if (!isAdmin) {
+    const departmentId = Number(department_id);
+    if (!department_id || Number.isNaN(departmentId)) {
+      return res.status(400).json({ error: "Departamento é obrigatório" });
+    }
+    const department = db
+      .prepare("SELECT id FROM departments WHERE id = ?")
+      .get(departmentId);
+    if (!department) {
+      return res.status(400).json({ error: "Departamento inválido" });
+    }
+    savedDepartmentId = departmentId;
   }
 
   const existing = db
@@ -265,13 +305,13 @@ router.put("/me", authMiddleware, (req, res) => {
       normalizedUsername,
       normalizedEmail,
       passwordHash,
-      departmentId,
+      savedDepartmentId,
       req.user.id,
     );
   } else {
     db.prepare(
       "UPDATE users SET username = ?, email = ?, department_id = ? WHERE id = ?",
-    ).run(normalizedUsername, normalizedEmail, departmentId, req.user.id);
+    ).run(normalizedUsername, normalizedEmail, savedDepartmentId, req.user.id);
   }
 
   const user = db
@@ -284,7 +324,23 @@ router.put("/me", authMiddleware, (req, res) => {
 });
 
 /**
- * Obter departamento do utilizador logado
+ * @openapi
+ * /api/auth/getDepartment:
+ *   get:
+ *     tags: [Auth]
+ *     summary: Obter departamento do utilizador logado
+ *     description: Obter departamento do utilizador logado.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Departamento retornado com sucesso
+ *       401:
+ *         description: Token inválido ou ausente
+ *       404:
+ *         description: Departamento não encontrado
+ *       500:
+ *         description: Erro ao obter departamento
  */
 router.get("/getDepartment", authMiddleware, async (req, res) => {
   const user_id = req.user.id;
