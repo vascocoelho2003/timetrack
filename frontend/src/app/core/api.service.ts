@@ -185,6 +185,15 @@ export class ApiService {
   }
 
   /**
+   * Atualiza o nome da Tasklist
+   * @param listId
+   * @param name
+   */
+  updateTaskList(listId: number, name: string) {
+    return this.http.put<TaskList>(`${API}/task-lists/${listId}`, { name });
+  }
+
+  /**
    * Elimina a Tasklist através do ID enviado por parâmetro
    * @param listId 
    * @returns 

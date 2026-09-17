@@ -56,7 +56,23 @@
         @for (list of lists; track list.id) {
           <div class="board-column card">
             <div class="column-header">
-              <h4>{{ list.name }}</h4>
+              @if (isAdmin && editingListId === list.id) {
+                <input
+                  class="list-name-input"
+                  [(ngModel)]="editingListName"
+                  (click)="$event.stopPropagation()"
+                  (keydown.enter)="saveListName(list); $event.preventDefault()"
+                  (keydown.escape)="cancelRenameList()"
+                  (blur)="saveListName(list)"
+                />
+              } @else {
+                <h4
+                  [class.list-name-editable]="isAdmin"
+                  [title]="isAdmin ? 'Clicar para alterar o nome' : ''"
+                  (click)="isAdmin && startRenameList(list)">
+                  {{ list.name }}
+                </h4>
+              }
               <div class="column-actions">
                 @if (isAdmin) {
                   <button class="btn-icon" (click)="openNewTask(list.id)" title="Nova tarefa">+</button>

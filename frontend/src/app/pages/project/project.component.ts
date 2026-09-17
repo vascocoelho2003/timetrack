@@ -52,6 +52,8 @@ export class ProjectComponent implements OnInit {
   listPage = 1;
   listPageSize = 10;
   newListName = '';
+  editingListId: number | null = null;
+  editingListName = '';
   showNewTaskForm = false;
   newTaskListId = 0;
   newTaskTitle = '';
@@ -279,6 +281,43 @@ export class ProjectComponent implements OnInit {
         this.newListName = '';
         this.showNewList = false;
       });
+  }
+
+  startRenameList(list: TaskList): void {
+    this.editingListId = list.id;
+    this.editingListName = list.name;
+    setTimeout(() => {
+      const input = document.querySelector(
+        '.list-name-input',
+      ) as HTMLInputElement | null;
+      input?.focus();
+      input?.select();
+    });
+  }
+
+  cancelRenameList(): void {
+    this.editingListId = null;
+    this.editingListName = '';
+  }
+
+  saveListName(list: TaskList): void {
+    if (this.editingListId !== list.id) return;
+    const name = this.editingListName.trim();
+    if (!name || name === list.name) {
+      this.cancelRenameList();
+      return;
+    }
+    this.api.updateTaskList(list.id, name).subscribe({
+      next: (updated) => {
+        this.lists = this.lists.map((item) =>
+          item.id === updated.id ? { ...item, name: updated.name } : item,
+        );
+        this.cancelRenameList();
+      },
+      error: () => {
+        this.cancelRenameList();
+      },
+    });
   }
 
   openNewTask(listId: number) {
