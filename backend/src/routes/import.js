@@ -34,9 +34,6 @@ router.post("/import/:team_id/:project_id", async (req, res) => {
       }
 
       const hojeStr = new Date().toISOString().split("T")[0];
-      if (dueDate <= hojeStr) {
-        continue;
-      }
       tasklist = db
         .prepare("SELECT * FROM task_lists Where project_id=? AND name=? ")
         .get(project, row.tasklist);
