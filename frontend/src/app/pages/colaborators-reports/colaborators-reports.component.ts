@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
-import { AuthService } from '../../core/auth.service';
 import { colaboratorReport } from '../../core/models';
 import { FormsModule } from '@angular/forms';
 
@@ -19,10 +18,9 @@ export class ColaboratorsReportsComponent implements OnInit {
   pageSize = 10;
 
   constructor(
-    private authService: AuthService,
     private apiService: ApiService,
     private router: Router,
-  ) {}
+  ){}
 
   ngOnInit(): void {
     this.apiService.getColaboratorReport().subscribe({

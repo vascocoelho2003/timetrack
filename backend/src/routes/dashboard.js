@@ -314,7 +314,7 @@ router.get("/project_report/:projectId", authMiddleware, async (req, res) => {
  *   get:
  *     tags: [Dashboard]
  *     summary: Obter os dados necessários para o relatório geral de colaboradores
- *     description: Obter os dados necessários para o relatório geral de colaboradores.
+ *     description: Conta tarefas atribuídas e fechadas em projetos comuns com o utilizador autenticado. Na linha do próprio utilizador inclui também as tarefas pessoais.
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -336,12 +336,20 @@ router.get("/colaborators_reports/", authMiddleware, async (req, res) => {
             COUNT(DISTINCT CASE
                 WHEN t.created_at >= datetime('now', 'start of month')
                  AND t.created_at < datetime('now', 'start of month', '+1 month')
+                 AND (
+                    p.id IS NOT NULL
+                    OR (u.id = $id AND t.task_list_id IS NULL)
+                 )
                 THEN t.id
             END) AS nr_tasks,
             COUNT(DISTINCT CASE
                 WHEN t.status = 'done'
                  AND t.completed_at >= datetime('now', 'start of month')
                  AND t.completed_at < datetime('now', 'start of month', '+1 month')
+                 AND (
+                    p.id IS NOT NULL
+                    OR (u.id = $id AND t.task_list_id IS NULL)
+                 )
                 THEN t.id
             END) AS nr_closed_tasks
         FROM team_members tm
@@ -355,10 +363,18 @@ router.get("/colaborators_reports/", authMiddleware, async (req, res) => {
             ON tl.id = t.task_list_id
         LEFT JOIN projects p
             ON p.id = tl.project_id
+           AND p.team_id IN (
+                SELECT tm_me.team_id
+                FROM team_members tm_me
+                JOIN team_members tm_them
+                  ON tm_them.team_id = tm_me.team_id
+                 AND tm_them.user_id = u.id
+                WHERE tm_me.user_id = $id
+            )
         WHERE tm.team_id IN (
             SELECT team_id
             FROM team_members
-            WHERE user_id = ?
+            WHERE user_id = $id
         )
         GROUP BY
             u.id,
@@ -367,7 +383,7 @@ router.get("/colaborators_reports/", authMiddleware, async (req, res) => {
             u.username;
     `,
     )
-    .all(id);
+    .all({ id });
 
   const totalTimes = db
     .prepare(
@@ -381,20 +397,23 @@ router.get("/colaborators_reports/", authMiddleware, async (req, res) => {
            AND ta.user_id = te.user_id
         JOIN tasks t
             ON t.id = te.task_id
-        JOIN task_lists tl
+        LEFT JOIN task_lists tl
             ON tl.id = t.task_list_id
-        JOIN projects p
+        LEFT JOIN projects p
             ON p.id = tl.project_id
-        WHERE p.team_id IN (
-            SELECT team_id
-            FROM team_members
-            WHERE user_id = ?
-        )
+        WHERE (
+            p.team_id IN (
+                SELECT team_id
+                FROM team_members
+                WHERE user_id = $id
+            )
+            OR (te.user_id = $id AND t.task_list_id IS NULL)
+          )
           AND datetime(te.created_at) >= datetime('now', '-1 month')
         GROUP BY te.user_id
     `,
     )
-    .all(id);
+    .all({ id });
 
   const timesMap = new Map(totalTimes.map((t) => [t.user_id, t.total_time]));
 
@@ -411,7 +430,7 @@ router.get("/colaborators_reports/", authMiddleware, async (req, res) => {
  *   get:
  *     tags: [Dashboard]
  *     summary: Obter os dados necessários para o relatório de colaborador
- *     description: Obter os dados necessários para o relatório de colaborador.
+ *     description: Obtém os registos de tempo do colaborador em projetos comuns com o utilizador autenticado. Se o relatório for o próprio, inclui também tarefas pessoais.
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -426,8 +445,15 @@ router.get("/colaborators_reports/", authMiddleware, async (req, res) => {
  */
 router.get("/colaborator_report/:id", authMiddleware, (req, res) => {
   const userId = req.params.id;
+  const loggedUserId = req.user.id;
+  const isOwnReport = Number(loggedUserId) === Number(userId);
   const { startDate, endDate } = req.query;
   const hasDateRange = startDate && endDate;
+
+  const params = [userId, loggedUserId, isOwnReport ? 1 : 0];
+  if (hasDateRange) {
+    params.push(startDate, endDate);
+  }
 
   const timeEntries = db
     .prepare(
@@ -435,8 +461,8 @@ router.get("/colaborator_report/:id", authMiddleware, (req, res) => {
         SELECT
             t.title,
             t.status,
-            tl.name AS task_list_name,
-            p.name AS project_name,
+            COALESCE(tl.name, 'Lista pessoal') AS task_list_name,
+            COALESCE(p.name, 'Pessoal') AS project_name,
             te.*
         FROM time_entries te
         JOIN task_assignees ta
@@ -444,18 +470,26 @@ router.get("/colaborator_report/:id", authMiddleware, (req, res) => {
            AND ta.user_id = te.user_id
         JOIN tasks t
             ON t.id = te.task_id
-        JOIN task_lists tl
+        LEFT JOIN task_lists tl
             ON tl.id = t.task_list_id
-        JOIN projects p
+        LEFT JOIN projects p
             ON p.id = tl.project_id
-        JOIN team_members tm
-            ON tm.team_id = p.team_id
-           AND tm.user_id = te.user_id
         WHERE te.user_id = ?
+          AND (
+            p.team_id IN (
+                SELECT tm_me.team_id
+                FROM team_members tm_me
+                JOIN team_members tm_them
+                  ON tm_them.team_id = tm_me.team_id
+                 AND tm_them.user_id = te.user_id
+                WHERE tm_me.user_id = ?
+            )
+            OR (? = 1 AND p.id IS NULL)
+          )
         ${hasDateRange ? "AND date(te.start) >= date(?) AND date(te.start) < date(?, '+1 day')" : ""}
     `,
     )
-    .all(...(hasDateRange ? [userId, startDate, endDate] : [userId]));
+    .all(...params);
 
   return res.status(200).json(timeEntries);
 });

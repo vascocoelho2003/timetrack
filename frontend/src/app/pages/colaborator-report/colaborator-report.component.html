@@ -59,5 +59,7 @@
         <div class="empty-state">Não foram encontrados registos de tempo.</div>
       }
     </section>
-    <h6>*Se não for selecionado nenhum período, os dados serão relativos ao ano atual</h6>
+    @if (selectedPeriod === 'custom' && (!startDate || !endDate)) {
+      <h6>*Se não for selecionado nenhum período, os dados serão relativos ao ano atual</h6>
+    }
   </main>
