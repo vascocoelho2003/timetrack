@@ -36,6 +36,24 @@
   font-weight: 600;
 }
 
+.list-name-editable {
+  cursor: pointer;
+}
+
+.list-name-input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  margin-right: 8px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .task-filters {
   display: flex;
   flex-wrap: wrap;

@@ -156,6 +156,68 @@ router.get("/:listId/tasks", (req, res) => {
 /**
  * @openapi
  * /api/task-lists/{listId}:
+ *   put:
+ *     tags: [Task Lists]
+ *     summary: Atualiza o nome de uma lista
+ *     description: Altera o nome de uma lista de tarefas, disponível apenas para administradores.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: listId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Lista atualizada com sucesso
+ *       400:
+ *         description: Nome inválido
+ *       403:
+ *         description: Sem permissão
+ *       404:
+ *         description: Lista não encontrada
+ */
+router.put("/:listId", (req, res) => {
+  const listId = +req.params.listId;
+  const list = db.prepare("SELECT * FROM task_lists WHERE id = ?").get(listId);
+  if (!list) return res.status(404).json({ error: "Lista não encontrada" });
+
+  const teamId = getTeamIdForProject(list.project_id);
+  if (!isTeamAdmin(req.user.id, teamId)) {
+    return res
+      .status(403)
+      .json({ error: "Apenas admins podem alterar listas" });
+  }
+
+  const listName =
+    typeof req.body.name === "string" ? req.body.name.trim() : "";
+  if (!listName) {
+    return res.status(400).json({ error: "Nome é obrigatório" });
+  }
+
+  db.prepare("UPDATE task_lists SET name = ? WHERE id = ?").run(
+    listName,
+    listId,
+  );
+  return res
+    .status(200)
+    .json(db.prepare("SELECT * FROM task_lists WHERE id = ?").get(listId));
+});
+
+/**
+ * @openapi
+ * /api/task-lists/{listId}:
  *   delete:
  *     tags: [Task Lists]
  *     summary: Elimina uma lista
