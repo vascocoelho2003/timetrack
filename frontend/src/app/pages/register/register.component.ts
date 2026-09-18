@@ -54,6 +54,11 @@ export class RegisterComponent implements OnInit {
       return;
     }
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email.trim())) {
+      this.error = 'Indique um email válido (ex: nome@dominio.com).';
+      return;
+    }
+
     if (this.departmentId == null) {
       this.error = 'Selecione um departamento.';
       return;

@@ -12,10 +12,10 @@ export const routes: Routes = [
   { path: 'admin-panel/users/:id', loadComponent: () => import('./pages/admin-user/admin-user.component').then(m => m.AdminUserComponent), canActivate: [authGuard, adminGuard] },
   { path: 'admin-team-details/:id', loadComponent: () => import('./pages/admin-team-details/admin-team-details.component').then(m => m.AdminTeamDetailsComponent), canActivate: [authGuard, adminGuard] },
   { path: 'admin-department-details/:id', loadComponent: () => import('./pages/admin-department-details/admin-department-details.component').then(m => m.AdminDepartmentDetailsComponent), canActivate: [authGuard, adminGuard] },
-
   { path: 'admin-panel/departments', loadComponent: () => import('./pages/admin-departments/admin-departments.component').then(m => m.AdminDepartmentsComponent), canActivate: [authGuard, adminGuard] },
   { path: 'admin-panel/teams', loadComponent: () => import('./pages/admin-teams/admin-teams.component').then(m => m.AdminTeamsComponent), canActivate: [authGuard, adminGuard] },
   { path: 'admin-panel/projects', loadComponent: () => import('./pages/admin-projects/admin-projects.component').then(m => m.AdminProjectsComponent), canActivate: [authGuard, adminGuard] },
+ 
   { path: 'teams', loadComponent: () => import('./pages/teams/teams.component').then(m => m.TeamsComponent), canActivate: [authGuard, userGuard] },
   { path: 'teams/:id', loadComponent: () => import('./pages/team/team.component').then(m => m.TeamComponent), canActivate: [authGuard, userGuard], pathMatch: 'full' },
   { path: 'projects/:id', loadComponent: () => import('./pages/project/project.component').then(m => m.ProjectComponent), canActivate: [authGuard, userGuard], pathMatch: 'full' },
@@ -32,4 +32,5 @@ export const routes: Routes = [
   { path: 'individual-client-report', loadComponent: () => import('./pages/individual-client-report/individual-client-report.component').then(m=>m.IndividualClientReportComponent), canActivate: [authGuard, userGuard]},
   { path: 'personal-report', loadComponent: () => import('./pages/personal-report/personal-report.component').then(m=>m.PersonalReportComponent), canActivate: [authGuard, userGuard]},
   { path: 'colaborator-client-report', loadComponent: () => import('./pages/colaborator-client-report/colaborator-client-report.component').then(m=>m.ColaboratorClientReportComponent), canActivate: [authGuard, userGuard]},
+  { path: 'password-reset', loadComponent: () => import('./pages/password-reset/password-reset.component').then(m=>m.PasswordResetComponent), canActivate: [guestGuard]},
 ];

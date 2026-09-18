@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const { db } = require("../db");
 const { signToken, authMiddleware } = require("../middleware/auth");
+const { sendEmail } = require("../controllers/email_notification");
 
 const router = express.Router();
 
@@ -70,6 +71,9 @@ router.post("/register", (req, res) => {
     return res.status(400).json({
       error: "O username não pode conter espaços nem caracteres especiais",
     });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    return res.status(400).json({ error: "Email inválido" });
   }
   if (password.length < 6) {
     return res
@@ -355,6 +359,177 @@ router.get("/getDepartment", authMiddleware, async (req, res) => {
     )
     .get(user_id);
   return res.status(200).json({ department });
+});
+
+/**
+ * @openapi
+ * /api/auth/password_recover:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Pedir recuperação de password
+ *     description: Envia um email com um link de recuperação se a conta existir.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Pedido processado
+ *       400:
+ *         description: Email inválido
+ *       500:
+ *         description: Erro ao enviar o email
+ */
+router.post("/password_recover", async (req, res) => {
+  const { email } = req.body;
+  const genericMessage = {
+    message:
+      "Se o email existir na aplicação, será enviado um link de recuperação.",
+  };
+
+  if (!email?.trim()) {
+    return res.status(400).json({ error: "Email é obrigatório" });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    return res.status(400).json({ error: "Email inválido" });
+  }
+
+  const user = db
+    .prepare("SELECT id, username, email, active FROM users WHERE email = ?")
+    .get(email.trim().toLowerCase());
+
+  const active =
+    user &&
+    (user.active === 1 ||
+      user.active === true ||
+      String(user.active).toLowerCase() === "true");
+
+  if (!user || !active) {
+    return res.status(200).json(genericMessage);
+  }
+
+  const token = crypto.randomBytes(32).toString("hex");
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+  db.prepare("DELETE FROM password_reset_tokens WHERE user_id = ?").run(
+    user.id,
+  );
+  db.prepare(
+    `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+     VALUES (?, ?, datetime('now', '+1 hour'))`,
+  ).run(user.id, tokenHash);
+
+  const frontendUrl = (
+    process.env.FRONTEND_URL || "http://localhost:4200"
+  ).replace(/\/$/, "");
+  const resetLink = `${frontendUrl}/password-reset?token=${token}`;
+
+  try {
+    await sendEmail(
+      user.email,
+      "Recuperação de password",
+      `Olá ${user.username},
+
+Recebemos um pedido para redefinir a password da sua conta no Task Management.
+
+Para escolher uma nova password, abra o seguinte link (válido durante 1 hora):
+
+${resetLink}
+
+Se não fez este pedido, ignore este email. A password atual mantém-se.
+
+Cumprimentos,
+Task Management`,
+    );
+  } catch (error) {
+    console.error("Erro ao enviar email de recuperação:", error);
+    return res
+      .status(500)
+      .json({ error: "Não foi possível enviar o email de recuperação." });
+  }
+
+  return res.status(200).json(genericMessage);
+});
+
+/**
+ * @openapi
+ * /api/auth/password_reset:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Definir nova password com o token de recuperação
+ *     description: Define uma nova password usando o token enviado por email.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token, password, passwordConfirm]
+ *             properties:
+ *               token:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               passwordConfirm:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password atualizada com sucesso
+ *       400:
+ *         description: Dados inválidos ou token expirado
+ */
+router.post("/password_reset", (req, res) => {
+  const { token, password, passwordConfirm } = req.body;
+  if (!token || !password || !passwordConfirm) {
+    return res
+      .status(400)
+      .json({ error: "Token, password e confirmação são obrigatórios" });
+  }
+  if (password.length < 6) {
+    return res
+      .status(400)
+      .json({ error: "Password deve ter pelo menos 6 caracteres" });
+  }
+  if (!passwordsMatch(password, passwordConfirm)) {
+    return res.status(400).json({ error: "As passwords não coincidem" });
+  }
+
+  const tokenHash = crypto.createHash("sha256").update(String(token)).digest("hex");
+  const reset = db
+    .prepare(
+      `SELECT id, user_id FROM password_reset_tokens
+       WHERE token_hash = ?
+         AND used = 0
+         AND datetime(expires_at) > datetime('now')`,
+    )
+    .get(tokenHash);
+
+  if (!reset) {
+    return res
+      .status(400)
+      .json({ error: "O link de recuperação é inválido ou já expirou." });
+  }
+
+  const passwordHash = bcrypt.hashSync(password, 10);
+  db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(
+    passwordHash,
+    reset.user_id,
+  );
+  db.prepare("UPDATE password_reset_tokens SET used = 1 WHERE id = ?").run(
+    reset.id,
+  );
+  db.prepare("DELETE FROM password_reset_tokens WHERE user_id = ? AND id != ?").run(
+    reset.user_id,
+    reset.id,
+  );
+
+  return res.status(200).json({ message: "Password atualizada com sucesso." });
 });
 
 module.exports = router;

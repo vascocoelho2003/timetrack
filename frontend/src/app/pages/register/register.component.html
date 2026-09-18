@@ -12,7 +12,17 @@
           </small>
         }
         <label>Email</label>
-        <input type="email" [(ngModel)]="email" name="email" required />
+        <input
+          type="email"
+          [(ngModel)]="email"
+          name="email"
+          required
+          pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+          #emailCtrl="ngModel"
+        />
+        @if (emailCtrl.invalid && emailCtrl.touched) {
+          <small class="error">Indique um email válido (ex: nome&#64;dominio.com).</small>
+        }
         <label>Departamento</label>
         <select [(ngModel)]="departmentId" name="departmentId" required>
           <option [ngValue]="null" disabled>Selecionar departamento</option>

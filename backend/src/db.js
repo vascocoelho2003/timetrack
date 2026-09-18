@@ -137,12 +137,22 @@ function initDb() {
       PRIMARY KEY (predecessor, successor)
     );
 
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      used INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
     CREATE INDEX IF NOT EXISTS idx_team_members_user ON team_members(user_id);
     CREATE INDEX IF NOT EXISTS idx_tasks_list ON tasks(task_list_id);
     CREATE INDEX IF NOT EXISTS idx_time_entries_user ON time_entries(user_id);
     CREATE INDEX IF NOT EXISTS idx_time_entries_task ON time_entries(task_id);
     CREATE INDEX IF NOT EXISTS idx_dependencies_predecessor ON dependencies(predecessor);
     CREATE INDEX IF NOT EXISTS idx_dependencies_successor ON dependencies(successor);
+    CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_hash ON password_reset_tokens(token_hash);
   `);
 
   const userColumns = db.prepare(`PRAGMA table_info(users)`).all();

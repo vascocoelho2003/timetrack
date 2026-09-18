@@ -792,4 +792,18 @@ export class ApiService {
   getTeam(team_id: number){
     return this.http.get<TeamModel>(`${API}/teams/${team_id}`);
   }
+
+  password_recover(email: string) {
+    return this.http.post<{ message: string }>(`${API}/auth/password_recover`, {
+      email,
+    });
+  }
+
+  resetPassword(token: string, password: string, passwordConfirm: string) {
+    return this.http.post<{ message: string }>(`${API}/auth/password_reset`, {
+      token,
+      password,
+      passwordConfirm,
+    });
+  }
 }
