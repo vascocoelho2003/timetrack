@@ -25,6 +25,25 @@ function passwordsMatch(password, passwordConfirm) {
   return crypto.timingSafeEqual(a, b);
 }
 
+function getFrontendUrl(req) {
+  const fromEnv = process.env.FRONTEND_URL?.trim().replace(/\/$/, "");
+  if (fromEnv) return fromEnv;
+
+  const originHeader = req.get("origin") || req.get("referer");
+  if (originHeader) {
+    try {
+      return new URL(originHeader).origin;
+    } catch {
+      // ignore invalid origin
+    }
+  }
+
+  const host = req.get("x-forwarded-host") || req.get("host");
+  const proto = req.get("x-forwarded-proto") || req.protocol || "http";
+  if (host) return `${proto}://${host}`.replace(/\/$/, "");
+  return "http://localhost:4200";
+}
+
 /**
  * @openapi
  * /api/auth/register:
@@ -425,9 +444,7 @@ router.post("/password_recover", async (req, res) => {
      VALUES (?, ?, datetime('now', '+1 hour'))`,
   ).run(user.id, tokenHash);
 
-  const frontendUrl = (
-    process.env.FRONTEND_URL || "http://localhost:4200"
-  ).replace(/\/$/, "");
+  const frontendUrl = getFrontendUrl(req);
   const resetLink = `${frontendUrl}/password-reset?token=${token}`;
 
   try {
