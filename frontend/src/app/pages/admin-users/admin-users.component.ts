@@ -117,6 +117,10 @@ export class AdminUsersComponent implements OnInit {
       this.formError = 'O email é obrigatório.';
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      this.formError = 'Indique um email válido (ex: nome@dominio.com).';
+      return;
+    }
     if (this.newProfile === 'user' && this.newDepartmentId == null) {
       this.formError = 'Selecione um departamento.';
       return;
