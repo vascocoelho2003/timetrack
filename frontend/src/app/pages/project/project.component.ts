@@ -327,8 +327,18 @@ export class ProjectComponent implements OnInit {
     this.resetDependencyPicker();
   }
 
+  openNewTaskFromList(): void {
+    const filteredId = Number(this.listFilterList);
+    const listId =
+      filteredId && this.lists.some((list) => list.id === filteredId)
+        ? filteredId
+        : this.lists[0]?.id;
+    if (!listId) return;
+    this.openNewTask(listId);
+  }
+
   createTask() {
-    if (!this.newTaskTitle.trim()) return;
+    if (!this.newTaskTitle.trim() || !this.newTaskListId) return;
     this.dependencyError = '';
     const pendingDeps = [...this.newTaskDependencies];
     this.api
