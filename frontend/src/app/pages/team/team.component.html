@@ -38,7 +38,7 @@
       <section class="card section">
         <h3>Novo projeto</h3>
         <div class="inline-form">
-          <input [(ngModel)]="projectName" placeholder="Nome do projeto" />
+          <input [(ngModel)]="projectName" placeholder="Nome do projeto" maxlength="50"/>
           <input [(ngModel)]="projectDesc" placeholder="Descrição (opcional)" maxlength="50" />
           <button class="btn btn-primary" (click)="createProject()">Criar projeto</button>
         </div>
