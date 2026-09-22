@@ -40,6 +40,12 @@
   cursor: pointer;
 }
 
+.list-view-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
 .list-name-input {
   flex: 1;
   min-width: 0;

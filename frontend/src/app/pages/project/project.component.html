@@ -1,5 +1,3 @@
-
-<!-- project.component.html -->
 <div class="page project-page">
     <a [routerLink]="['/teams', project?.team_id]" class="back-link">← Equipa</a>
     <div class="page-header">
@@ -10,6 +8,15 @@
         <button class="btn btn-ghost" [routerLink]="['/projects', project?.id, 'closed-tasks']">Closed Tasks</button>
       @if (isAdmin) {
         <button class="btn btn-ghost" (click)="showNewList = !showNewList">Criar Lista</button>
+        @if (viewMode === 'list') {
+          <button
+            class="btn btn-primary"
+            type="button"
+            [disabled]="!lists.length"
+            (click)="openNewTaskFromList()">
+            Nova tarefa
+          </button>
+        }
         <button class="btn btn-danger btn-sm" (click)="deleteProject()" title="Eliminar projeto">Eliminar projeto</button>
       }
       </div>
@@ -100,6 +107,17 @@
       </div>
     } @else {
       <div class="card">
+        @if (isAdmin) {
+          <div class="list-view-toolbar">
+            <button
+              class="btn btn-primary"
+              type="button"
+              [disabled]="!lists.length"
+              (click)="openNewTaskFromList()">
+              Nova tarefa
+            </button>
+          </div>
+        }
         <div class="inline-form" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px;">
           <input [(ngModel)]="listSearch" placeholder="Pesquisa" />
           <select [(ngModel)]="listFilterList">
@@ -386,6 +404,12 @@
       <div class="modal-overlay" (click)="showNewTaskForm = false">
         <div class="modal card" (click)="$event.stopPropagation()">
           <h3>Nova tarefa</h3>
+          <label>Lista</label>
+          <select [(ngModel)]="newTaskListId">
+            @for (list of lists; track list.id) {
+              <option [ngValue]="list.id">{{ list.name }}</option>
+            }
+          </select>
           <label>Título</label>
           <input [(ngModel)]="newTaskTitle" />
 
