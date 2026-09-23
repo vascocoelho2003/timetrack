@@ -3,7 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
-import { TimerService, formatDuration } from '../../core/timer.service';
+import {
+  TimerService,
+  formatDuration,
+  formatTimeRange,
+  toDateTimeLocal,
+} from '../../core/timer.service';
 import {
   Comment,
   Task,
@@ -56,6 +61,10 @@ export class MyTasksComponent implements OnInit {
   newComment = '';
   viewMode: 'list' | 'calendar' = 'list';
   timeEntries: TimeEntry[] = [];
+  editingTimeEntryId: number | null = null;
+  editTimeStart = '';
+  editTimeEnd = '';
+  timeEntryError = '';
   fmt = formatDuration;
   recurrenceRuleType = 'fixed_day';
   recurrenceFrequency = 'daily';
@@ -269,14 +278,18 @@ export class MyTasksComponent implements OnInit {
       : date.toLocaleDateString('pt-PT');
   }
 
-  get canTrackTime() {
+  get isTaskAssignee() {
     return !!this.selectedTask?.assigneeIds.includes(
       this.auth.currentUser()?.id || 0,
     );
   }
 
+  get canTrackTime() {
+    return this.isTaskAssignee && this.selectedTask?.status !== 'done';
+  }
+
   get canChangeStatus() {
-    return this.isAdmin || this.canTrackTime;
+    return this.isAdmin || this.isTaskAssignee;
   }
 
   get activeOnThisTask() {
@@ -323,6 +336,7 @@ export class MyTasksComponent implements OnInit {
         this.members = [];
         this.isAdmin = true;
       }
+      this.cancelEditTimeEntry();
       this.api
         .getTaskTimeEntries(row.id)
         .subscribe((entries) => (this.timeEntries = entries));
@@ -339,6 +353,7 @@ export class MyTasksComponent implements OnInit {
     this.taskDependencies = [];
     this.predecessorCandidates = [];
     this.blockingPredecessorId = null;
+    this.cancelEditTimeEntry();
     this.resetDependencyPicker();
   }
 
@@ -368,6 +383,7 @@ export class MyTasksComponent implements OnInit {
       })
       .subscribe({
         next: () => {
+          if (this.editStatus === 'done') this.timer.refresh();
           this.loadTasks();
           this.closeTask();
         },
@@ -409,7 +425,19 @@ export class MyTasksComponent implements OnInit {
     this.api
       .updateTask(this.selectedTask.id, { status: this.editStatus })
       .subscribe({
-        next: () => this.loadTasks(),
+        next: () => {
+          if (this.selectedTask) {
+            this.selectedTask = {
+              ...this.selectedTask,
+              status: this.editStatus,
+            };
+          }
+          if (this.editStatus === 'done') {
+            this.timer.refresh();
+            this.reloadTimeEntries();
+          }
+          this.loadTasks();
+        },
         error: (err) => {
           this.saveError =
             err.error?.error || 'Não foi possível alterar o estado';
@@ -573,17 +601,85 @@ export class MyTasksComponent implements OnInit {
   }
 
   startTimer() {
-    if (this.selectedTask) this.timer.start(this.selectedTask.id);
+    if (!this.canTrackTime || !this.selectedTask) return;
+    this.timer.start(this.selectedTask.id);
   }
 
   stopTimer() {
-    this.timer.stop().subscribe(() => {
-      if (this.selectedTask) {
-        this.api
-          .getTaskTimeEntries(this.selectedTask.id)
-          .subscribe((entries) => (this.timeEntries = entries));
-      }
+    this.timer.stop().subscribe(() => this.reloadTimeEntries());
+  }
+
+  canManageTimeEntry(entry: TimeEntry): boolean {
+    return (
+      this.isAdmin ||
+      this.auth.isAdmin ||
+      entry.user_id === this.auth.currentUser()?.id
+    );
+  }
+
+  formatEntryRange(entry: TimeEntry): string {
+    return formatTimeRange(entry.start, entry.end);
+  }
+
+  startEditTimeEntry(entry: TimeEntry) {
+    this.editingTimeEntryId = entry.id;
+    this.editTimeStart = toDateTimeLocal(entry.start);
+    this.editTimeEnd = toDateTimeLocal(entry.end);
+    this.timeEntryError = '';
+  }
+
+  cancelEditTimeEntry() {
+    this.editingTimeEntryId = null;
+    this.editTimeStart = '';
+    this.editTimeEnd = '';
+    this.timeEntryError = '';
+  }
+
+  saveTimeEntry() {
+    if (!this.editingTimeEntryId) return;
+    const start = new Date(this.editTimeStart);
+    const end = new Date(this.editTimeEnd);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      this.timeEntryError = 'Indique uma data de início e de fim válidas';
+      return;
+    }
+    if (end.getTime() <= start.getTime()) {
+      this.timeEntryError = 'O fim tem de ser depois do início';
+      return;
+    }
+    this.timeEntryError = '';
+    this.api
+      .updateTimeEntry(this.editingTimeEntryId, {
+        start: start.toISOString(),
+        end: end.toISOString(),
+      })
+      .subscribe({
+        next: () => {
+          this.cancelEditTimeEntry();
+          this.reloadTimeEntries();
+        },
+        error: (err) => {
+          this.timeEntryError =
+            err.error?.error || 'Não foi possível atualizar o registo';
+        },
+      });
+  }
+
+  deleteTimeEntry(entry: TimeEntry) {
+    if (!confirm('Eliminar este registo de tempo?')) return;
+    this.api.deleteTimeEntry(entry.id).subscribe({
+      next: () => {
+        if (this.editingTimeEntryId === entry.id) this.cancelEditTimeEntry();
+        this.reloadTimeEntries();
+      },
     });
+  }
+
+  private reloadTimeEntries() {
+    if (!this.selectedTask) return;
+    this.api
+      .getTaskTimeEntries(this.selectedTask.id)
+      .subscribe((entries) => (this.timeEntries = entries));
   }
 
   postComment() {

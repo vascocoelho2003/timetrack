@@ -448,6 +448,20 @@ export class ApiService {
   }
 
   /**
+   * Atualiza o início e o fim de um registo de tempo
+   */
+  updateTimeEntry(entryId: number, data: { start: string; end: string }) {
+    return this.http.put<TimeEntry>(`${API}/time/entry/${entryId}`, data);
+  }
+
+  /**
+   * Elimina um registo de tempo já associado a uma tarefa
+   */
+  deleteTimeEntry(entryId: number) {
+    return this.http.delete(`${API}/time/entry/${entryId}`);
+  }
+
+  /**
    * Obtém os dados para o Team Report
    */
   getTeamReport(teamId: number) {

@@ -132,24 +132,53 @@
           }
         }
 
-        @if (canTrackTime || timeEntries.length) {
+        @if (canTrackTime || timeEntries.length || activeOnThisTask) {
           <details class="form-section">
             <summary>Time tracking</summary>
             <div class="form-section-body">
-              @if (canTrackTime) {
-                @if (activeOnThisTask) {
-                  <p class="timer-running">⏱ {{ fmt(timer.elapsedSeconds()) }}</p>
-                  <button class="btn btn-danger" (click)="stopTimer()">Parar timer</button>
-                } @else {
-                  <button class="btn btn-primary" (click)="startTimer()" [disabled]="!!timer.activeEntry()">
-                    Iniciar timer
-                  </button>
-                }
+              @if (activeOnThisTask) {
+                <p class="timer-running">⏱ {{ fmt(timer.elapsedSeconds()) }}</p>
+                <button class="btn btn-danger" (click)="stopTimer()">Parar timer</button>
+              } @else if (canTrackTime) {
+                <button class="btn btn-primary" (click)="startTimer()" [disabled]="!!timer.activeEntry()">
+                  Iniciar timer
+                </button>
               }
               @if (timeEntries.length) {
                 <ul class="time-list">
                   @for (entry of timeEntries; track entry.id) {
-                    <li>{{ entry.user_name }} — {{ fmt(entry.duration || 0) }}</li>
+                    <li>
+                      @if (editingTimeEntryId === entry.id) {
+                        <div class="time-entry-edit">
+                          <label>Início
+                            <input type="datetime-local" [(ngModel)]="editTimeStart" />
+                          </label>
+                          <label>Fim
+                            <input type="datetime-local" [(ngModel)]="editTimeEnd" />
+                          </label>
+                          @if (timeEntryError) {
+                            <p class="field-error">{{ timeEntryError }}</p>
+                          }
+                          <div class="inline-form">
+                            <button class="btn btn-primary btn-sm" type="button" (click)="saveTimeEntry()">Guardar</button>
+                            <button class="btn btn-ghost btn-sm" type="button" (click)="cancelEditTimeEntry()">Cancelar</button>
+                          </div>
+                        </div>
+                      } @else {
+                        <div class="time-entry-row">
+                          <div class="time-entry-meta">
+                            <span>{{ entry.user_name }} — {{ fmt(entry.duration || 0) }}</span>
+                            <span class="time-entry-range">{{ formatEntryRange(entry) }}</span>
+                          </div>
+                          @if (canManageTimeEntry(entry)) {
+                            <div class="time-entry-actions">
+                              <button class="btn btn-ghost btn-sm" type="button" (click)="startEditTimeEntry(entry)">Editar</button>
+                              <button class="btn btn-danger btn-sm" type="button" (click)="deleteTimeEntry(entry)">Eliminar</button>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </li>
                   }
                 </ul>
               }

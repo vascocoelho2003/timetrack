@@ -34,6 +34,27 @@ function setAssignees(taskId, assigneeIds) {
   }
 }
 
+function stopActiveTimersForTask(taskId) {
+  const now = new Date().toISOString();
+  const actives = db
+    .prepare(
+      "SELECT id, start FROM time_entries WHERE task_id = ? AND end IS NULL",
+    )
+    .all(taskId);
+  const update = db.prepare(
+    "UPDATE time_entries SET end = ?, duration = ? WHERE id = ?",
+  );
+  for (const entry of actives) {
+    const duration = Math.max(
+      0,
+      Math.floor(
+        (new Date(now).getTime() - new Date(entry.start).getTime()) / 1000,
+      ),
+    );
+    update.run(now, duration, entry.id);
+  }
+}
+
 function syncCompletedAt(taskId, previousStatus, nextStatus) {
   if (!nextStatus || nextStatus === previousStatus) return;
   if (nextStatus === "done") {
@@ -526,6 +547,7 @@ router.put("/:taskId", (req, res) => {
   }
 
   syncCompletedAt(taskId, ctx.status, status);
+  if (status === "done") stopActiveTimersForTask(taskId);
 
   const task = db.prepare("SELECT * FROM tasks WHERE id = ?").get(taskId);
   const ids = db

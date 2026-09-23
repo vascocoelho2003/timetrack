@@ -661,6 +661,48 @@ select:focus {
   color: var(--muted);
 }
 
+.time-list > li {
+  margin-bottom: 0.55rem;
+}
+
+.time-entry-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.time-entry-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.time-entry-range {
+  font-size: 0.78rem;
+}
+
+.time-entry-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.35rem;
+}
+
+.time-entry-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.time-entry-edit label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
 .comment {
   background: var(--bg);
   padding: 0.5rem 0.75rem;

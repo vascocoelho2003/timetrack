@@ -48,6 +48,11 @@ router.post("/start", (req, res) => {
     if (!ctx.team_id && !isPersonalTaskOwner(req.user.id, ctx)) {
       return res.status(403).json({ error: "Sem acesso" });
     }
+    if (ctx.status === "done") {
+      return res
+        .status(400)
+        .json({ error: "Não é possível registar tempo numa tarefa concluída" });
+    }
     if (!isTaskAssignee(req.user.id, taskId)) {
       return res
         .status(403)
@@ -242,6 +247,11 @@ router.post("/unassigned/:id/assign", (req, res) => {
   if (existingTaskId) {
     const ctx = getTaskWithContext(existingTaskId);
     if (!ctx) return res.status(404).json({ error: "Tarefa não encontrada" });
+    if (ctx.status === "done") {
+      return res
+        .status(400)
+        .json({ error: "Não é possível registar tempo numa tarefa concluída" });
+    }
     if (!isTaskAssignee(req.user.id, existingTaskId)) {
       return res
         .status(403)
@@ -527,6 +537,159 @@ router.get("/reports/project/:projectId", (req, res) => {
     .all(projectId);
 
   res.json({ byUser, byTask });
+});
+
+function getTimeEntryById(id) {
+  return db
+    .prepare(
+      `
+    SELECT te.*, u.username as user_name, t.title as task_title
+    FROM time_entries te
+    JOIN users u ON u.id = te.user_id
+    LEFT JOIN tasks t ON t.id = te.task_id
+    WHERE te.id = ?
+  `,
+    )
+    .get(id);
+}
+
+function canManageTimeEntry(req, entry) {
+  if (!entry) return false;
+  if (Number(entry.user_id) === Number(req.user.id)) return true;
+  if (req.user.profile === "admin") return true;
+  if (!entry.task_id) return false;
+  const ctx = getTaskWithContext(entry.task_id);
+  if (!ctx) return false;
+  if (ctx.team_id) return isTeamAdmin(req.user.id, ctx.team_id);
+  return isPersonalTaskOwner(req.user.id, ctx);
+}
+
+function parseEntryDate(value) {
+  if (!value || typeof value !== "string") return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
+
+/**
+ * @openapi
+ * /api/time/entry/{id}:
+ *   put:
+ *     tags: [Time Entries]
+ *     summary: Editar um registo de tempo
+ *     description: Atualiza o início e o fim de um registo já terminado. Disponível para o autor, admin da equipa ou admin da plataforma.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [start, end]
+ *             properties:
+ *               start:
+ *                 type: string
+ *                 format: date-time
+ *               end:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       200:
+ *         description: Registo atualizado
+ *       400:
+ *         description: Dados inválidos
+ *       403:
+ *         description: Sem permissão
+ *       404:
+ *         description: Registo não encontrado
+ */
+router.put("/entry/:id", (req, res) => {
+  const entryId = +req.params.id;
+  const entry = db.prepare("SELECT * FROM time_entries WHERE id = ?").get(entryId);
+  if (!entry) {
+    return res.status(404).json({ error: "Registo de tempo não encontrado" });
+  }
+  if (!canManageTimeEntry(req, entry)) {
+    return res.status(403).json({ error: "Sem permissão para editar este registo" });
+  }
+  if (!entry.end) {
+    return res
+      .status(400)
+      .json({ error: "Pare o timer antes de editar o registo" });
+  }
+
+  const start = parseEntryDate(req.body.start);
+  const end = parseEntryDate(req.body.end);
+  if (!start || !end) {
+    return res
+      .status(400)
+      .json({ error: "Indique uma data de início e de fim válidas" });
+  }
+  if (end.getTime() <= start.getTime()) {
+    return res
+      .status(400)
+      .json({ error: "O fim tem de ser depois do início" });
+  }
+
+  const duration = Math.floor((end.getTime() - start.getTime()) / 1000);
+  db.prepare(
+    "UPDATE time_entries SET start = ?, end = ?, duration = ? WHERE id = ?",
+  ).run(start.toISOString(), end.toISOString(), duration, entryId);
+
+  res.json(getTimeEntryById(entryId));
+});
+
+/**
+ * @openapi
+ * /api/time/entry/{id}:
+ *   delete:
+ *     tags: [Time Entries]
+ *     summary: Eliminar um registo de tempo
+ *     description: Elimina um registo já terminado. Disponível para o autor, admin da equipa ou admin da plataforma.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       204:
+ *         description: Registo eliminado
+ *       400:
+ *         description: Timer ainda ativo
+ *       403:
+ *         description: Sem permissão
+ *       404:
+ *         description: Registo não encontrado
+ */
+router.delete("/entry/:id", (req, res) => {
+  const entryId = +req.params.id;
+  const entry = db.prepare("SELECT * FROM time_entries WHERE id = ?").get(entryId);
+  if (!entry) {
+    return res.status(404).json({ error: "Registo de tempo não encontrado" });
+  }
+  if (!canManageTimeEntry(req, entry)) {
+    return res
+      .status(403)
+      .json({ error: "Sem permissão para eliminar este registo" });
+  }
+  if (!entry.end) {
+    return res
+      .status(400)
+      .json({ error: "Pare o timer antes de eliminar o registo" });
+  }
+
+  db.prepare("DELETE FROM time_entries WHERE id = ?").run(entryId);
+  res.status(204).send();
 });
 
 module.exports = router;

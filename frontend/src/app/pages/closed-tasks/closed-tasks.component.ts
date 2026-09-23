@@ -13,7 +13,12 @@ import { ApiService } from '../../core/api.service';
 import { RouterLink } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { formatDuration } from '../../core/timer.service';
+import { AuthService } from '../../core/auth.service';
+import {
+  formatDuration,
+  formatTimeRange,
+  toDateTimeLocal,
+} from '../../core/timer.service';
 
 @Component({
   selector: 'app-closed-tasks',
@@ -38,6 +43,10 @@ export class ClosedTasksComponent {
   isAdmin = false;
   selectedTask: (Task & { comments?: Comment[] }) | null = null;
   timeEntries: TimeEntry[] = [];
+  editingTimeEntryId: number | null = null;
+  editTimeStart = '';
+  editTimeEnd = '';
+  timeEntryError = '';
   newComment = '';
   fmt = formatDuration;
 
@@ -52,6 +61,7 @@ export class ClosedTasksComponent {
     private location: Location,
     private apiService: ApiService,
     private route: ActivatedRoute,
+    public auth: AuthService,
   ) {}
 
   ngOnInit() {
@@ -73,16 +83,91 @@ export class ClosedTasksComponent {
 
   closeTask() {
     this.selectedTask = null;
+    this.cancelEditTimeEntry();
   }
 
   openTask(taskId: number) {
     this.apiService.getTask(taskId).subscribe((task) => {
       this.selectedTask = task;
       this.newComment = '';
+      this.cancelEditTimeEntry();
       this.apiService.getTaskTimeEntries(taskId).subscribe((entries) => {
         this.timeEntries = entries;
       });
     });
+  }
+
+  canManageTimeEntry(entry: TimeEntry): boolean {
+    return (
+      this.isAdmin ||
+      this.auth.isAdmin ||
+      entry.user_id === this.auth.currentUser()?.id
+    );
+  }
+
+  formatEntryRange(entry: TimeEntry): string {
+    return formatTimeRange(entry.start, entry.end);
+  }
+
+  startEditTimeEntry(entry: TimeEntry) {
+    this.editingTimeEntryId = entry.id;
+    this.editTimeStart = toDateTimeLocal(entry.start);
+    this.editTimeEnd = toDateTimeLocal(entry.end);
+    this.timeEntryError = '';
+  }
+
+  cancelEditTimeEntry() {
+    this.editingTimeEntryId = null;
+    this.editTimeStart = '';
+    this.editTimeEnd = '';
+    this.timeEntryError = '';
+  }
+
+  saveTimeEntry() {
+    if (!this.editingTimeEntryId) return;
+    const start = new Date(this.editTimeStart);
+    const end = new Date(this.editTimeEnd);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      this.timeEntryError = 'Indique uma data de início e de fim válidas';
+      return;
+    }
+    if (end.getTime() <= start.getTime()) {
+      this.timeEntryError = 'O fim tem de ser depois do início';
+      return;
+    }
+    this.timeEntryError = '';
+    this.apiService
+      .updateTimeEntry(this.editingTimeEntryId, {
+        start: start.toISOString(),
+        end: end.toISOString(),
+      })
+      .subscribe({
+        next: () => {
+          this.cancelEditTimeEntry();
+          this.reloadTimeEntries();
+        },
+        error: (err) => {
+          this.timeEntryError =
+            err.error?.error || 'Não foi possível atualizar o registo';
+        },
+      });
+  }
+
+  deleteTimeEntry(entry: TimeEntry) {
+    if (!confirm('Eliminar este registo de tempo?')) return;
+    this.apiService.deleteTimeEntry(entry.id).subscribe({
+      next: () => {
+        if (this.editingTimeEntryId === entry.id) this.cancelEditTimeEntry();
+        this.reloadTimeEntries();
+      },
+    });
+  }
+
+  private reloadTimeEntries() {
+    if (!this.selectedTask) return;
+    this.apiService
+      .getTaskTimeEntries(this.selectedTask.id)
+      .subscribe((entries) => (this.timeEntries = entries));
   }
 
   reopenTask() {
