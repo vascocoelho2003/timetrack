@@ -43,7 +43,7 @@ router.get("/userProjectsDetails", (req, res) => {
         FROM tasks ta
         JOIN task_lists tl ON tl.id = ta.task_list_id
         WHERE tl.project_id = p.id
-          AND ta.status = 'todo'
+          AND ta.status != 'done'
       ) AS todo_tasks,
 
       (
