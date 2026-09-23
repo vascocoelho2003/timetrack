@@ -157,8 +157,10 @@ export class ColaboratorReportComponent implements OnInit {
     ].join(':');
   }
 
-  formatDate(dateString: string) {
+  formatDate(dateString: string | null | undefined) {
+    if (!dateString) return '—';
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return '—';
 
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');

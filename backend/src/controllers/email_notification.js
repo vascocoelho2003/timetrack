@@ -80,13 +80,13 @@ async function sendEmailNotifications(tasks) {
       for (const user of users) {
         await sendEmail(
           user.email,
-          "A sua tarefa vence dentro de uma semana",
+          "A sua tarefa termina a validade dentro de uma semana",
           `
                         Olá,
 
-                        A tarefa "${task.title}" vence no dia ${task.due_date}.
+                        A tarefa "${task.title}" termina a validade no dia ${task.due_date}.
 
-                        Por favor, verifique se consegue concluí-la antes da data limite.
+                        Por favor, verifique se consegue concluí-la antes do fim do prazo.
 
                         Cumprimentos,
                         Task Manager

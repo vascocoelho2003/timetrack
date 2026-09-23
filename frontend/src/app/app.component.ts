@@ -91,7 +91,7 @@ export class AppComponent implements OnInit {
 
   loadExistingTasks() {
     this.api.getUserTasks().subscribe((tasks) => {
-      this.existingTasks = tasks;
+      this.existingTasks = tasks.filter((task) => task.status !== 'done');
     });
   }
 

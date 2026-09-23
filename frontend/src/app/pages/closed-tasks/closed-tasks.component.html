@@ -108,7 +108,38 @@
             @if (timeEntries.length) {
               <ul class="time-list">
                 @for (entry of timeEntries; track entry.id) {
-                  <li>{{ entry.user_name || 'Unknown' }} — {{ fmt(entry.duration || 0) }}</li>
+                  <li>
+                    @if (editingTimeEntryId === entry.id) {
+                      <div class="time-entry-edit">
+                        <label>Início
+                          <input type="datetime-local" [(ngModel)]="editTimeStart" />
+                        </label>
+                        <label>Fim
+                          <input type="datetime-local" [(ngModel)]="editTimeEnd" />
+                        </label>
+                        @if (timeEntryError) {
+                          <p class="field-error">{{ timeEntryError }}</p>
+                        }
+                        <div class="inline-form">
+                          <button class="btn btn-primary btn-sm" type="button" (click)="saveTimeEntry()">Guardar</button>
+                          <button class="btn btn-ghost btn-sm" type="button" (click)="cancelEditTimeEntry()">Cancelar</button>
+                        </div>
+                      </div>
+                    } @else {
+                      <div class="time-entry-row">
+                        <div class="time-entry-meta">
+                          <span>{{ entry.user_name || 'Unknown' }} — {{ fmt(entry.duration || 0) }}</span>
+                          <span class="time-entry-range">{{ formatEntryRange(entry) }}</span>
+                        </div>
+                        @if (canManageTimeEntry(entry)) {
+                          <div class="time-entry-actions">
+                            <button class="btn btn-ghost btn-sm" type="button" (click)="startEditTimeEntry(entry)">Editar</button>
+                            <button class="btn btn-danger btn-sm" type="button" (click)="deleteTimeEntry(entry)">Eliminar</button>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </li>
                 }
               </ul>
             } @else {

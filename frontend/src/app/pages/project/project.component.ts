@@ -3,7 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
-import { TimerService, formatDuration } from '../../core/timer.service';
+import {
+  TimerService,
+  formatDuration,
+  formatTimeRange,
+  toDateTimeLocal,
+} from '../../core/timer.service';
 import {
   Project,
   TaskList,
@@ -72,6 +77,10 @@ export class ProjectComponent implements OnInit {
   editAssignees: number[] = [];
   newComment = '';
   timeEntries: TimeEntry[] = [];
+  editingTimeEntryId: number | null = null;
+  editTimeStart = '';
+  editTimeEnd = '';
+  timeEntryError = '';
   fmt = formatDuration;
   selectedFile: File | null = null;
   selectedFileName = '';
@@ -132,14 +141,18 @@ export class ProjectComponent implements OnInit {
     return this.auth.currentUser()?.id;
   }
 
-  get canTrackTime(): boolean {
+  get isTaskAssignee(): boolean {
     if (!this.selectedTask) return false;
     const uid = this.auth.currentUser()?.id;
     return !!uid && this.selectedTask.assigneeIds.includes(uid);
   }
 
+  get canTrackTime(): boolean {
+    return this.isTaskAssignee && this.selectedTask?.status !== 'done';
+  }
+
   get canChangeStatus(): boolean {
-    return this.isAdmin || this.canTrackTime;
+    return this.isAdmin || this.isTaskAssignee;
   }
 
   get activeOnThisTask(): boolean {
@@ -407,9 +420,10 @@ export class ProjectComponent implements OnInit {
       this.clientId = task.client_id ?? null;
       this.taskDependencies = task.dependencies || [];
       this.resetRecurrenceForm(task.recurrence);
+      this.cancelEditTimeEntry();
       this.api
         .getTaskTimeEntries(taskId)
-        .subscribe((e) => (this.timeEntries = e));
+        .subscribe((e) => this.applyTimeEntries(e));
     });
   }
 
@@ -419,6 +433,7 @@ export class ProjectComponent implements OnInit {
     this.taskDependencies = [];
     this.saveError = '';
     this.blockingPredecessorId = null;
+    this.cancelEditTimeEntry();
     this.resetDependencyPicker();
   }
 
@@ -454,6 +469,7 @@ export class ProjectComponent implements OnInit {
             ...updated,
             assigneeIds: this.editAssignees,
           };
+          if (updated.status === 'done') this.timer.refresh();
           this.closeTask();
         },
         error: (err) => {
@@ -496,7 +512,21 @@ export class ProjectComponent implements OnInit {
         status: this.editStatus as Task['status'],
       })
       .subscribe({
-        next: (updated) => this.refreshTaskInBoard(updated),
+        next: (updated) => {
+          this.refreshTaskInBoard(updated);
+          if (this.selectedTask) {
+            this.selectedTask = {
+              ...this.selectedTask,
+              ...updated,
+              comments: this.selectedTask.comments,
+              assigneeIds: this.selectedTask.assigneeIds,
+            };
+          }
+          if (updated.status === 'done') {
+            this.timer.refresh();
+            this.reloadTimeEntries();
+          }
+        },
         error: (err) => {
           this.saveError =
             err.error?.error || 'Não foi possível alterar o estado';
@@ -695,18 +725,93 @@ export class ProjectComponent implements OnInit {
   }
 
   startTimer() {
-    if (!this.selectedTask) return;
+    if (!this.canTrackTime || !this.selectedTask) return;
     this.timer.start(this.selectedTask.id);
   }
 
   stopTimer() {
-    this.timer.stop().subscribe(() => {
-      if (this.selectedTask) {
-        this.api
-          .getTaskTimeEntries(this.selectedTask.id)
-          .subscribe((e) => (this.timeEntries = e));
-      }
+    this.timer.stop().subscribe(() => this.reloadTimeEntries());
+  }
+
+  canManageTimeEntry(entry: TimeEntry): boolean {
+    return (
+      this.isAdmin ||
+      this.auth.isAdmin ||
+      entry.user_id === this.auth.currentUser()?.id
+    );
+  }
+
+  formatEntryRange(entry: TimeEntry): string {
+    return formatTimeRange(entry.start, entry.end);
+  }
+
+  startEditTimeEntry(entry: TimeEntry) {
+    this.editingTimeEntryId = entry.id;
+    this.editTimeStart = toDateTimeLocal(entry.start);
+    this.editTimeEnd = toDateTimeLocal(entry.end);
+    this.timeEntryError = '';
+  }
+
+  cancelEditTimeEntry() {
+    this.editingTimeEntryId = null;
+    this.editTimeStart = '';
+    this.editTimeEnd = '';
+    this.timeEntryError = '';
+  }
+
+  saveTimeEntry() {
+    if (!this.editingTimeEntryId) return;
+    const start = new Date(this.editTimeStart);
+    const end = new Date(this.editTimeEnd);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      this.timeEntryError = 'Indique uma data de início e de fim válidas';
+      return;
+    }
+    if (end.getTime() <= start.getTime()) {
+      this.timeEntryError = 'O fim tem de ser depois do início';
+      return;
+    }
+    this.timeEntryError = '';
+    this.api
+      .updateTimeEntry(this.editingTimeEntryId, {
+        start: start.toISOString(),
+        end: end.toISOString(),
+      })
+      .subscribe({
+        next: () => {
+          this.cancelEditTimeEntry();
+          this.reloadTimeEntries();
+        },
+        error: (err) => {
+          this.timeEntryError =
+            err.error?.error || 'Não foi possível atualizar o registo';
+        },
+      });
+  }
+
+  deleteTimeEntry(entry: TimeEntry) {
+    if (!confirm('Eliminar este registo de tempo?')) return;
+    this.api.deleteTimeEntry(entry.id).subscribe({
+      next: () => {
+        if (this.editingTimeEntryId === entry.id) this.cancelEditTimeEntry();
+        this.reloadTimeEntries();
+      },
     });
+  }
+
+  private reloadTimeEntries() {
+    if (!this.selectedTask) return;
+    this.api
+      .getTaskTimeEntries(this.selectedTask.id)
+      .subscribe((entries) => this.applyTimeEntries(entries));
+  }
+
+  private applyTimeEntries(entries: TimeEntry[]) {
+    this.timeEntries = entries;
+    if (!this.selectedTask) return;
+    const total = entries.reduce((sum, entry) => sum + (entry.duration || 0), 0);
+    this.selectedTask = { ...this.selectedTask, total_time: total };
+    this.refreshTaskInBoard(this.selectedTask);
   }
 
   postComment() {

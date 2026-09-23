@@ -375,7 +375,7 @@ router.get("/colaborators_reports/", authMiddleware, async (req, res) => {
             SELECT team_id
             FROM team_members
             WHERE user_id = $id
-        )
+        ) 
         GROUP BY
             u.id,
             u.username
@@ -409,6 +409,7 @@ router.get("/colaborators_reports/", authMiddleware, async (req, res) => {
             )
             OR (te.user_id = $id AND t.task_list_id IS NULL)
           )
+          AND te.end IS NOT NULL
           AND datetime(te.created_at) >= datetime('now', '-1 month')
         GROUP BY te.user_id
     `,
@@ -486,6 +487,7 @@ router.get("/colaborator_report/:id", authMiddleware, (req, res) => {
             )
             OR (? = 1 AND p.id IS NULL)
           )
+          AND te.end IS NOT NULL
         ${hasDateRange ? "AND date(te.start) >= date(?) AND date(te.start) < date(?, '+1 day')" : ""}
     `,
     )
