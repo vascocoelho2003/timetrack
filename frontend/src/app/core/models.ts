@@ -288,6 +288,7 @@ export interface TimeEntry {
   start: string;
   end: string | null;
   duration: number | null;
+  edited?: boolean | number;
   task_title?: string;
   user_name?: string;
 }

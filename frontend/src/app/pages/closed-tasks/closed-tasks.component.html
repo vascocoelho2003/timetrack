@@ -128,7 +128,11 @@
                     } @else {
                       <div class="time-entry-row">
                         <div class="time-entry-meta">
-                          <span>{{ entry.user_name || 'Unknown' }} — {{ fmt(entry.duration || 0) }}</span>
+                          <span>{{ entry.user_name || 'Unknown' }} — {{ fmt(entry.duration || 0) }}
+                            @if (entry.edited) {
+                              <span class="badge time-entry-edited">Editado</span>
+                            }
+                          </span>
                           <span class="time-entry-range">{{ formatEntryRange(entry) }}</span>
                         </div>
                         @if (canManageTimeEntry(entry)) {

@@ -640,7 +640,7 @@ router.put("/entry/:id", (req, res) => {
 
   const duration = Math.floor((end.getTime() - start.getTime()) / 1000);
   db.prepare(
-    "UPDATE time_entries SET start = ?, end = ?, duration = ? WHERE id = ?",
+    "UPDATE time_entries SET start = ?, end = ?, duration = ?, edited = 1 WHERE id = ?",
   ).run(start.toISOString(), end.toISOString(), duration, entryId);
 
   res.json(getTimeEntryById(entryId));
