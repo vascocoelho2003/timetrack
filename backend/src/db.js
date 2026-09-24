@@ -127,7 +127,8 @@ function initDb() {
       start TEXT NOT NULL,
       end TEXT,
       duration INTEGER,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      edited INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS dependencies (
@@ -172,7 +173,14 @@ function initDb() {
     db.exec(`ALTER TABLE tasks ADD COLUMN completed_at TEXT`);
   }
 
-  const timeEntryColumns = db.prepare(`PRAGMA table_info(time_entries)`).all();
+  let timeEntryColumns = db.prepare(`PRAGMA table_info(time_entries)`).all();
+  if (!timeEntryColumns.some((column) => column.name === "edited")) {
+    db.exec(
+      `ALTER TABLE time_entries ADD COLUMN edited INTEGER NOT NULL DEFAULT 0`,
+    );
+    timeEntryColumns = db.prepare(`PRAGMA table_info(time_entries)`).all();
+  }
+
   const taskIdColumn = timeEntryColumns.find(
     (column) => column.name === "task_id",
   );
@@ -186,10 +194,11 @@ function initDb() {
         start TEXT NOT NULL,
         end TEXT,
         duration INTEGER,
-        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        edited INTEGER NOT NULL DEFAULT 0
       );
-      INSERT INTO time_entries_new (id, user_id, task_id, start, end, duration, created_at)
-        SELECT id, user_id, task_id, start, end, duration, created_at FROM time_entries;
+      INSERT INTO time_entries_new (id, user_id, task_id, start, end, duration, created_at, edited)
+        SELECT id, user_id, task_id, start, end, duration, created_at, COALESCE(edited, 0) FROM time_entries;
       DROP TABLE time_entries;
       ALTER TABLE time_entries_new RENAME TO time_entries;
       CREATE INDEX IF NOT EXISTS idx_time_entries_user ON time_entries(user_id);

@@ -683,6 +683,18 @@ select:focus {
   font-size: 0.78rem;
 }
 
+.time-entry-edited {
+  margin-left: 0.35rem;
+  background: #fef3c7;
+  color: #92400e;
+  vertical-align: middle;
+}
+
+:root.dark-mode .time-entry-edited {
+  background: #78350f;
+  color: #fde68a;
+}
+
 .time-entry-actions {
   display: flex;
   flex-shrink: 0;
