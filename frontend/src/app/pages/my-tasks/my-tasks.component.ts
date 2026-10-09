@@ -13,12 +13,14 @@ import {
   Comment,
   Task,
   Task_proj,
+  TaskList,
   TeamMember,
   TimeEntry,
   RecurrenceRule,
   Client,
   TaskDependency,
   DependencyType,
+  Project,
 } from '../../core/models';
 import { forkJoin } from 'rxjs';
 import { FullCalendarModule } from '@fullcalendar/angular';
@@ -95,6 +97,17 @@ export class MyTasksComponent implements OnInit {
   page = 1;
   pageSize = 10;
 
+  showNewTaskForm = false;
+  userProjects: Project[] = [];
+  newTaskLists: TaskList[] = [];
+  newTaskTitle = '';
+  newTaskDescription = '';
+  newTaskPriority = 'medium';
+  newTaskDueDate = '';
+  newTaskProjectId: number | null = null;
+  newTaskListId: number | null = null;
+  newTaskError = '';
+
   calendarOptions: CalendarOptions = {
     initialView: 'dayGridMonth',
     locale: ptLocale,
@@ -109,6 +122,9 @@ export class MyTasksComponent implements OnInit {
     eventClick: (info) => {
       const task = info.event.extendedProps['task'] as Task_proj | undefined;
       if (task) this.openTask(task);
+    },
+    dateClick: (info) => {
+      this.openNewTaskForm(info.dateStr);
     },
   };
 
@@ -131,6 +147,9 @@ export class MyTasksComponent implements OnInit {
     this.api.getClients().subscribe((clients) => {
       this.clients = clients;
     });
+    this.api.getUserProjects().subscribe((projects) => {
+      this.userProjects = projects;
+    });
   }
 
   loadTasks() {
@@ -139,6 +158,57 @@ export class MyTasksComponent implements OnInit {
       this.page = 1;
       this.syncCalendarEvents();
     });
+  }
+
+  openNewTaskForm(dueDate?: string) {
+    this.showNewTaskForm = true;
+    this.newTaskError = '';
+    this.newTaskTitle = '';
+    this.newTaskDescription = '';
+    this.newTaskPriority = 'medium';
+    this.newTaskDueDate = dueDate?.slice(0, 10) || '';
+    this.newTaskProjectId = null;
+    this.newTaskListId = null;
+    this.newTaskLists = [];
+  }
+
+  onNewTaskProjectChange() {
+    this.newTaskListId = null;
+    this.newTaskLists = [];
+    if (!this.newTaskProjectId) return;
+    this.api.getTaskLists(this.newTaskProjectId).subscribe((lists) => {
+      this.newTaskLists = lists;
+    });
+  }
+
+  createMyTask() {
+    if (!this.newTaskTitle.trim()) {
+      this.newTaskError = 'Indique um título para a tarefa.';
+      return;
+    }
+    if (this.newTaskProjectId && !this.newTaskListId) {
+      this.newTaskError = 'Escolha a lista da tarefa.';
+      return;
+    }
+    this.newTaskError = '';
+    this.api
+      .createTask({
+        taskListId: this.newTaskListId,
+        title: this.newTaskTitle.trim(),
+        description: this.newTaskDescription,
+        priority: this.newTaskPriority,
+        dueDate: this.newTaskDueDate || null,
+      })
+      .subscribe({
+        next: () => {
+          this.showNewTaskForm = false;
+          this.loadTasks();
+        },
+        error: (err) => {
+          this.newTaskError =
+            err.error?.error || 'Não foi possível criar a tarefa.';
+        },
+      });
   }
 
   setViewMode(mode: 'list' | 'calendar') {
@@ -296,6 +366,10 @@ export class MyTasksComponent implements OnInit {
     return this.timer.activeEntry()?.task_id === this.selectedTask?.id;
   }
 
+  get hasRegisteredTime() {
+    return this.timeEntries.length > 0 || this.activeOnThisTask;
+  }
+
   openTask(row: Task_proj) {
     this.saveError = '';
     this.blockingPredecessorId = null;
@@ -373,7 +447,7 @@ export class MyTasksComponent implements OnInit {
       .updateTask(this.selectedTask.id, {
         title: this.editTitle,
         description: this.editDescription,
-        status: this.editStatus,
+        status: this.statusToSave(),
         priority: this.editPriority,
         dueDate: this.editDueDate || null,
         next_alert_date: this.editAlertDate || null,
@@ -423,16 +497,18 @@ export class MyTasksComponent implements OnInit {
     this.saveError = '';
     this.blockingPredecessorId = null;
     this.api
-      .updateTask(this.selectedTask.id, { status: this.editStatus })
+      .updateTask(this.selectedTask.id, { status: this.statusToSave() })
       .subscribe({
         next: () => {
+          const status = this.statusToSave();
           if (this.selectedTask) {
             this.selectedTask = {
               ...this.selectedTask,
-              status: this.editStatus,
+              status,
             };
           }
-          if (this.editStatus === 'done') {
+          this.editStatus = status;
+          if (status === 'done') {
             this.timer.refresh();
             this.reloadTimeEntries();
           }
@@ -602,7 +678,24 @@ export class MyTasksComponent implements OnInit {
 
   startTimer() {
     if (!this.canTrackTime || !this.selectedTask) return;
-    this.timer.start(this.selectedTask.id);
+    this.timer.start(this.selectedTask.id).subscribe({
+      next: () => this.promoteSelectedTaskToDoing(),
+    });
+  }
+
+  private statusToSave(): Task['status'] {
+    if (this.hasRegisteredTime && this.editStatus === 'todo') return 'doing';
+    return this.editStatus;
+  }
+
+  private promoteSelectedTaskToDoing() {
+    if (!this.selectedTask || this.selectedTask.status !== 'todo') return;
+    this.selectedTask = { ...this.selectedTask, status: 'doing' };
+    this.editStatus = 'doing';
+    this.tasks = this.tasks.map((task) =>
+      task.id === this.selectedTask!.id ? { ...task, status: 'doing' } : task,
+    );
+    this.syncCalendarEvents();
   }
 
   stopTimer() {

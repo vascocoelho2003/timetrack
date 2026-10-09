@@ -10,6 +10,7 @@ const { parseDocsUrl } = require("../utils/url");
 const { checkDependencies } = require("../utils/dependenciesRules");
 const {
   isTeamAdmin,
+  isTeamMember,
   canViewTask,
   getTaskWithContext,
   attachAssignees,
@@ -18,6 +19,7 @@ const {
 } = require("../utils/permissions");
 
 const { getDaysBetweenAlertAndDue } = require("../utils/diffDates");
+const { taskHasRegisteredTime } = require("../utils/taskTime");
 const router = express.Router();
 router.use(authMiddleware);
 
@@ -138,7 +140,7 @@ router.get("/", (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
- *             required: [taskListId, title]
+ *             required: [title]
  *             properties:
  *               taskListId:
  *                 type: integer
@@ -179,9 +181,7 @@ router.post("/", (req, res) => {
   created_by_user = req.user.id;
 
   if (!title?.trim()) {
-    return res
-      .status(400)
-      .json({ error: "taskListId e título são obrigatórios" });
+    return res.status(400).json({ error: "O título é obrigatório" });
   }
 
   const parsedDocsUrl = parseDocsUrl(docs_url);
@@ -194,15 +194,23 @@ router.post("/", (req, res) => {
       });
   }
 
-  const list = db
-    .prepare(
-      "SELECT tl.*, p.team_id FROM task_lists tl JOIN projects p ON p.id = tl.project_id WHERE tl.id = ?",
-    )
-    .get(taskListId);
-  if (!list) return res.status(404).json({ error: "Lista não encontrada" });
-  if (!isTeamAdmin(req.user.id, list.team_id)) {
-    return res.status(403).json({ error: "Apenas admins podem criar tarefas" });
+  let list = null;
+  if (taskListId) {
+    list = db
+      .prepare(
+        "SELECT tl.*, p.team_id FROM task_lists tl JOIN projects p ON p.id = tl.project_id WHERE tl.id = ?",
+      )
+      .get(taskListId);
+    if (!list) return res.status(404).json({ error: "Lista não encontrada" });
+    if (!isTeamMember(req.user.id, list.team_id)) {
+      return res.status(403).json({ error: "Sem acesso a este projeto" });
+    }
   }
+
+  const assigneeIdsFinal =
+    Array.isArray(assigneeIds) && assigneeIds.length
+      ? assigneeIds
+      : [req.user.id];
   if (alertDate && dueDate) {
     alert_offset_days = getDaysBetweenAlertAndDue(alertDate, dueDate);
   }
@@ -220,7 +228,7 @@ router.post("/", (req, res) => {
   `,
     )
     .run(
-      taskListId,
+      taskListId || null,
       title.trim(),
       description.trim(),
       status,
@@ -233,11 +241,11 @@ router.post("/", (req, res) => {
     );
 
   const taskId = result.lastInsertRowid;
-  setAssignees(taskId, assigneeIds);
+  setAssignees(taskId, assigneeIdsFinal);
   syncCompletedAt(taskId, "todo", status);
 
   const task = db.prepare("SELECT * FROM tasks WHERE id = ?").get(taskId);
-  res.status(201).json({ ...task, assigneeIds: assigneeIds || [] });
+  res.status(201).json({ ...task, assigneeIds: assigneeIdsFinal });
 });
 
 /**
@@ -443,14 +451,16 @@ router.put("/:taskId", (req, res) => {
   const {
     title,
     description,
-    status,
+    status: statusBody,
     priority,
     dueDate,
     assigneeIds,
     clientId,
     next_alert_date,
     docs_url,
+    taskListId,
   } = req.body;
+  let status = statusBody;
 
   let parsedDocsUrl = null;
   if (docs_url !== undefined) {
@@ -465,7 +475,52 @@ router.put("/:taskId", (req, res) => {
     }
   }
 
-  if (status && status !== ctx.status) {
+  if (taskListId !== undefined && taskListId !== null) {
+    const targetListId = +taskListId;
+    if (!Number.isInteger(targetListId) || targetListId <= 0) {
+      return res.status(400).json({ error: "Lista inválida" });
+    }
+    if (Number(ctx.task_list_id) !== targetListId) {
+      if (ctx.team_id && !isTeamMember(req.user.id, ctx.team_id) && !admin) {
+        return res.status(403).json({ error: "Sem acesso para mover esta tarefa" });
+      }
+      const targetList = db
+        .prepare(
+          `
+        SELECT tl.id, tl.project_id
+        FROM task_lists tl
+        WHERE tl.id = ?
+      `,
+        )
+        .get(targetListId);
+      if (!targetList) {
+        return res.status(404).json({ error: "Lista não encontrada" });
+      }
+      if (Number(targetList.project_id) !== Number(ctx.project_id)) {
+        return res
+          .status(400)
+          .json({ error: "A lista não pertence a este projeto" });
+      }
+      db.prepare("UPDATE tasks SET task_list_id = ? WHERE id = ?").run(
+        targetListId,
+        taskId,
+      );
+    }
+  }
+
+  let skipDependencyCheck = false;
+  if (status === "todo" && taskHasRegisteredTime(taskId)) {
+    if (ctx.status !== "todo") {
+      return res.status(400).json({
+        error:
+          "Não é possível colocar em Por Fazer uma tarefa com tempo registado",
+      });
+    }
+    status = "doing";
+    skipDependencyCheck = true;
+  }
+
+  if (status && status !== ctx.status && !skipDependencyCheck) {
     const dependenciesStatus = checkDependencies(taskId, status);
     if (!dependenciesStatus.ok) {
       return res.status(400).json({

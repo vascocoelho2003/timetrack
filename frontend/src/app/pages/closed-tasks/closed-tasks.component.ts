@@ -172,8 +172,9 @@ export class ClosedTasksComponent {
 
   reopenTask() {
     if (!this.selectedTask) return;
+    const status = this.timeEntries.length > 0 ? 'doing' : 'todo';
     this.apiService
-      .updateTask(this.selectedTask.id, { status: 'todo' })
+      .updateTask(this.selectedTask.id, { status })
       .subscribe((updated) => {
         this.closed_tasks = this.closed_tasks.filter(
           (t) => t.id !== updated.id,

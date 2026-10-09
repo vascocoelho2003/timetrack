@@ -28,7 +28,7 @@ export class AdminUsersComponent implements OnInit {
   newPassword = '';
   newPasswordConfirm = '';
   newDepartmentId: number | null = null;
-  newProfile: 'admin' | 'user' = 'user';
+  newProfile: 'admin' | 'user' |'master' = 'user';
 
   constructor(
     private apiService: ApiService,
@@ -107,6 +107,7 @@ export class AdminUsersComponent implements OnInit {
     this.formError = '';
     const username = this.newUsername.trim();
     const email = this.newEmail.trim();
+    console.log(this.newProfile)
 
     if (!/^[a-zA-Z0-9._]+$/.test(username)) {
       this.formError =
@@ -141,7 +142,7 @@ export class AdminUsersComponent implements OnInit {
         email,
         password: this.newPassword,
         passwordConfirm: this.newPasswordConfirm,
-        department_id: this.newProfile === 'admin' ? null : this.newDepartmentId,
+        department_id: this.newProfile === 'user' ? this.newDepartmentId : null,
         profile: this.newProfile,
       })
       .subscribe({

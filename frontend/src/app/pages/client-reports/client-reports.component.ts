@@ -130,7 +130,7 @@ export class ClientReportsComponent implements OnInit {
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.text('Relatório Geral de Cliente', margin, 43);
+    doc.text('Relatório como Cliente', margin, 43);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);

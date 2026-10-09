@@ -40,7 +40,7 @@ function validateUserPayload(body, { requirePassword }) {
   const email = body.email?.trim().toLowerCase();
   const password = body.password;
   const passwordConfirm = body.passwordConfirm;
-  const profile = body.profile === "admin" ? "admin" : "user";
+  const profile = body.profile === "admin" ? "admin" : body.profile === "master" ? "master" : "user";
   let departmentId = null;
 
   if (!username || !email) {
@@ -81,7 +81,7 @@ function validateUserPayload(body, { requirePassword }) {
 const router = express.Router();
 router.use(authMiddleware);
 router.use((req, res, next) => {
-  if (req.user?.profile !== "admin") {
+  if (req.user?.profile !== "admin" && req.user?.profile !== "master") {
     return res
       .status(403)
       .json({ error: "Acesso reservado a administradores" });

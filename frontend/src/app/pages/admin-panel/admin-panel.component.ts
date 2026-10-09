@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AdminDashboard } from '../../core/models';
+import { AuthService } from '../../core/auth.service';
 
 @Component({
   selector: 'app-admin-panel',
@@ -10,6 +11,7 @@ import { AdminDashboard } from '../../core/models';
   styleUrl: './admin-panel.component.css',
 })
 export class AdminPanelComponent implements OnInit {
+
   stats: AdminDashboard = {
     total_users: 0,
     total_departments: 0,
@@ -19,7 +21,7 @@ export class AdminPanelComponent implements OnInit {
     total_clients: 0,
   };
 
-  constructor(private apiService: ApiService) {}
+  constructor(private apiService: ApiService, private auth: AuthService) {}
 
   ngOnInit(): void {
     this.apiService.getAdminDashboard().subscribe({

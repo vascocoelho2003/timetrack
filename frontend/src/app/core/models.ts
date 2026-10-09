@@ -4,7 +4,7 @@ export interface User {
   username: string;
   department_id?: number | null;
   department_name?: string | null;
-  profile?: 'admin' | 'user';
+  profile?: 'admin' | 'user' | 'master';
 }
 
 export interface Client {
@@ -83,7 +83,7 @@ export interface AdminUser {
   id: number;
   username: string;
   email: string;
-  profile: 'admin' | 'user' | string;
+  profile: 'admin' | 'master' | 'user';
   active: boolean;
   created_at: string;
   department_id: number | null;

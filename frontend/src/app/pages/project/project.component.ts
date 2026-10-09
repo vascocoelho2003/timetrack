@@ -28,12 +28,19 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environments';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatCheckboxChange } from '@angular/material/checkbox';
+import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { AssigneeSelectComponent } from '../../shared/assignee-select/assignee-select.component';
 
 @Component({
   selector: 'app-project',
   standalone: true,
-  imports: [FormsModule, RouterLink, MatCheckboxModule, AssigneeSelectComponent],
+  imports: [
+    FormsModule,
+    RouterLink,
+    MatCheckboxModule,
+    DragDropModule,
+    AssigneeSelectComponent,
+  ],
   styleUrls: ['./project.component.css'],
   templateUrl: './project.component.html',
 })
@@ -104,6 +111,7 @@ export class ProjectComponent implements OnInit {
   dependencyError = '';
   saveError = '';
   blockingPredecessorId: number | null = null;
+  private taskDragged = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -158,6 +166,10 @@ export class ProjectComponent implements OnInit {
   get activeOnThisTask(): boolean {
     const active = this.timer.activeEntry();
     return !!active && active.task_id === this.selectedTask?.id;
+  }
+
+  get hasRegisteredTime(): boolean {
+    return this.timeEntries.length > 0 || this.activeOnThisTask;
   }
 
   ngOnInit() {
@@ -402,6 +414,58 @@ export class ProjectComponent implements OnInit {
       });
   }
 
+  openTaskCard(taskId: number) {
+    if (this.taskDragged) return;
+    this.openTask(taskId);
+  }
+
+  onTaskDragStarted() {
+    this.taskDragged = true;
+  }
+
+  onTaskDragEnded() {
+    setTimeout(() => (this.taskDragged = false));
+  }
+
+  dropTask(event: CdkDragDrop<number>) {
+    const task = event.item.data as Task | undefined;
+    const targetListId = event.container.data;
+    if (!task || !targetListId || task.task_list_id === targetListId) {
+      setTimeout(() => (this.taskDragged = false));
+      return;
+    }
+
+    const fromListId = task.task_list_id;
+    const moved: Task = { ...task, task_list_id: targetListId };
+    this.tasksByList[fromListId] = (this.tasksByList[fromListId] || []).filter(
+      (item) => item.id !== task.id,
+    );
+    const dest = [...(this.tasksByList[targetListId] || [])];
+    dest.splice(event.currentIndex, 0, moved);
+    this.tasksByList[targetListId] = dest;
+
+    this.api.updateTask(task.id, { taskListId: targetListId }).subscribe({
+      next: (updated) => {
+        this.tasksByList[targetListId] = (
+          this.tasksByList[targetListId] || []
+        ).map((item) =>
+          item.id === updated.id ? { ...item, ...updated } : item,
+        );
+        setTimeout(() => (this.taskDragged = false));
+      },
+      error: () => {
+        this.tasksByList[targetListId] = (
+          this.tasksByList[targetListId] || []
+        ).filter((item) => item.id !== task.id);
+        this.tasksByList[fromListId] = [
+          task,
+          ...(this.tasksByList[fromListId] || []),
+        ];
+        setTimeout(() => (this.taskDragged = false));
+      },
+    });
+  }
+
   openTask(taskId: number) {
     this.saveError = '';
     this.blockingPredecessorId = null;
@@ -453,7 +517,7 @@ export class ProjectComponent implements OnInit {
       .updateTask(this.selectedTask.id, {
         title: this.editTitle,
         description: this.editDescription,
-        status: this.editStatus as Task['status'],
+        status: this.statusToSave(),
         priority: this.editPriority as Task['priority'],
         dueDate: this.editDueDate || null,
         next_alert_date: this.editAlertDate || null,
@@ -509,7 +573,7 @@ export class ProjectComponent implements OnInit {
     this.blockingPredecessorId = null;
     this.api
       .updateTask(this.selectedTask.id, {
-        status: this.editStatus as Task['status'],
+        status: this.statusToSave(),
       })
       .subscribe({
         next: (updated) => {
@@ -726,7 +790,22 @@ export class ProjectComponent implements OnInit {
 
   startTimer() {
     if (!this.canTrackTime || !this.selectedTask) return;
-    this.timer.start(this.selectedTask.id);
+    this.timer.start(this.selectedTask.id).subscribe({
+      next: () => this.promoteSelectedTaskToDoing(),
+    });
+  }
+
+  private statusToSave(): Task['status'] {
+    if (this.hasRegisteredTime && this.editStatus === 'todo') return 'doing';
+    return this.editStatus as Task['status'];
+  }
+
+  private promoteSelectedTaskToDoing() {
+    if (!this.selectedTask || this.selectedTask.status !== 'todo') return;
+    const updated = { ...this.selectedTask, status: 'doing' as const };
+    this.selectedTask = updated;
+    this.editStatus = 'doing';
+    this.refreshTaskInBoard(updated);
   }
 
   stopTimer() {

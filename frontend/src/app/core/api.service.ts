@@ -227,7 +227,7 @@ export class ApiService {
    * @returns 
    */
   createTask(data: {
-    taskListId: number;
+    taskListId?: number | null;
     title: string;
     description?: string;
     status?: string;
@@ -723,7 +723,7 @@ export class ApiService {
     password: string;
     passwordConfirm: string;
     department_id: number | null;
-    profile: 'admin' | 'user';
+    profile: 'admin' | 'user' | 'master';
   }) {
     return this.http.post<AdminUser>(`${API}/admin/users`, data);
   }

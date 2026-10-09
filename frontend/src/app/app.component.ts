@@ -64,7 +64,7 @@ export class AppComponent implements OnInit {
       this.openTaskModal();
       return;
     }
-    this.timer.start();
+    this.timer.start().subscribe();
   }
 
   stopHeaderTimer() {

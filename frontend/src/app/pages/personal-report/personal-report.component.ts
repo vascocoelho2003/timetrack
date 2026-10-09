@@ -82,7 +82,7 @@ export class PersonalReportComponent implements OnInit {
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.text('Relatório Pessoal', margin, 43);
+    doc.text('Relatório como Prestador', margin, 43);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
@@ -121,7 +121,7 @@ export class PersonalReportComponent implements OnInit {
     });
 
     doc.save(
-      `relatorio-pessoal-${this.getPeriodLabel().replace(/ /g, '-')}.pdf`,
+      `relatorio-prestador-${this.getPeriodLabel().replace(/ /g, '-')}.pdf`,
     );
   }
 

@@ -59,7 +59,7 @@
     }
     @if (viewMode === 'board') {
 
-      <div class="board">
+      <div class="board" cdkDropListGroup>
         @for (list of lists; track list.id) {
           <div class="board-column card">
             <div class="column-header">
@@ -83,24 +83,40 @@
               <div class="column-actions">
                 @if (isAdmin) {
                   <button class="btn-icon" (click)="openNewTask(list.id)" title="Nova tarefa">+</button>
-                  <button class="btn-icon btn-danger" (click)="deleteList(list.id)" title="Eliminar lista">🗑</button>
                 }
               </div>
             </div>
-            @for (task of getTasksForList(list.id); track task.id) {
-              <div class="task-card" (click)="openTask(task.id)">
-                <div class="task-title">{{ task.title }}</div>
-                <div class="task-meta">
-                <div class="status-pill">{{ formatDate(task.due_date) }}</div>
-                  <span class="status-pill" [attr.data-status]="task.status">{{ statusLabel(task.status) }}</span>
-                  <span class="priority-pill" [attr.data-priority]="task.priority">{{ task.priority }}</span>
+            <div
+              class="column-tasks"
+              cdkDropList
+              [cdkDropListData]="list.id"
+              (cdkDropListDropped)="dropTask($event)">
+              @for (task of getTasksForList(list.id); track task.id) {
+                <div
+                  class="task-card"
+                  cdkDrag
+                  [cdkDragData]="task"
+                  (cdkDragStarted)="onTaskDragStarted()"
+                  (cdkDragEnded)="onTaskDragEnded()"
+                  (click)="openTaskCard(task.id)">
+                  <div class="task-title">{{ task.title }}</div>
+                  <div class="task-meta">
+                  <div class="status-pill">{{ formatDate(task.due_date) }}</div>
+                    <span class="status-pill" [attr.data-status]="task.status">{{ statusLabel(task.status) }}</span>
+                    <span class="priority-pill" [attr.data-priority]="task.priority">{{ task.priority }}</span>
+                  </div>
+                  @for(a of task.assignees; track a.id){
+                  <span class="assign-pill" >&nbsp;&nbsp;{{ a.username }} </span>
+                  <br>
+                  }
+                  <div class="task-total-time">Tempo total: {{ fmt(task.total_time || 0) }}</div>
                 </div>
-                @for(a of task.assignees; track a.id){
-                <span class="assign-pill" >&nbsp;&nbsp;{{ a.username }} </span>
-                <br>
-                }
-                <div class="task-total-time">Tempo total: {{ fmt(task.total_time || 0) }}</div>
-              </div>
+              }
+            </div>
+            @if (isAdmin) {
+              <button class="column-delete-list" type="button" (click)="deleteList(list.id)">
+                Eliminar lista
+              </button>
             }
           </div>
         }
@@ -134,6 +150,17 @@
             <option value="overdue">Atrasadas</option>
           </select>
         </div>
+        @if (isAdmin) {
+          <div class="list-view-toolbar">
+            <button
+              class="btn btn-primary"
+              type="button"
+              [disabled]="!lists.length"
+              (click)="openNewTaskFromList()">
+              Nova tarefa
+            </button>
+          </div>
+        }
         <div class="list-table-header">
           <span>Tarefa</span>
           <span>Lista</span>
@@ -179,7 +206,7 @@
                 <textarea [(ngModel)]="editDescription" rows="3"></textarea>
                 <label>Estado</label>
                 <select [(ngModel)]="editStatus">
-                  <option value="todo">Por fazer</option>
+                  <option value="todo" [disabled]="hasRegisteredTime">Por fazer</option>
                   <option value="doing">Em progresso</option>
                   <option value="done">Concluída</option>
                 </select>
@@ -205,7 +232,7 @@
             @if (canChangeStatus) {
               <label>Estado</label>
               <select [(ngModel)]="editStatus" (change)="saveStatusOnly()">
-                <option value="todo">A fazer</option>
+                <option value="todo" [disabled]="hasRegisteredTime">A fazer</option>
                 <option value="doing">Em progresso</option>
                 <option value="done">Concluída</option>
               </select>
@@ -428,6 +455,12 @@
           <h3>Nova tarefa</h3>
           <label>Título</label>
           <input [(ngModel)]="newTaskTitle" />
+          <label>Lista</label>
+          <select [(ngModel)]="newTaskListId">
+            @for (list of lists; track list.id) {
+              <option [ngValue]="list.id">{{ list.name }}</option>
+            }
+          </select>
 
           <details class="form-section" open>
             <summary>Detalhes</summary>

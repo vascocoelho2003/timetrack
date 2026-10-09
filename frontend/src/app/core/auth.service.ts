@@ -27,11 +27,16 @@ export class AuthService {
   }
 
   get isAdmin(): boolean {
-    return this.currentUser()?.profile === 'admin';
+    return this.currentUser()?.profile === 'admin' || this.isMaster;
+  }
+
+  get isMaster(): boolean {
+    return this.currentUser()?.profile === 'master';
   }
 
   get homePath(): string {
-    return this.isAdmin ? '/admin-panel' : '/reports';
+    if(this.isAdmin) return '/admin-panel';
+    return '/reports'
   }
 
   register(
