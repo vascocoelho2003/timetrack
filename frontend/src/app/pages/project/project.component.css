@@ -229,3 +229,47 @@
 .form-section-body {
   padding-bottom: 0.75rem;
 }
+
+.column-tasks {
+  min-height: 72px;
+  flex: 1;
+}
+
+.task-card {
+  cursor: grab;
+}
+
+.task-card.cdk-drag-animating {
+  transition: transform 200ms ease;
+}
+
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.4;
+}
+
+.cdk-drop-list-dragging .task-card:not(.cdk-drag-placeholder) {
+  transition: transform 200ms ease;
+}
+
+.column-delete-list {
+  display: block;
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.4rem 0.5rem;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  text-align: center;
+}
+
+.column-delete-list:hover {
+  color: var(--danger);
+}

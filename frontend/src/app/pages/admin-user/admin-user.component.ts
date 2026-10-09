@@ -17,7 +17,7 @@ export class AdminUserComponent implements OnInit {
   username = '';
   email = '';
   departmentId: number | null = null;
-  profile: 'admin' | 'user' = 'user';
+  profile: 'admin' | 'master' | 'user' = 'user';
   active = true;
   departments: Department[] = [];
   newPassword = '';
@@ -108,7 +108,7 @@ export class AdminUserComponent implements OnInit {
       .updateAdminUser(this.userId, {
         username,
         email,
-        department_id: this.profile === 'admin' ? null : this.departmentId,
+        department_id: this.profile === 'user' ? this.departmentId : null,
         ...(this.newPassword ? { password: this.newPassword } : {}),
       })
       .subscribe({
@@ -132,7 +132,16 @@ export class AdminUserComponent implements OnInit {
     this.username = user.username;
     this.email = user.email;
     this.departmentId = user.department_id;
-    this.profile = user.profile === 'admin' ? 'admin' : 'user';
+    this.profile =
+      user.profile === 'admin' || user.profile === 'master'
+        ? user.profile
+        : 'user';
     this.active = user.active;
+  }
+
+  profileLabel(): string {
+    if (this.profile === 'admin') return 'Administrador';
+    if (this.profile === 'master') return 'Administrador';
+    return 'Utilizador';
   }
 }

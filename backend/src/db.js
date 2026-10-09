@@ -23,7 +23,7 @@ function initDb() {
       username TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
-      profile TEXT NOT NULL DEFAULT 'user' CHECK(profile IN ('admin', 'user')),
+      profile TEXT NOT NULL DEFAULT 'user' CHECK(profile IN ('admin', 'user', 'master')),
       active BOOLEAN NOT NULL DEFAULT 'True',
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       department_id INTEGER DEFAULT NULL REFERENCES departments(id) ON DELETE SET NULL
@@ -161,6 +161,43 @@ function initDb() {
     db.exec(
       `ALTER TABLE users ADD COLUMN department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL`,
     );
+  }
+
+  const usersTableSql =
+    db
+      .prepare(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'users'",
+      )
+      .get()?.sql || "";
+  if (!usersTableSql.includes("'master'")) {
+    db.pragma("foreign_keys = OFF");
+    db.exec(`
+      CREATE TABLE users_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        profile TEXT NOT NULL DEFAULT 'user' CHECK(profile IN ('admin', 'user', 'master')),
+        active BOOLEAN NOT NULL DEFAULT 'True',
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        department_id INTEGER DEFAULT NULL REFERENCES departments(id) ON DELETE SET NULL
+      );
+      INSERT INTO users_new (id, username, email, password_hash, profile, active, created_at, department_id)
+        SELECT id, username, email, password_hash, profile, active, created_at, department_id FROM users;
+      DROP TABLE users;
+      ALTER TABLE users_new RENAME TO users;
+    `);
+    try {
+      const maxId =
+        db.prepare("SELECT MAX(id) as maxId FROM users").get()?.maxId || 0;
+      db.prepare("DELETE FROM sqlite_sequence WHERE name = 'users'").run();
+      db.prepare(
+        "INSERT INTO sqlite_sequence(name, seq) VALUES ('users', ?)",
+      ).run(maxId);
+    } catch {
+      // sqlite_sequence may not exist yet
+    }
+    db.pragma("foreign_keys = ON");
   }
 
   const taskColumns = db.prepare(`PRAGMA table_info(tasks)`).all();

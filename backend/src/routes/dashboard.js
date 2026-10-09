@@ -100,7 +100,7 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
  *   get:
  *     tags: [Dashboard]
  *     summary: Obter as tarefas atribuídas ao utilizador logado para apresentar na página my-tasks
- *     description: Obter as tarefas atribuídas ao utilizador logado para apresentar na página my-tasks.
+ *     description: Inclui tarefas de projeto e tarefas pessoais (sem lista/projeto) atribuídas ao utilizador logado.
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -121,10 +121,6 @@ router.get("/my-todo-tasks", authMiddleware, async (req, res) => {
         FROM task_assignees ta
         JOIN tasks t
             ON t.id = ta.task_id
-        JOIN task_lists tl
-            ON tl.id = t.task_list_id
-        JOIN projects p
-            ON p.id = tl.project_id
         WHERE ta.user_id = ?
           AND t.status = 'todo'
         ORDER BY

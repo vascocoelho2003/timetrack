@@ -24,6 +24,14 @@ export const adminGuard: CanActivateFn = () => {
   return true;
 };
 
+export const masterGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if(!auth.isLoggedIn) return router.createUrlTree(['/login']);
+  if(!auth.isMaster) return router.createUrlTree([auth.homePath]);
+  return true;
+}
+
 export const userGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);

@@ -509,6 +509,8 @@ select:focus {
 }
 
 .board-column {
+  display: flex;
+  flex-direction: column;
   min-width: 280px;
   max-width: 320px;
   flex-shrink: 0;
@@ -537,6 +539,15 @@ select:focus {
 
 .task-card:hover {
   border-color: var(--primary);
+}
+
+.cdk-drag-preview.task-card {
+  background: var(--bg);
+  border: 1px solid var(--primary);
+  border-radius: 8px;
+  padding: 0.75rem;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+}
 }
 
 .task-title {

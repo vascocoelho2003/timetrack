@@ -9,6 +9,7 @@ const {
   getTeamIdForProject,
   isPersonalTaskOwner,
 } = require("../utils/permissions");
+const { markTaskInProgressIfTodo } = require("../utils/taskTime");
 
 const router = express.Router();
 router.use(authMiddleware);
@@ -78,6 +79,8 @@ router.post("/start", (req, res) => {
     )
     .run(req.user.id, taskId || null, now);
 
+  if (taskId) markTaskInProgressIfTodo(taskId);
+
   const entry = db
     .prepare(
       `
@@ -123,6 +126,7 @@ router.post("/stop", (req, res) => {
     duration,
     active.id,
   );
+  if (active.task_id) markTaskInProgressIfTodo(active.task_id);
 
   const entry = db
     .prepare(
@@ -261,7 +265,10 @@ router.post("/unassigned/:id/assign", (req, res) => {
       existingTaskId,
       entryId,
     );
-    return res.json(ctx);
+    markTaskInProgressIfTodo(existingTaskId);
+    return res.json(
+      db.prepare("SELECT * FROM tasks WHERE id = ?").get(existingTaskId),
+    );
   }
 
   if (!title?.trim())
@@ -290,7 +297,7 @@ router.post("/unassigned/:id/assign", (req, res) => {
       .prepare(
         `
       INSERT INTO tasks (task_list_id, title, description, status, priority, due_date, created_by_user_id)
-      VALUES (?, ?, ?, 'todo', ?, ?, ?)
+      VALUES (?, ?, ?, 'doing', ?, ?, ?)
     `,
       )
       .run(

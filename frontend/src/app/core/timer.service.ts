@@ -29,12 +29,12 @@ export class TimerService {
   }
 
   start(taskId?: number) {
-    return this.api.startTimer(taskId).subscribe({
-      next: (entry) => {
+    return this.api.startTimer(taskId).pipe(
+      tap((entry) => {
         this.activeEntry.set(entry);
         this.startTicking(entry.start);
-      },
-    });
+      }),
+    );
   }
 
   stop() {

@@ -1,9 +1,24 @@
 <div class="page project-page">
   <div class="page-header">
     <h2 class="page-title">As minhas tarefas</h2>
-    <div class="view-switch">
-      <button class="btn" [class.btn-primary]="viewMode === 'list'" (click)="setViewMode('list')"> Lista </button>&nbsp;
-      <button class="btn" [class.btn-primary]="viewMode === 'calendar'" (click)="setViewMode('calendar')"> Calendário </button>
+    <div class="header-actions">
+      <div class="view-switch" role="group" aria-label="Vista">
+        <button
+          class="btn btn-ghost"
+          type="button"
+          [class.active]="viewMode === 'list'"
+          (click)="setViewMode('list')">
+          Lista
+        </button>
+        <button
+          class="btn btn-ghost"
+          type="button"
+          [class.active]="viewMode === 'calendar'"
+          (click)="setViewMode('calendar')">
+          Calendário
+        </button>
+      </div>
+      <button class="btn btn-primary" type="button" (click)="openNewTaskForm()">Nova tarefa</button>
     </div>
   </div>
 
@@ -73,6 +88,7 @@
       }
     } @else {
       <div class="calendar-wrap">
+        <p class="muted calendar-hint">Clique num dia para criar uma tarefa com esse prazo.</p>
         <full-calendar [options]="calendarOptions"></full-calendar>
       </div>
     }
@@ -97,7 +113,7 @@
               <textarea [(ngModel)]="editDescription" rows="3"></textarea>
               <label>Estado</label>
               <select [(ngModel)]="editStatus">
-                <option value="todo">Por fazer</option>
+                <option value="todo" [disabled]="hasRegisteredTime">Por fazer</option>
                 <option value="doing">Em progresso</option>
                 <option value="done">Concluída</option>
               </select>
@@ -123,7 +139,7 @@
           @if (canChangeStatus) {
             <label>Estado</label>
             <select [(ngModel)]="editStatus" (change)="saveStatusOnly()">
-              <option value="todo">A fazer</option>
+              <option value="todo" [disabled]="hasRegisteredTime">A fazer</option>
               <option value="doing">Em progresso</option>
               <option value="done">Concluída</option>
             </select>
@@ -336,6 +352,57 @@
             <button class="btn btn-primary" (click)="saveTask()">Guardar</button>
             <button class="btn btn-danger" (click)="deleteTask()">Eliminar</button>
           }
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showNewTaskForm) {
+    <div class="modal-overlay" (click)="showNewTaskForm = false">
+      <div class="modal card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Nova tarefa</h3>
+          <button class="btn-icon" type="button" (click)="showNewTaskForm = false">×</button>
+        </div>
+        <label>Título</label>
+        <input [(ngModel)]="newTaskTitle" placeholder="Título da tarefa" />
+        <label>Projeto</label>
+        <select [(ngModel)]="newTaskProjectId" (ngModelChange)="onNewTaskProjectChange()">
+          <option [ngValue]="null">Sem projeto (tarefa pessoal)</option>
+          @for (project of userProjects; track project.id) {
+            <option [ngValue]="project.id">{{ project.name }}</option>
+          }
+        </select>
+        @if (newTaskProjectId) {
+          <label>Lista</label>
+          <select [(ngModel)]="newTaskListId">
+            <option [ngValue]="null">Selecionar lista</option>
+            @for (list of newTaskLists; track list.id) {
+              <option [ngValue]="list.id">{{ list.name }}</option>
+            }
+          </select>
+          @if (!newTaskLists.length) {
+            <p class="muted">Este projeto não tem listas.</p>
+          }
+        } @else {
+          <p class="muted">A tarefa fica na sua lista pessoal.</p>
+        }
+        <label>Descrição</label>
+        <textarea [(ngModel)]="newTaskDescription" rows="2" placeholder="Detalhes (opcional)"></textarea>
+        <label>Prioridade</label>
+        <select [(ngModel)]="newTaskPriority">
+          <option value="low">Baixa</option>
+          <option value="medium">Média</option>
+          <option value="high">Alta</option>
+        </select>
+        <label>Prazo</label>
+        <input type="date" [(ngModel)]="newTaskDueDate" />
+        @if (newTaskError) {
+          <p class="field-error">{{ newTaskError }}</p>
+        }
+        <div class="modal-actions">
+          <button class="btn btn-ghost" type="button" (click)="showNewTaskForm = false">Cancelar</button>
+          <button class="btn btn-primary" type="button" (click)="createMyTask()">Criar tarefa</button>
         </div>
       </div>
     </div>
