@@ -1,65 +1,62 @@
-<main class="main-container">
-    <a routerLink="/colaborators-reports" class="back-link">← Equipa</a>
-    <section class="report-header">
-      <div class="report-title">
-        <h1>Relatório de Colaborador</h1>
-        <div class="report-meta">
-          <h2>Colaborador: {{this.username}}</h2>
-          <h3>Tempo Total: {{formatDuration(this.totalTime)}}</h3>
-        </div>
-      </div>
-      <div class="report-controls">
-        <div class="date-range">
-          <select class="select" [(ngModel)]="selectedPeriod" (ngModelChange)="onPeriodChange()">
-            <option value="custom">Período Personalizado</option>
-            <option value="month">Este mês</option>
-            <option value="last-month">Mês passado</option>
-            <option value="year">Este ano</option>
-          </select>
-          @if (selectedPeriod === 'custom') {
-            <input type="date" class="date-input" [(ngModel)]="startDate" (ngModelChange)="onCustomDateChange()" />
-            <input type="date" class="date-input" [(ngModel)]="endDate" (ngModelChange)="onCustomDateChange()" />
-          }
-        </div>
-        <button class="btn export-btn" type="button" (click)="exportPdf()">Exportar PDF ↓</button>
-      </div>
-    </section>
+<main class="page colaborator-report-page">
+  <a routerLink="/colaborators-reports" class="back-link">← Relatórios Colaborador</a>
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Relatório de Colaborador</h1>
+      <p class="muted page-subtitle">{{ username }} · Tempo total: {{ formatDuration(totalTime) }}</p>
+    </div>
+  </div>
+  <div class="toolbar">
+    <button class="btn btn-ghost btn-export" type="button" (click)="exportPdf()">Exportar PDF</button>
+    <div class="date-range">
+      <select class="select" [(ngModel)]="selectedPeriod" (ngModelChange)="onPeriodChange()">
+        <option value="custom">Período Personalizado</option>
+        <option value="month">Este mês</option>
+        <option value="last-month">Mês passado</option>
+        <option value="year">Este ano</option>
+      </select>
+      @if (selectedPeriod === 'custom') {
+        <input type="date" class="date-input" [(ngModel)]="startDate" (ngModelChange)="onCustomDateChange()" />
+        <input type="date" class="date-input" [(ngModel)]="endDate" (ngModelChange)="onCustomDateChange()" />
+      }
+    </div>
+  </div>
 
-    <section class="report-card">
-      @for(group of groupedColaboradores; track group.projectName + group.taskListName){
+  <section class="report-card">
+    @for (group of groupedColaboradores; track group.projectName + group.taskListName) {
       <div class="task-group">
         <div class="group-header">
           <div>
-            <span>Projeto: {{group.projectName}}</span>
+            <span>Projeto: {{ group.projectName }}</span>
             <br>
-            <span>Lista de Tarefas: {{group.taskListName}}</span>
+            <span>Lista de Tarefas: {{ group.taskListName }}</span>
           </div>
           <div>Tempo Registado</div>
           <div>Estado da Tarefa</div>
           <div>Data do Registo</div>
         </div>
-        @for(col of group.tasks; track col.id){
-        <div class="task-row">
-          <div class="task-name">{{col.title}}</div>
-          <div class="task-time" data-label="Tempo">{{formatDuration(col.duration)}}</div>
-          @if (col.status === 'todo') {
-          <div class="task-status" data-label="Estado"><span class="status status-{{col.status}}">Por Fazer</span></div>
-          }
-          @if (col.status === 'doing') {
-          <div class="task-status" data-label="Estado"><span class="status status-{{col.status}}">Em Progresso</span></div>
-          }
-          @if (col.status === 'done') {
-          <div class="task-status" data-label="Estado"><span class="status status-{{col.status}}">Concluído</span></div>
-          }
-          <div class="task-deadline" data-label="Data">{{formatDate(col.end)}}</div>
-        </div>
-      }
+        @for (col of group.tasks; track col.id) {
+          <div class="task-row">
+            <div class="task-name">{{ col.title }}</div>
+            <div class="task-time" data-label="Tempo">{{ formatDuration(col.duration) }}</div>
+            @if (col.status === 'todo') {
+              <div class="task-status" data-label="Estado"><span class="status status-todo">Por Fazer</span></div>
+            }
+            @if (col.status === 'doing') {
+              <div class="task-status" data-label="Estado"><span class="status status-doing">Em Progresso</span></div>
+            }
+            @if (col.status === 'done') {
+              <div class="task-status" data-label="Estado"><span class="status status-done">Concluído</span></div>
+            }
+            <div class="task-deadline" data-label="Data">{{ formatDate(col.end) }}</div>
+          </div>
+        }
       </div>
-      } @empty {
-        <div class="empty-state">Não foram encontrados registos de tempo.</div>
-      }
-    </section>
-    @if (selectedPeriod === 'custom' && (!startDate || !endDate)) {
-      <h6>*Se não for selecionado nenhum período, os dados serão relativos ao ano atual</h6>
+    } @empty {
+      <div class="empty-state">Não foram encontrados registos de tempo.</div>
     }
-  </main>
+  </section>
+  @if (selectedPeriod === 'custom' && (!startDate || !endDate)) {
+    <p class="footnote">*Se não for selecionado nenhum período, os dados serão relativos ao ano atual</p>
+  }
+</main>

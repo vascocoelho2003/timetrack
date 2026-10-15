@@ -1,6 +1,8 @@
-<div class="page">
-  <a class="back" routerLink="/reports">← Dashboard</a>
-  <h1>Relatórios de Projeto</h1>
+<div class="page projects-reports-page">
+  <a class="back-link" routerLink="/reports">← Dashboard</a>
+  <div class="page-header">
+    <h1 class="page-title">Relatórios de Projeto</h1>
+  </div>
   <div class="toolbar">
     <div class="search">
       <input type="text" placeholder="Pesquisar Projeto" [(ngModel)]="searchText" (input)="applyFilters()">
@@ -29,25 +31,29 @@
         </tr>
       </thead>
       <tbody>
-        @for( proj of filteredProjects; track proj.id){ 
-        <tr>
-          <td [routerLink]="['/project-report', proj.id]">{{proj.name}}</td>
-          <td>
-            <a [routerLink]="['/teams', proj.team_id]" class="team-name">
-              {{ proj.team_name }}
-            </a>
-            @for (m of proj.members; track m.id) {
-              <div class="team-members">
-                <span>{{ m.username }}</span>
-              </div>
-            }
-          </td>
-          <td>{{proj.todo_tasks}}</td>
-          <td>{{proj.done_tasks}}</td>
-        </tr>
-      }
+        @for (proj of filteredProjects; track proj.id) {
+          <tr>
+            <td [routerLink]="['/project-report', proj.id]">{{ proj.name }}</td>
+            <td>
+              <a [routerLink]="['/teams', proj.team_id]" class="team-name">
+                {{ proj.team_name }}
+              </a>
+              @for (m of proj.members; track m.id) {
+                <div class="team-members">
+                  <span>{{ m.username }}</span>
+                </div>
+              }
+            </td>
+            <td>{{ proj.todo_tasks }}</td>
+            <td>{{ proj.done_tasks }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4" class="empty-hint">Não foram encontrados projetos.</td>
+          </tr>
+        }
       </tbody>
     </table>
   </div>
-  <div style="font-size: small;">**só aparecem relatórios dos projetos dos quais o utilizador é membro</div>
-</div> 
+  <p class="footnote">**só aparecem relatórios dos projetos dos quais o utilizador é membro</p>
+</div>

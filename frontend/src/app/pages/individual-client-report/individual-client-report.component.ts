@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { IndividualClientReport } from '../../core/models';
 import { ApiService } from '../../core/api.service';
@@ -9,7 +9,7 @@ import autoTable from 'jspdf-autotable';
 
 @Component({
   selector: 'app-individual-client-report',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './individual-client-report.component.html',
   styleUrl: './individual-client-report.component.css',
 })
@@ -119,7 +119,7 @@ export class IndividualClientReportComponent implements OnInit {
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.text('Relatório de Cliente por Colaborador', margin, 43);
+    doc.text('Relatório como Cliente por Colaborador', margin, 43);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
@@ -168,7 +168,7 @@ export class IndividualClientReportComponent implements OnInit {
 
     const safeName = this.username.trim().replace(/[<>:"/\\|?*\s]/g, '-');
     doc.save(
-      `relatorio-cliente-${safeName}-${this.getPeriodLabel().replace(/ /g, '-')}.pdf`,
+      `relatorio-como-cliente-${safeName}-${this.getPeriodLabel().replace(/ /g, '-')}.pdf`,
     );
   }
 

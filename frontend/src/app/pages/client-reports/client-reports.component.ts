@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ClientReport } from '../../core/models';
 import { AuthService } from '../../core/auth.service';
 import { ApiService } from '../../core/api.service';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
@@ -13,7 +13,7 @@ import {
 
 @Component({
   selector: 'app-client-reports',
-  imports: [FormsModule, MatCheckboxModule],
+  imports: [FormsModule, MatCheckboxModule, RouterLink],
   templateUrl: './client-reports.component.html',
   styleUrl: './client-reports.component.css',
 })
@@ -170,7 +170,7 @@ export class ClientReportsComponent implements OnInit {
     });
 
     doc.save(
-      `relatorio-cliente-${this.getPeriodLabel().replace(/ /g, '-')}.pdf`,
+      `relatorio-como-cliente-${this.getPeriodLabel().replace(/ /g, '-')}.pdf`,
     );
   }
 
