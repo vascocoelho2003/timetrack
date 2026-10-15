@@ -301,7 +301,9 @@ export class MyTasksComponent implements OnInit {
             : this.filterDueDate === 'week'
               ? due >= startWeek &&
                 due < new Date(startWeek.getTime() + 7 * 86400000)
-              : due < startTomorrow));
+              : this.filterDueDate === 'overdue'
+                ? due < startTomorrow && task.status !== 'done'
+                : due < startTomorrow));
       return (
         matchesSearch &&
         (!this.filterProject ||

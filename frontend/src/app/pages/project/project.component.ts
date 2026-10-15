@@ -260,7 +260,7 @@ export class ProjectComponent implements OnInit {
             due >= startOfWeek &&
             due < new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000);
         } else if (this.listFilterDueDate === 'overdue') {
-          matchesDueDate = due < startOfToday;
+          matchesDueDate = due < startOfToday && task.status !== 'done';
         }
       } else if (this.listFilterDueDate && !task.due_date) {
         matchesDueDate = false;
