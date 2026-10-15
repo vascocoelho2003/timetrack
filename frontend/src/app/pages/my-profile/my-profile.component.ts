@@ -33,6 +33,16 @@ export class MyProfileComponent implements OnInit {
     this.isadmin=auth.isAdmin;
   }
 
+  get initials(): string {
+    const cleaned = this.username.trim();
+    if (!cleaned) return '?';
+    const parts = cleaned.split(/[._\s]+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return cleaned.slice(0, 2).toUpperCase();
+  }
+
   ngOnInit() {
     const user = this.auth.currentUser();
     if (user) {

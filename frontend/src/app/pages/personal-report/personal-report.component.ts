@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { personal_report } from '../../core/models';
 import { ApiService } from '../../core/api.service';
 import jsPDF from 'jspdf';
@@ -8,7 +8,7 @@ import autoTable from 'jspdf-autotable';
 
 @Component({
   selector: 'app-personal-report',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './personal-report.component.html',
   styleUrl: './personal-report.component.css',
 })

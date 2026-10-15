@@ -21,7 +21,7 @@ import {
   TaskDependency,
   DependencyType,
 } from '../../core/models';
-import { forkJoin, of } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import * as XLSX from 'xlsx';
 import { HttpClient } from '@angular/common/http';

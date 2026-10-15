@@ -1,81 +1,81 @@
-<div class="page">
-<main class="main wrapper">
-    <a routerLink="/projects-reports" class="back-link">
-      ← Relatórios de Projeto
-    </a>
-    <div class="title-bar">
-      <h1 class="title">Relatório de Projeto</h1>
-      <div class="date-filters">
-        <select class="select-box" [(ngModel)]="selectedPeriod" (ngModelChange)="onPeriodChange()">
-          <option value="custom">Período Personalizado</option>
-          <option value="month">Este mês</option>
-          <option value="last-month">Mês passado</option>
-          <option value="year">Este ano</option>
-        </select>
-        @if (selectedPeriod === 'custom') {
-          <input type="date" class="date-input" [(ngModel)]="startDate" (ngModelChange)="onCustomDateChange()" />
-          <input type="date" class="date-input" [(ngModel)]="endDate" (ngModelChange)="onCustomDateChange()" />
-        }
-      </div>
+<div class="page project-report-page">
+  <a routerLink="/projects-reports" class="back-link">← Relatórios de Projeto</a>
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Relatório de Projeto</h1>
+      @if (dados) {
+        <p class="muted page-subtitle">{{ dados.project.name }}</p>
+      }
     </div>
-    @if (dados) {
-    <div class="project-header">
-      <h2 class="project-title">Projeto: {{dados.project.name}}</h2>
-      <button class="btn-export" type="button" (click)="exportPdf()">
-        <span>Exportar PDF</span>
-        <span>↓</span>
-      </button>
-    </div>
-    <div class="card">
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th></th>
-              <th>Colaborador/Tempo</th>
-              <th>Estado</th>
-              <th>Data do Registo</th>
-              <th>Tempo Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (list of listsWithTasks; track list.id) {
-              <tr class="group-header group-divider">
-                <td colspan="5">Lista de Tarefas: {{ list.name }}</td>
-              </tr>
-              @for (task of list.tasks; track task.id) {
-                <tr class="task-row">
-                  <td class="task-name">{{ task.title }}</td>
-                  <td>
-                    @for (user of task.assignees; track user.id) {
-                      {{ user.username }}<br><span class="time">{{ formatDuration(user.time) }}</span><br/>
-                    }
-                  </td>
-                  @if (task.status === 'todo') {
-                    <td>
-                      <span class="status status-{{ task.status }}">Por Fazer</span>
-                    </td>
-                  }
-                  @if (task.status === 'done') {
-                    <td>
-                      <span class="status status-{{ task.status }}">Concluída</span>
-                    </td>
-                  }
-                  @if (task.status === 'doing') {
-                    <td>
-                      <span class="status status-{{ task.status }}">Em Progresso</span>
-                    </td>
-                  }
-                  <td>{{ task.due_date?.substring(0, 10) }}</td>
-                  <td class="time">{{ formatDuration(task.total_time) }}</td>
-                </tr>
-              }
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-    }
-  </main>
   </div>
-  
+  <div class="toolbar">
+    <button class="btn btn-ghost btn-export" type="button" (click)="exportPdf()" [disabled]="!dados">
+      Exportar PDF
+    </button>
+    <div class="date-filters">
+      <select class="select-box" [(ngModel)]="selectedPeriod" (ngModelChange)="onPeriodChange()">
+        <option value="custom">Período Personalizado</option>
+        <option value="month">Este mês</option>
+        <option value="last-month">Mês passado</option>
+        <option value="year">Este ano</option>
+      </select>
+      @if (selectedPeriod === 'custom') {
+        <input type="date" class="date-input" [(ngModel)]="startDate" (ngModelChange)="onCustomDateChange()" />
+        <input type="date" class="date-input" [(ngModel)]="endDate" (ngModelChange)="onCustomDateChange()" />
+      }
+    </div>
+  </div>
+  @if (dados) {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Colaborador/Tempo</th>
+            <th>Estado</th>
+            <th>Data do Registo</th>
+            <th>Tempo Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (list of listsWithTasks; track list.id) {
+            <tr class="group-header">
+              <td colspan="5">Lista de Tarefas: {{ list.name }}</td>
+            </tr>
+            @for (task of list.tasks; track task.id) {
+              <tr class="task-row">
+                <td class="task-name">{{ task.title }}</td>
+                <td>
+                  @for (user of task.assignees; track user.id) {
+                    {{ user.username }}<br><span class="time">{{ formatDuration(user.time) }}</span><br>
+                  }
+                </td>
+                @if (task.status === 'todo') {
+                  <td>
+                    <span class="status status-todo">Por Fazer</span>
+                  </td>
+                }
+                @if (task.status === 'done') {
+                  <td>
+                    <span class="status status-done">Concluída</span>
+                  </td>
+                }
+                @if (task.status === 'doing') {
+                  <td>
+                    <span class="status status-doing">Em Progresso</span>
+                  </td>
+                }
+                <td>{{ task.due_date?.substring(0, 10) }}</td>
+                <td class="time">{{ formatDuration(task.total_time) }}</td>
+              </tr>
+            }
+          } @empty {
+            <tr>
+              <td colspan="5" class="empty-hint">Não foram encontrados registos.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

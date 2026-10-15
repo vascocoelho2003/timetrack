@@ -1,0 +1,104 @@
+.teams-page {
+  width: 100%;
+}
+
+.teams-page .page-header h2 {
+  font-size: 1.65rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.teams-page .page-header .btn {
+  white-space: nowrap;
+}
+
+.teams-page .card.inline-form {
+  margin-bottom: 1.25rem;
+  padding: 0.9rem 1rem;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.teams-page .inline-form input {
+  border-radius: 8px;
+}
+
+.teams-page .empty-state {
+  padding: 1.5rem 1rem;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.teams-page .empty-state p {
+  margin: 0.2rem 0;
+}
+
+.teams-page .grid {
+  gap: 1rem;
+}
+
+.teams-page .team-card {
+  padding: 0.95rem 1rem 0.85rem;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    transform 0.15s;
+}
+
+.teams-page .team-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+.teams-page .team-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.teams-page .team-link:hover {
+  text-decoration: none;
+}
+
+.teams-page .team-card h3 {
+  margin: 0 0 0.45rem;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.teams-page .badge {
+  padding: 0.15rem 0.5rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+}
+
+.teams-page .delete-link {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.teams-page .delete-link:hover {
+  color: var(--danger);
+  text-decoration: none;
+}
+
+:host-context(.dark-mode) .teams-page .team-card {
+  box-shadow: none;
+}
+
+:host-context(.dark-mode) .teams-page .team-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ColaboratorClientReport } from '../../core/models';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
@@ -9,7 +9,7 @@ import autoTable from 'jspdf-autotable';
 
 @Component({
   selector: 'app-colaborator-client-report',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './colaborator-client-report.component.html',
   styleUrl: './colaborator-client-report.component.css',
 })
@@ -71,7 +71,7 @@ export class ColaboratorClientReportComponent implements OnInit {
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.text('Relatório Pessoal por Cliente', margin, 43);
+    doc.text('Relatório como Prestador por Cliente', margin, 43);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
@@ -122,7 +122,7 @@ export class ColaboratorClientReportComponent implements OnInit {
       .trim()
       .replace(/[<>:"/\\|?*\s]/g, '-');
     doc.save(
-      `relatorio-pessoal-${safeName}-${this.getPeriodLabel().replace(/ /g, '-')}.pdf`,
+      `relatorio-como-prestador-${safeName}-${this.getPeriodLabel().replace(/ /g, '-')}.pdf`,
     );
   }
 

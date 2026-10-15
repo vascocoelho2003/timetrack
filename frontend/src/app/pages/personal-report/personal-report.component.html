@@ -1,8 +1,8 @@
-<div class="page">
-  <a class="back" href="/reports">← Equipa</a>
+<div class="page personal-report-page">
+  <a class="back-link" routerLink="/reports">← Dashboard</a>
 
-  <div class="title-row">
-    <h2 class="page-heading">Relatório como Prestador</h2>
+  <div class="page-header">
+    <h2 class="page-title">Relatório como Prestador</h2>
   </div>
 
   <div class="toolbar">
@@ -14,7 +14,7 @@
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
       </div>
-      <button class="btn-export" type="button" (click)="exportPdf()">
+      <button class="btn btn-ghost btn-export" type="button" (click)="exportPdf()">
         Exportar PDF
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -42,25 +42,27 @@
       </thead>
       <tbody>
         @for (report of pagedReports; track report.id) {
-        <tr
-          (click)="selectRow(report)"
-          [class.selected]="selectedId === report.id"
-        >
-          <td>{{report.name}}</td>
-          <td>{{report.nr_tarefas}} tarefas</td>
-          <td>{{formatDuration(report.duration)}}</td>
-        </tr>
+          <tr
+            (click)="selectRow(report)"
+            [class.selected]="selectedId === report.id"
+          >
+            <td>{{ report.name }}</td>
+            <td>{{ report.nr_tarefas }} tarefas</td>
+            <td>{{ formatDuration(report.duration) }}</td>
+          </tr>
         } @empty {
-        <tr><td colspan="3">Não foram encontrados registos.</td></tr>
+          <tr>
+            <td colspan="3" class="empty-hint">Não foram encontrados registos.</td>
+          </tr>
         }
       </tbody>
     </table>
   </div>
   @if (totalPages > 1) {
-  <div class="pagination">
-    <button [disabled]="page === 1" (click)="page = page - 1">Anterior</button>
-    <span>Página {{page}} de {{totalPages}}</span>
-    <button [disabled]="page === totalPages" (click)="page = page + 1">Seguinte</button>
-  </div>
+    <div class="pagination">
+      <button class="btn btn-ghost" [disabled]="page === 1" (click)="page = page - 1">Anterior</button>
+      <span class="muted">Página {{ page }} de {{ totalPages }}</span>
+      <button class="btn btn-ghost" [disabled]="page === totalPages" (click)="page = page + 1">Seguinte</button>
+    </div>
   }
 </div>
