@@ -548,7 +548,6 @@ select:focus {
   padding: 0.75rem;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
 }
-}
 
 .task-title {
   font-weight: 600;

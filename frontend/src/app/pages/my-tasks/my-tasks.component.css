@@ -4,6 +4,14 @@
   padding: 32px 24px 48px;
 }
 
+.project-page .page-title,
+.project-page .page-header h2 {
+  font-size: 1.65rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
 .header-actions {
   display: flex;
   flex-wrap: wrap;
@@ -39,10 +47,21 @@
   box-shadow: var(--shadow);
 }
 
+.project-page > .card {
+  padding: 1.1rem 1.15rem 1rem;
+  border-radius: 10px;
+}
+
 .filters {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
   margin-bottom: 12px;
+}
+
+.filters input,
+.filters select {
+  border-radius: 8px;
 }
 
 .pagination {
@@ -55,11 +74,14 @@
 
 .empty-state {
   margin: 0;
+  padding: 1.25rem 0.25rem;
+  font-weight: 600;
 }
 
 .calendar-hint {
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.85rem;
   font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .calendar-wrap {
@@ -69,48 +91,159 @@
 
 .calendar-wrap ::ng-deep .fc {
   font-size: 0.9rem;
+  --fc-border-color: var(--border);
+  --fc-page-bg-color: var(--surface);
+  --fc-neutral-bg-color: var(--bg);
+  --fc-today-bg-color: rgba(59, 130, 246, 0.1);
+  --fc-list-event-hover-bg-color: var(--bg);
+}
+
+.calendar-wrap ::ng-deep .fc-toolbar {
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.calendar-wrap ::ng-deep .fc-toolbar-title {
+  font-size: 1.15rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.calendar-wrap ::ng-deep .fc-button {
+  border-radius: 8px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--bg) !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+  font-size: 0.82rem !important;
+  padding: 0.35rem 0.7rem !important;
+}
+
+.calendar-wrap ::ng-deep .fc-button:hover {
+  background: var(--surface) !important;
+  color: var(--primary) !important;
+}
+
+.calendar-wrap ::ng-deep .fc-button-primary:not(:disabled).fc-button-active,
+.calendar-wrap ::ng-deep .fc-button-primary:not(:disabled):active {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #fff !important;
+}
+
+.calendar-wrap ::ng-deep .fc-col-header-cell-cushion {
+  padding: 0.55rem 0.25rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.calendar-wrap ::ng-deep .fc-daygrid-day {
+  transition: background 0.12s;
+}
+
+.calendar-wrap ::ng-deep .fc-daygrid-day:hover {
+  background: var(--bg);
+}
+
+.calendar-wrap ::ng-deep .fc-daygrid-day-number {
+  color: var(--text);
+  font-weight: 600;
+  padding: 0.4rem 0.5rem;
 }
 
 .calendar-wrap ::ng-deep .fc-event {
   cursor: pointer;
-}
-
-.list-table-header {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  padding: 8px 0;
-  border-bottom: 1px solid #e5e7eb;
+  border: none;
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 0.75rem;
   font-weight: 600;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
-.list-table-row {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  padding: 10px 0;
-  border-bottom: 1px solid #f3f4f6;
-  cursor: pointer;
+.calendar-wrap ::ng-deep .fc-event:hover {
+  filter: brightness(0.96);
 }
 
+.calendar-wrap ::ng-deep .fc-daygrid-event-dot {
+  display: none;
+}
+
+.calendar-wrap ::ng-deep .fc-scrollgrid,
+.calendar-wrap ::ng-deep .fc-scrollgrid-section > td {
+  border-radius: 10px;
+}
+
+.list-table-header,
+.list-table-row,
+.list-table-row-doing,
 .list-table-row-done {
   display: grid;
   grid-template-columns: minmax(0, 2fr) repeat(4, minmax(0, 1fr));
   gap: 8px;
-  padding: 10px 0;
-  background-color: #eefff1;
-  border-bottom: 1px solid rgb(0, 0, 0) 4f6;
+  align-items: center;
+}
+
+.list-table-header {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.list-table-row,
+.list-table-row-doing,
+.list-table-row-done {
+  padding: 11px 10px;
+  border-bottom: 1px solid var(--border);
+  border-radius: 8px;
   cursor: pointer;
+  transition: background 0.12s;
+}
+
+.list-table-row {
+  background: transparent;
+}
+
+.list-table-row:hover {
+  background: var(--bg);
 }
 
 .list-table-row-doing {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-  gap: 8px;
-  padding: 10px 0;
   background-color: #faf5e1;
-  border-bottom: 1px solid rgb(0, 0, 0) 4f6;
-  cursor: pointer;
+}
+
+.list-table-row-doing:hover {
+  background-color: #f4ebd0;
+}
+
+.list-table-row-done {
+  background-color: #eefff1;
+}
+
+.list-table-row-done:hover {
+  background-color: #ddf8e4;
+}
+
+.list-table-row .status-pill,
+.list-table-row-doing .status-pill,
+.list-table-row-done .status-pill,
+.list-table-row .priority-pill,
+.list-table-row-doing .priority-pill,
+.list-table-row-done .priority-pill {
+  justify-self: start;
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  letter-spacing: 0.02em;
 }
 
 .assign-pill {
@@ -120,15 +253,21 @@
   white-space: nowrap;
 }
 
-:host-context(.dark-mode) .list-table-row-done {
-  background-color: #14532d;
-  border-bottom-color: #166534;
+:host-context(.dark-mode) .list-table-row:hover {
+  background: #1e293b;
+}
+
+:host-context(.dark-mode) .list-table-row-done,
+:host-context(.dark-mode) .list-table-row-done:hover {
+  background-color: #163326;
+  border-bottom-color: var(--border);
   color: #dcfce7;
 }
 
-:host-context(.dark-mode) .list-table-row-doing {
-  background-color: #713f12;
-  border-bottom-color: #854d0e;
+:host-context(.dark-mode) .list-table-row-doing,
+:host-context(.dark-mode) .list-table-row-doing:hover {
+  background-color: #3f3a1f;
+  border-bottom-color: var(--border);
   color: #fef3c7;
 }
 
@@ -147,48 +286,78 @@
   color: #fef3c7;
 }
 
+:host-context(.dark-mode) .calendar-wrap ::ng-deep .fc {
+  --fc-today-bg-color: rgba(96, 165, 250, 0.12);
+}
+
+:host-context(.dark-mode) .calendar-wrap ::ng-deep .fc-button {
+  background: var(--surface) !important;
+}
+
+:host-context(.dark-mode) .calendar-wrap ::ng-deep .fc-event {
+  box-shadow: none;
+}
+
 @media (max-width: 768px) {
-  .list-table-header {
+  .list-table-header,
+  .list-table-row,
+  .list-table-row-doing,
+  .list-table-row-done {
     grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(0, 1fr));
     font-size: 0.85rem;
   }
 
-  .list-table-row {
-    grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(0, 1fr));
-    font-size: 0.85rem;
-    padding: 8px 0;
+  .list-table-row,
+  .list-table-row-doing,
+  .list-table-row-done {
+    padding: 8px 8px;
   }
 
   .list-table-row > :nth-child(2),
+  .list-table-row-doing > :nth-child(2),
+  .list-table-row-done > :nth-child(2),
   .list-table-header > :nth-child(2),
   .list-table-row > :nth-child(5),
+  .list-table-row-doing > :nth-child(5),
+  .list-table-row-done > :nth-child(5),
   .list-table-header > :nth-child(5) {
     display: none;
   }
 }
 
 @media (max-width: 480px) {
-  .list-table-header {
+  .list-table-header,
+  .list-table-row,
+  .list-table-row-doing,
+  .list-table-row-done {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     font-size: 0.75rem;
   }
 
-  .list-table-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    font-size: 0.75rem;
-    padding: 6px 0;
+  .list-table-row,
+  .list-table-row-doing,
+  .list-table-row-done {
+    padding: 6px 6px;
   }
 
   .list-table-row > :nth-child(2),
+  .list-table-row-doing > :nth-child(2),
+  .list-table-row-done > :nth-child(2),
   .list-table-header > :nth-child(2),
   .list-table-row > :nth-child(3),
+  .list-table-row-doing > :nth-child(3),
+  .list-table-row-done > :nth-child(3),
   .list-table-header > :nth-child(3),
   .list-table-row > :nth-child(5),
+  .list-table-row-doing > :nth-child(5),
+  .list-table-row-done > :nth-child(5),
   .list-table-header > :nth-child(5) {
     display: none;
   }
 
   .list-table-row > :first-child,
+  .list-table-row-doing > :first-child,
+  .list-table-row-done > :first-child,
   .list-table-header > :first-child {
     grid-column: 1;
   }
@@ -238,7 +407,7 @@
   z-index: 5;
   left: 0;
   right: 0;
-  background: var(--card, #fff);
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;
   max-height: 200px;

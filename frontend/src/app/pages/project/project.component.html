@@ -2,9 +2,11 @@
     <a [routerLink]="['/teams', project?.team_id]" class="back-link">← Equipa</a>
     <div class="page-header">
       <h2>{{ project?.name }}</h2>
-      <div class="inline-form" style="gap:8px;">
-        <button class="btn btn-ghost" [class.active]="viewMode === 'board'" (click)="viewMode = 'board'">Board</button>
-        <button class="btn btn-ghost" [class.active]="viewMode === 'list'" (click)="viewMode = 'list'">Lista</button>
+      <div class="inline-form header-actions">
+        <div class="view-switch" role="group" aria-label="Vista">
+          <button class="btn btn-ghost" type="button" [class.active]="viewMode === 'board'" (click)="viewMode = 'board'">Board</button>
+          <button class="btn btn-ghost" type="button" [class.active]="viewMode === 'list'" (click)="viewMode = 'list'">Lista</button>
+        </div>
         <button class="btn btn-ghost" [routerLink]="['/projects', project?.id, 'closed-tasks']">Closed Tasks</button>
       @if (isAdmin) {
         <button class="btn btn-ghost" (click)="showNewList = !showNewList">Criar Lista</button>
@@ -21,13 +23,17 @@
       }
       </div>
     </div>  
-    <div class="inline-form file-upload-row" style="display:flex;align-items:center;gap:8px;">
+    @if(isAdmin){
+    <a href="Tarefas.xlsx" download="Tarefas.xlsx" class="btn btn-primary">Download Template</a><br><br>
+  }
+    <div class="inline-form file-upload-row">
       @if (isAdmin) {
       <input type="file" id="excelFile" accept=".xlsx,.xls" (change)="onFileSelected($event)" style="display:none;" />
       <label for="excelFile" class="btn btn-ghost">Escolher ficheiro</label>
       @if (selectedFileName) {
         <span class="muted">{{ selectedFileName }}</span>
       }
+
       <button class="btn btn-primary" (click)="submitExcel()" [disabled]="!selectedFile">Submeter</button>
       }
     </div>
@@ -94,6 +100,7 @@
               @for (task of getTasksForList(list.id); track task.id) {
                 <div
                   class="task-card"
+                  [attr.data-status]="task.status"
                   cdkDrag
                   [cdkDragData]="task"
                   (cdkDragStarted)="onTaskDragStarted()"
@@ -105,10 +112,11 @@
                     <span class="status-pill" [attr.data-status]="task.status">{{ statusLabel(task.status) }}</span>
                     <span class="priority-pill" [attr.data-priority]="task.priority">{{ task.priority }}</span>
                   </div>
-                  @for(a of task.assignees; track a.id){
-                  <span class="assign-pill" >&nbsp;&nbsp;{{ a.username }} </span>
-                  <br>
-                  }
+                  <div class="task-assignees">
+                    @for (a of task.assignees; track a.id) {
+                      <span class="assign-pill">{{ a.username }}</span>
+                    }
+                  </div>
                   <div class="task-total-time">Tempo total: {{ fmt(task.total_time || 0) }}</div>
                 </div>
               }
@@ -123,7 +131,7 @@
       </div>
     } @else {
       <div class="card">
-        <div class="inline-form" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px;">
+        <div class="inline-form list-view-filters">
           <input [(ngModel)]="listSearch" placeholder="Pesquisa" />
           <select [(ngModel)]="listFilterList">
             <option value="">Todas as listas</option>
@@ -169,7 +177,7 @@
           <span>Prioridade</span>
         </div>
         @for (entry of pagedListViewTasks; track entry.task.id) {
-          <div class="list-table-row" (click)="openTask(entry.task.id)">
+          <div class="list-table-row" [attr.data-status]="entry.task.status" (click)="openTask(entry.task.id)">
             <span>{{ entry.task.title }}</span>
             <span>{{ entry.listName }}</span>
             <span>@for (a of entry.task.assignees; track a.id){{{a.username}}<br>}</span>
@@ -178,7 +186,7 @@
           </div>
         }
         @if (totalListPages > 1) {
-          <div class="inline-form" style="justify-content:center;margin-top:12px;gap:8px;">
+          <div class="inline-form list-pagination">
             <button class="btn btn-ghost" [disabled]="listPage === 1" (click)="listPage = listPage - 1">Anterior</button>
             <span class="muted">Página {{ listPage }} de {{ totalListPages }}</span>
             <button class="btn btn-ghost" [disabled]="listPage === totalListPages" (click)="listPage = listPage + 1">Seguinte</button>

@@ -1,0 +1,174 @@
+.team-page {
+  width: 100%;
+}
+
+.team-page .back-link {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.team-page .back-link:hover {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.team-page .page-header h2 {
+  font-size: 1.65rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.team-page .section {
+  margin-bottom: 1.25rem;
+}
+
+.team-page .card.section,
+.team-page section.card {
+  padding: 1.1rem 1.15rem 1rem;
+}
+
+.team-page h3 {
+  margin: 0 0 0.85rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.95rem;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+
+.team-page .inline-form {
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.team-page .inline-form input,
+.team-page .inline-form select {
+  border-radius: 8px;
+}
+
+.team-page .alert {
+  margin-top: 0;
+}
+
+.team-page .member-list {
+  margin: 0;
+}
+
+.team-page .member-list li {
+  padding: 0;
+  border-bottom: none;
+}
+
+.team-page .member-list li + li {
+  margin-top: 0.35rem;
+}
+
+.team-page .member-item {
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.team-page .member-item:hover {
+  border-color: var(--primary);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+.team-page .member-item > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.team-page .badge {
+  flex-shrink: 0;
+  padding: 0.15rem 0.5rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+}
+
+.team-page .delete-link {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.team-page .delete-link:hover {
+  color: var(--danger);
+  text-decoration: none;
+}
+
+.team-page .grid {
+  gap: 1rem;
+}
+
+.team-page .project-card {
+  padding: 0.95rem 1rem 0.85rem;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    transform 0.15s;
+}
+
+.team-page .project-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+.team-page .project-link {
+  text-decoration: none;
+}
+
+.team-page .project-link:hover {
+  text-decoration: none;
+}
+
+.team-page .project-card h4 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.team-page .project-card .muted {
+  margin: 0 0 0.5rem;
+  line-height: 1.4;
+}
+
+.team-page .project-card .delete-link {
+  display: inline-block;
+  margin-left: 0;
+  padding: 0.2rem 0;
+}
+
+.team-page .empty-state {
+  padding: 1.5rem 1rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+:host-context(.dark-mode) .team-page .member-item,
+:host-context(.dark-mode) .team-page .project-card {
+  box-shadow: none;
+}
+
+:host-context(.dark-mode) .team-page .member-item:hover,
+:host-context(.dark-mode) .team-page .project-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
