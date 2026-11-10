@@ -145,6 +145,15 @@ tbody tr:hover {
   background: var(--bg);
 }
 
+tfoot {
+  background: var(--bg);
+}
+
+tfoot td {
+  border-top: 1px solid var(--border);
+  font-weight: 700;
+}
+
 .empty-hint {
   text-align: center !important;
   padding: 1.5rem 1rem !important;
