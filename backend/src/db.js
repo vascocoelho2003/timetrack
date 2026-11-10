@@ -88,7 +88,8 @@ function initDb() {
       near_due_email_sent INTEGER DEFAULT 0,
       created_by_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
       client_id INTEGER DEFAULT NULL REFERENCES clients(id) ON DELETE SET NULL,
-      docs_url TEXT DEFAULT NULL
+      docs_url TEXT DEFAULT NULL,
+      expected_time INTEGER
     );
 
     CREATE TABLE IF NOT EXISTS recurrence_rules(
@@ -208,6 +209,9 @@ function initDb() {
   }
   if (!taskColumns.some((column) => column.name === "completed_at")) {
     db.exec(`ALTER TABLE tasks ADD COLUMN completed_at TEXT`);
+  }
+  if (!taskColumns.some((column) => column.name === "expected_time")) {
+    db.exec(`ALTER TABLE tasks ADD COLUMN expected_time INTEGER`);
   }
 
   let timeEntryColumns = db.prepare(`PRAGMA table_info(time_entries)`).all();

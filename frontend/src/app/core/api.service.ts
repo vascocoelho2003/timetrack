@@ -236,6 +236,7 @@ export class ApiService {
     alertDate?: string | null;
     assigneeIds?: number[];
     parentTaskId?: number | null;
+    expectedTime?: number | null;
   }) {
     return this.http.post<Task>(`${API}/tasks`, data);
   }

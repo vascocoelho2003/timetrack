@@ -8,6 +8,8 @@ import {
   formatDuration,
   formatTimeRange,
   toDateTimeLocal,
+  durationToHoursMinutes,
+  hoursMinutesToSeconds,
 } from '../../core/timer.service';
 import {
   Project,
@@ -74,6 +76,16 @@ export class ProjectComponent implements OnInit {
   newTaskDueDate = '';
   alertDate = '';
   newTaskAssignees: number[] = [];
+  newExpectedHours: number | null = null;
+  newExpectedMinutes: number | null = null;
+  showNewSubtaskForm = false;
+  newSubtaskTitle = '';
+  newSubtaskDescription = '';
+  newSubtaskPriority = 'medium';
+  newSubtaskDueDate = '';
+  newSubtaskAlertDate = '';
+  newSubtaskAssignees: number[] = [];
+  newSubtaskError = '';
   selectedTask: (Task & { comments?: Comment[] }) | null = null;
   editTitle = '';
   editDescription = '';
@@ -81,6 +93,8 @@ export class ProjectComponent implements OnInit {
   editPriority = 'medium';
   editDueDate = '';
   editAlertDate = '';
+  editExpectedHours: number | null = null;
+  editExpectedMinutes: number | null = null;
   editAssignees: number[] = [];
   newComment = '';
   timeEntries: TimeEntry[] = [];
@@ -163,9 +177,80 @@ export class ProjectComponent implements OnInit {
     return this.isAdmin || this.isTaskAssignee;
   }
 
+  get isSubtask(): boolean {
+    return !!this.selectedTask?.parent_task_id;
+  }
+
+  get canManageSubtasks(): boolean {
+    return this.isAdmin && !this.isSubtask;
+  }
+
+  get actualTimeSeconds(): number {
+    const own = this.timeEntries.reduce(
+      (sum, entry) => sum + (entry.duration || 0),
+      0,
+    );
+    const running = this.activeOnThisTask ? this.timer.elapsedSeconds() : 0;
+    const children = (this.selectedTask?.subtasks || []).reduce(
+      (sum, subtask) => sum + (subtask.total_time || 0),
+      0,
+    );
+    return own + running + children;
+  }
+
+  get displayedExpectedSeconds(): number | null {
+    if (this.isAdmin && !this.isSubtask) {
+      return hoursMinutesToSeconds(
+        this.editExpectedHours,
+        this.editExpectedMinutes,
+      );
+    }
+    return this.selectedTask?.expected_time ?? null;
+  }
+
+  get timeVarianceLabel(): string {
+    const expected = this.displayedExpectedSeconds;
+    if (!expected) return '';
+    const diff = this.actualTimeSeconds - expected;
+    if (diff === 0) return 'Dentro do esperado';
+    if (diff > 0) return `${this.fmt(diff)} acima do esperado`;
+    return `${this.fmt(-diff)} abaixo do esperado`;
+  }
+
+  get timeVarianceState(): 'over' | 'under' | 'even' | '' {
+    const expected = this.displayedExpectedSeconds;
+    if (!expected) return '';
+    const diff = this.actualTimeSeconds - expected;
+    if (diff > 0) return 'over';
+    if (diff < 0) return 'under';
+    return 'even';
+  }
+
+  get subtaskProgressLabel(): string {
+    const total = this.selectedTask?.subtasks?.length || 0;
+    if (!total) return '';
+    const done = (this.selectedTask?.subtasks || []).filter(
+      (subtask) => subtask.status === 'done',
+    ).length;
+    return `${done}/${total}`;
+  }
+
   get activeOnThisTask(): boolean {
     const active = this.timer.activeEntry();
     return !!active && active.task_id === this.selectedTask?.id;
+  }
+
+  get completionDate(): string {
+    if (this.editStatus !== 'done') return '';
+    const stored = this.selectedTask?.completed_at;
+    if (stored) return String(stored).slice(0, 10);
+    if (this.selectedTask?.status === 'done') return '';
+    const now = new Date();
+    return [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, '0'),
+      String(now.getDate()).padStart(2, '0'),
+    ].join('-');
   }
 
   get hasRegisteredTime(): boolean {
@@ -196,7 +281,6 @@ export class ProjectComponent implements OnInit {
         this.api.getTasks(list.id).subscribe((tasks) => {
           this.tasksByList[list.id] = tasks;
         });
-        console.log(this.tasksByList);
       }
     });
   }
@@ -375,6 +459,10 @@ export class ProjectComponent implements OnInit {
         dueDate: this.newTaskDueDate || null,
         alertDate: this.alertDate || null,
         assigneeIds: this.newTaskAssignees,
+        expectedTime: hoursMinutesToSeconds(
+          this.newExpectedHours,
+          this.newExpectedMinutes,
+        ),
       })
       .pipe(
         switchMap((task) => {
@@ -403,6 +491,8 @@ export class ProjectComponent implements OnInit {
           this.newTaskDueDate = '';
           this.alertDate = '';
           this.newTaskAssignees = [];
+          this.newExpectedHours = null;
+          this.newExpectedMinutes = null;
           this.newTaskDependencies = [];
           this.resetDependencyPicker();
         },
@@ -470,6 +560,7 @@ export class ProjectComponent implements OnInit {
     this.saveError = '';
     this.blockingPredecessorId = null;
     this.resetDependencyPicker();
+    this.resetNewSubtask();
     this.api.getTask(taskId).subscribe((task) => {
       this.selectedTask = task;
       this.editTitle = task.title;
@@ -478,6 +569,9 @@ export class ProjectComponent implements OnInit {
       this.editPriority = task.priority;
       this.editDueDate = task.due_date?.slice(0, 10) || '';
       this.editAlertDate = task.next_alert_date?.slice(0, 10) || '';
+      const expected = durationToHoursMinutes(task.expected_time);
+      this.editExpectedHours = expected.hours;
+      this.editExpectedMinutes = expected.minutes;
       this.editDocsUrl = task.docs_url || '';
       this.docsUrlError = '';
       this.editAssignees = [...task.assigneeIds];
@@ -499,6 +593,63 @@ export class ProjectComponent implements OnInit {
     this.blockingPredecessorId = null;
     this.cancelEditTimeEntry();
     this.resetDependencyPicker();
+    this.resetNewSubtask();
+  }
+
+  resetNewSubtask() {
+    this.showNewSubtaskForm = false;
+    this.newSubtaskTitle = '';
+    this.newSubtaskDescription = '';
+    this.newSubtaskPriority = 'medium';
+    this.newSubtaskDueDate = '';
+    this.newSubtaskAlertDate = '';
+    this.newSubtaskAssignees = [];
+    this.newSubtaskError = '';
+  }
+
+  openParentTask() {
+    const parentId = this.selectedTask?.parent_task_id;
+    if (parentId) this.openTask(parentId);
+  }
+
+  createSubtask() {
+    if (!this.selectedTask || this.isSubtask) return;
+    if (!this.newSubtaskTitle.trim()) {
+      this.newSubtaskError = 'Indique um título para a subtarefa.';
+      return;
+    }
+    this.newSubtaskError = '';
+    const parentId = this.selectedTask.id;
+    const listId = this.selectedTask.task_list_id;
+    this.api
+      .createTask({
+        parentTaskId: parentId,
+        taskListId: listId,
+        title: this.newSubtaskTitle.trim(),
+        description: this.newSubtaskDescription,
+        priority: this.newSubtaskPriority as Task['priority'],
+        dueDate: this.newSubtaskDueDate || null,
+        alertDate: this.newSubtaskAlertDate || null,
+        assigneeIds: this.newSubtaskAssignees,
+      })
+      .subscribe({
+        next: () => {
+          this.resetNewSubtask();
+          this.openTask(parentId);
+          this.reloadList(listId);
+        },
+        error: (err) => {
+          this.newSubtaskError =
+            err.error?.error || 'Não foi possível criar a subtarefa.';
+        },
+      });
+  }
+
+  private reloadList(listId: number | null | undefined) {
+    if (!listId) return;
+    this.api.getTasks(listId).subscribe((tasks) => {
+      this.tasksByList[listId] = tasks;
+    });
   }
 
   saveTask() {
@@ -524,10 +675,17 @@ export class ProjectComponent implements OnInit {
         assigneeIds: this.editAssignees,
         clientId: this.clientId,
         docs_url: docsUrl,
+        expectedTime: this.isSubtask
+          ? undefined
+          : hoursMinutesToSeconds(
+              this.editExpectedHours,
+              this.editExpectedMinutes,
+            ),
       })
       .subscribe({
         next: (updated) => {
           this.refreshTaskInBoard(updated);
+          if (updated.parent_task_id) this.reloadList(updated.task_list_id);
           this.selectedTask = {
             ...this.selectedTask!,
             ...updated,
@@ -578,14 +736,18 @@ export class ProjectComponent implements OnInit {
       .subscribe({
         next: (updated) => {
           this.refreshTaskInBoard(updated);
+          if (updated.parent_task_id) this.reloadList(updated.task_list_id);
           if (this.selectedTask) {
             this.selectedTask = {
               ...this.selectedTask,
               ...updated,
               comments: this.selectedTask.comments,
               assigneeIds: this.selectedTask.assigneeIds,
+              subtasks: this.selectedTask.subtasks,
+              parent_title: this.selectedTask.parent_title,
             };
           }
+          this.editStatus = updated.status || this.editStatus;
           if (updated.status === 'done') {
             this.timer.refresh();
             this.reloadTimeEntries();
@@ -768,10 +930,21 @@ export class ProjectComponent implements OnInit {
   }
 
   deleteTask() {
-    if (!this.selectedTask || !confirm('Eliminar esta tarefa?')) return;
+    if (!this.selectedTask) return;
+    const hasSubtasks = (this.selectedTask.subtasks?.length || 0) > 0;
+    const message = hasSubtasks
+      ? 'Eliminar esta tarefa e as respetivas subtarefas?'
+      : 'Eliminar esta tarefa?';
+    if (!confirm(message)) return;
     const id = this.selectedTask.id;
     const listId = this.selectedTask.task_list_id;
+    const parentId = this.selectedTask.parent_task_id;
     this.api.deleteTask(id).subscribe(() => {
+      if (parentId) {
+        this.openTask(parentId);
+        this.reloadList(listId);
+        return;
+      }
       this.tasksByList[listId] = (this.tasksByList[listId] || []).filter(
         (t) => t.id !== id,
       );
@@ -780,6 +953,7 @@ export class ProjectComponent implements OnInit {
   }
 
   refreshTaskInBoard(task: Task) {
+    if (task.parent_task_id) return;
     const listId = task.task_list_id;
     const arr = this.tasksByList[listId] || [];
     const exists = arr.some((t) => t.id === task.id);
@@ -888,8 +1062,12 @@ export class ProjectComponent implements OnInit {
   private applyTimeEntries(entries: TimeEntry[]) {
     this.timeEntries = entries;
     if (!this.selectedTask) return;
-    const total = entries.reduce((sum, entry) => sum + (entry.duration || 0), 0);
-    this.selectedTask = { ...this.selectedTask, total_time: total };
+    const own = entries.reduce((sum, entry) => sum + (entry.duration || 0), 0);
+    const children = (this.selectedTask.subtasks || []).reduce(
+      (sum, subtask) => sum + (subtask.total_time || 0),
+      0,
+    );
+    this.selectedTask = { ...this.selectedTask, total_time: own + children };
     this.refreshTaskInBoard(this.selectedTask);
   }
 

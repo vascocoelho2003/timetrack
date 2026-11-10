@@ -57,6 +57,32 @@ export class ClosedTasksComponent {
     );
   }
 
+  get actualTimeSeconds(): number {
+    const children = (this.selectedTask?.subtasks || []).reduce(
+      (sum, subtask) => sum + (subtask.total_time || 0),
+      0,
+    );
+    return this.totalTime + children;
+  }
+
+  get timeVarianceLabel(): string {
+    const expected = this.selectedTask?.expected_time;
+    if (!expected) return '';
+    const diff = this.actualTimeSeconds - expected;
+    if (diff === 0) return 'Dentro do esperado';
+    if (diff > 0) return `${this.fmt(diff)} acima do esperado`;
+    return `${this.fmt(-diff)} abaixo do esperado`;
+  }
+
+  get timeVarianceState(): 'over' | 'under' | 'even' | '' {
+    const expected = this.selectedTask?.expected_time;
+    if (!expected) return '';
+    const diff = this.actualTimeSeconds - expected;
+    if (diff > 0) return 'over';
+    if (diff < 0) return 'under';
+    return 'even';
+  }
+
   constructor(
     private location: Location,
     private apiService: ApiService,
@@ -214,6 +240,12 @@ export class ClosedTasksComponent {
     return (
       { todo: 'Por fazer', doing: 'Em progresso', done: 'Concluída' }[s] || s
     );
+  }
+
+  get completionDate(): string {
+    const stored = this.selectedTask?.completed_at;
+    if (!stored) return '';
+    return String(stored).slice(0, 10);
   }
 
   formatDateDMY(dateString: string | null | undefined) {

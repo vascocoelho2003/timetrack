@@ -167,14 +167,23 @@ function attachAssignees(tasks) {
     FROM time_entries
     WHERE task_id = ? AND end IS NOT NULL
   `);
+  const childTimeStmt = db.prepare(`
+    SELECT COALESCE(SUM(te.duration), 0) AS total_time
+    FROM time_entries te
+    JOIN tasks s ON s.id = te.task_id
+    WHERE s.parent_task_id = ? AND te.end IS NOT NULL
+  `);
 
   return tasks.map((t) => {
     const assignees = assigneeStmt.all(t.id);
-    const totalTime = totalTimeStmt.get(t.id)?.total_time || 0;
+    const ownTime = totalTimeStmt.get(t.id)?.total_time || 0;
+    const childTime = t.parent_task_id
+      ? 0
+      : childTimeStmt.get(t.id)?.total_time || 0;
 
     return {
       ...t,
-      total_time: totalTime,
+      total_time: ownTime + childTime,
       assigneeIds: assignees.map((a) => a.id),
       assignees,
     };

@@ -8,6 +8,8 @@ import {
   formatDuration,
   formatTimeRange,
   toDateTimeLocal,
+  durationToHoursMinutes,
+  hoursMinutesToSeconds,
 } from '../../core/timer.service';
 import {
   Comment,
@@ -44,6 +46,7 @@ export class MyTasksComponent implements OnInit {
         project_id?: number | null;
         project_name?: string | null;
         task_list_name?: string | null;
+        team_id?: number | null;
         comments?: Comment[];
       })
     | null = null;
@@ -57,6 +60,8 @@ export class MyTasksComponent implements OnInit {
   editPriority: Task['priority'] = 'medium';
   editDueDate = '';
   editAlertDate = '';
+  editExpectedHours: number | null = null;
+  editExpectedMinutes: number | null = null;
   editAssignees: number[] = [];
   editDocsUrl = '';
   docsUrlError = '';
@@ -107,6 +112,14 @@ export class MyTasksComponent implements OnInit {
   newTaskProjectId: number | null = null;
   newTaskListId: number | null = null;
   newTaskError = '';
+  newExpectedHours: number | null = null;
+  newExpectedMinutes: number | null = null;
+  showNewSubtaskForm = false;
+  newSubtaskTitle = '';
+  newSubtaskDescription = '';
+  newSubtaskPriority: Task['priority'] = 'medium';
+  newSubtaskDueDate = '';
+  newSubtaskError = '';
 
   calendarOptions: CalendarOptions = {
     initialView: 'dayGridMonth',
@@ -170,6 +183,8 @@ export class MyTasksComponent implements OnInit {
     this.newTaskProjectId = null;
     this.newTaskListId = null;
     this.newTaskLists = [];
+    this.newExpectedHours = null;
+    this.newExpectedMinutes = null;
   }
 
   onNewTaskProjectChange() {
@@ -198,6 +213,10 @@ export class MyTasksComponent implements OnInit {
         description: this.newTaskDescription,
         priority: this.newTaskPriority,
         dueDate: this.newTaskDueDate || null,
+        expectedTime: hoursMinutesToSeconds(
+          this.newExpectedHours,
+          this.newExpectedMinutes,
+        ),
       })
       .subscribe({
         next: () => {
@@ -362,24 +381,101 @@ export class MyTasksComponent implements OnInit {
     return this.isAdmin || this.isTaskAssignee;
   }
 
+  get isSubtask(): boolean {
+    return !!this.selectedTask?.parent_task_id;
+  }
+
+  get canManageSubtasks(): boolean {
+    return this.isAdmin && !this.isSubtask;
+  }
+
+  get actualTimeSeconds(): number {
+    const own = this.timeEntries.reduce(
+      (sum, entry) => sum + (entry.duration || 0),
+      0,
+    );
+    const running = this.activeOnThisTask ? this.timer.elapsedSeconds() : 0;
+    const children = (this.selectedTask?.subtasks || []).reduce(
+      (sum, subtask) => sum + (subtask.total_time || 0),
+      0,
+    );
+    return own + running + children;
+  }
+
+  get displayedExpectedSeconds(): number | null {
+    if (this.isAdmin && !this.isSubtask) {
+      return hoursMinutesToSeconds(
+        this.editExpectedHours,
+        this.editExpectedMinutes,
+      );
+    }
+    return this.selectedTask?.expected_time ?? null;
+  }
+
+  get timeVarianceLabel(): string {
+    const expected = this.displayedExpectedSeconds;
+    if (!expected) return '';
+    const diff = this.actualTimeSeconds - expected;
+    if (diff === 0) return 'Dentro do esperado';
+    if (diff > 0) return `${this.fmt(diff)} acima do esperado`;
+    return `${this.fmt(-diff)} abaixo do esperado`;
+  }
+
+  get timeVarianceState(): 'over' | 'under' | 'even' | '' {
+    const expected = this.displayedExpectedSeconds;
+    if (!expected) return '';
+    const diff = this.actualTimeSeconds - expected;
+    if (diff > 0) return 'over';
+    if (diff < 0) return 'under';
+    return 'even';
+  }
+
+  get subtaskProgressLabel(): string {
+    const total = this.selectedTask?.subtasks?.length || 0;
+    if (!total) return '';
+    const done = (this.selectedTask?.subtasks || []).filter(
+      (subtask) => subtask.status === 'done',
+    ).length;
+    return `${done}/${total}`;
+  }
+
   get activeOnThisTask() {
     return this.timer.activeEntry()?.task_id === this.selectedTask?.id;
+  }
+
+  get completionDate(): string {
+    if (this.editStatus !== 'done') return '';
+    const stored = this.selectedTask?.completed_at;
+    if (stored) return String(stored).slice(0, 10);
+    if (this.selectedTask?.status === 'done') return '';
+    const now = new Date();
+    return [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, '0'),
+      String(now.getDate()).padStart(2, '0'),
+    ].join('-');
   }
 
   get hasRegisteredTime() {
     return this.timeEntries.length > 0 || this.activeOnThisTask;
   }
 
-  openTask(row: Task_proj) {
+  openTask(row: { id: number } & Partial<Task_proj>) {
     this.saveError = '';
     this.blockingPredecessorId = null;
     this.resetDependencyPicker();
+    this.resetNewSubtask();
+    const context = {
+      project_id: row.project_id ?? this.selectedTask?.project_id ?? null,
+      project_name: row.project_name ?? this.selectedTask?.project_name ?? null,
+      task_list_name:
+        row.task_list_name ?? this.selectedTask?.task_list_name ?? null,
+      team_id: row.team_id ?? this.selectedTask?.team_id ?? null,
+    };
     this.api.getTask(row.id).subscribe((task) => {
       this.selectedTask = {
         ...task,
-        project_id: row.project_id,
-        project_name: row.project_name,
-        task_list_name: row.task_list_name,
+        ...context,
       };
       this.editTitle = task.title;
       this.editDescription = task.description;
@@ -387,23 +483,26 @@ export class MyTasksComponent implements OnInit {
       this.editPriority = task.priority;
       this.editDueDate = task.due_date?.slice(0, 10) || '';
       this.editAlertDate = task.next_alert_date?.slice(0, 10) || '';
+      const expected = durationToHoursMinutes(task.expected_time);
+      this.editExpectedHours = expected.hours;
+      this.editExpectedMinutes = expected.minutes;
       this.editDocsUrl = task.docs_url || '';
       this.docsUrlError = '';
       this.editAssignees = [...task.assigneeIds];
       this.clientId = task.client_id ?? null;
       this.taskDependencies = task.dependencies || [];
       this.resetRecurrenceForm(task.recurrence);
-      this.loadPredecessorCandidates(row);
-      if (row.team_id) {
+      this.loadPredecessorCandidates({ id: task.id, ...context });
+      if (context.team_id) {
         this.api
-          .getTeamMembers(row.team_id)
+          .getTeamMembers(context.team_id)
           .subscribe((members) => (this.members = members));
         this.api
           .getTeams()
           .subscribe(
             (teams) =>
               (this.isAdmin = teams.some(
-                (team) => team.id === row.team_id && team.role === 'admin',
+                (team) => team.id === context.team_id && team.role === 'admin',
               )),
           );
       } else {
@@ -429,6 +528,59 @@ export class MyTasksComponent implements OnInit {
     this.blockingPredecessorId = null;
     this.cancelEditTimeEntry();
     this.resetDependencyPicker();
+    this.resetNewSubtask();
+  }
+
+  resetNewSubtask() {
+    this.showNewSubtaskForm = false;
+    this.newSubtaskTitle = '';
+    this.newSubtaskDescription = '';
+    this.newSubtaskPriority = 'medium';
+    this.newSubtaskDueDate = '';
+    this.newSubtaskError = '';
+  }
+
+  openParentTask() {
+    const parentId = this.selectedTask?.parent_task_id;
+    if (!parentId) return;
+    const parent = this.tasks.find((task) => task.id === parentId);
+    this.openTask(parent || { id: parentId });
+  }
+
+  createSubtask() {
+    if (!this.selectedTask || this.isSubtask) return;
+    if (!this.newSubtaskTitle.trim()) {
+      this.newSubtaskError = 'Indique um título para a subtarefa.';
+      return;
+    }
+    this.newSubtaskError = '';
+    const parentId = this.selectedTask.id;
+    this.api
+      .createTask({
+        parentTaskId: parentId,
+        taskListId: this.selectedTask.task_list_id,
+        title: this.newSubtaskTitle.trim(),
+        description: this.newSubtaskDescription,
+        priority: this.newSubtaskPriority,
+        dueDate: this.newSubtaskDueDate || null,
+      })
+      .subscribe({
+        next: () => {
+          this.resetNewSubtask();
+          this.openTask({
+            id: parentId,
+            project_id: this.selectedTask?.project_id,
+            project_name: this.selectedTask?.project_name,
+            task_list_name: this.selectedTask?.task_list_name,
+            team_id: this.selectedTask?.team_id,
+          });
+          this.loadTasks();
+        },
+        error: (err) => {
+          this.newSubtaskError =
+            err.error?.error || 'Não foi possível criar a subtarefa.';
+        },
+      });
   }
 
   saveTask() {
@@ -454,6 +606,12 @@ export class MyTasksComponent implements OnInit {
         assigneeIds: this.editAssignees,
         clientId: this.clientId,
         docs_url: docsUrl,
+        expectedTime: this.isSubtask
+          ? undefined
+          : hoursMinutesToSeconds(
+              this.editExpectedHours,
+              this.editExpectedMinutes,
+            ),
       })
       .subscribe({
         next: () => {
@@ -499,12 +657,15 @@ export class MyTasksComponent implements OnInit {
     this.api
       .updateTask(this.selectedTask.id, { status: this.statusToSave() })
       .subscribe({
-        next: () => {
-          const status = this.statusToSave();
+        next: (updated) => {
+          const status = updated.status || this.statusToSave();
           if (this.selectedTask) {
             this.selectedTask = {
               ...this.selectedTask,
               status,
+              completed_at: updated.completed_at ?? null,
+              subtasks: this.selectedTask.subtasks,
+              parent_title: this.selectedTask.parent_title,
             };
           }
           this.editStatus = status;
@@ -525,7 +686,7 @@ export class MyTasksComponent implements OnInit {
       });
   }
 
-  private loadPredecessorCandidates(row: Task_proj) {
+  private loadPredecessorCandidates(row: { id: number } & Partial<Task_proj>) {
     this.predecessorCandidates = [];
     if (!row.project_id) {
       this.predecessorCandidates = this.tasks
@@ -798,14 +959,25 @@ export class MyTasksComponent implements OnInit {
   }
 
   deleteTask() {
-    if (
-      !this.selectedTask ||
-      !this.isAdmin ||
-      !confirm('Eliminar esta tarefa?')
-    )
-      return;
+    if (!this.selectedTask || !this.isAdmin) return;
+    const hasSubtasks = (this.selectedTask.subtasks?.length || 0) > 0;
+    const message = hasSubtasks
+      ? 'Eliminar esta tarefa e as respetivas subtarefas?'
+      : 'Eliminar esta tarefa?';
+    if (!confirm(message)) return;
+    const parentId = this.selectedTask.parent_task_id;
+    const context = {
+      project_id: this.selectedTask.project_id,
+      project_name: this.selectedTask.project_name,
+      task_list_name: this.selectedTask.task_list_name,
+      team_id: this.selectedTask.team_id,
+    };
     this.api.deleteTask(this.selectedTask.id).subscribe(() => {
       this.loadTasks();
+      if (parentId) {
+        this.openTask({ id: parentId, ...context });
+        return;
+      }
       this.closeTask();
     });
   }

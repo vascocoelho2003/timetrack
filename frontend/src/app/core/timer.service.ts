@@ -82,6 +82,27 @@ export function formatDuration(seconds: number): string {
   return `${s}s`;
 }
 
+export function durationToHoursMinutes(
+  seconds: number | null | undefined,
+): { hours: number | null; minutes: number | null } {
+  const value = Math.max(0, Math.floor(Number(seconds) || 0));
+  if (!value) return { hours: null, minutes: null };
+  return {
+    hours: Math.floor(value / 3600) || null,
+    minutes: Math.floor((value % 3600) / 60) || null,
+  };
+}
+
+export function hoursMinutesToSeconds(
+  hours: number | string | null | undefined,
+  minutes: number | string | null | undefined,
+): number | null {
+  const h = Math.max(0, Math.floor(Number(hours) || 0));
+  const m = Math.max(0, Math.floor(Number(minutes) || 0));
+  if (h === 0 && m === 0) return null;
+  return h * 3600 + m * 60;
+}
+
 export function toDateTimeLocal(iso: string | null | undefined): string {
   if (!iso) return '';
   const date = new Date(iso);
