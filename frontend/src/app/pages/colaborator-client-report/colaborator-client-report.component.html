@@ -4,7 +4,7 @@
   <div class="page-header">
     <div>
       <h1 class="page-title">Relatório Como Prestador por Cliente</h1>
-      <p class="muted page-subtitle">{{ username }} · Cliente: {{ cliente_username }}</p>
+      <p class="muted page-subtitle">{{ username }} · Cliente: {{ cliente_username }} · Tempo total despendido: {{ formatDuration(totalTime) }}</p>
     </div>
   </div>
 
@@ -52,6 +52,14 @@
           </tr>
         }
       </tbody>
+      @if (tasks.length) {
+        <tfoot>
+          <tr>
+            <td colspan="4">Total de horas despendidas</td>
+            <td>{{ formatDuration(totalTime) }}</td>
+          </tr>
+        </tfoot>
+      }
     </table>
   </div>
   @if (totalPages > 1) {

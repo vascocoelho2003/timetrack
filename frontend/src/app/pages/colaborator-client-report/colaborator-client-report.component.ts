@@ -51,6 +51,13 @@ export class ColaboratorClientReportComponent implements OnInit {
     return this.tasks.slice(start, start + this.pageSize);
   }
 
+  get totalTime(): number {
+    return this.tasks.reduce(
+      (sum, task) => sum + Number(task.duration || 0),
+      0,
+    );
+  }
+
   async exportPdf(): Promise<void> {
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -77,10 +84,15 @@ export class ColaboratorClientReportComponent implements OnInit {
     doc.setFontSize(8);
     doc.text(`Colaborador: ${this.username || '—'}`, margin, 52);
     doc.text(`Cliente: ${this.cliente_username || '—'}`, margin, 59);
-    doc.text(`Período: ${this.getPeriodLabel()}`, margin, 66);
+    doc.text(
+      `Total de horas despendidas: ${this.formatDuration(this.totalTime)}`,
+      margin,
+      66,
+    );
+    doc.text(`Período: ${this.getPeriodLabel()}`, margin, 73);
 
     autoTable(doc, {
-      startY: 77,
+      startY: 84,
       margin: { left: margin, right: margin },
       head: [
         ['Tarefa', 'Estado', 'Última Atualização', 'Prazo', 'Tempo Despendido'],
@@ -92,6 +104,7 @@ export class ColaboratorClientReportComponent implements OnInit {
         this.formatDate(t.due_date),
         this.formatDuration(t.duration),
       ]),
+      foot: [['Total de horas despendidas', '', '', '', this.formatDuration(this.totalTime)]],
       theme: 'plain',
       styles: {
         font: 'helvetica',
@@ -103,6 +116,13 @@ export class ColaboratorClientReportComponent implements OnInit {
         overflow: 'linebreak',
       },
       headStyles: {
+        fontStyle: 'bold',
+        fillColor: [255, 255, 255],
+        textColor: [25, 25, 25],
+        lineColor: [110, 110, 110],
+        lineWidth: { top: 0.25, bottom: 0.25, left: 0, right: 0 },
+      },
+      footStyles: {
         fontStyle: 'bold',
         fillColor: [255, 255, 255],
         textColor: [25, 25, 25],
