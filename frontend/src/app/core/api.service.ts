@@ -154,6 +154,19 @@ export class ApiService {
   }
 
   /**
+   * Atualiza o projeto com o ID enviado por parâmetro
+   * @param projectId
+   * @param data
+   * @returns
+   */
+  updateProject(
+    projectId: number,
+    data: { name?: string; description?: string },
+  ) {
+    return this.http.put<Project>(`${API}/projects/${projectId}`, data);
+  }
+
+  /**
    * Elimina o projeto através do ID que é enviado por parâmetro
    * @param projectId 
    * @returns 
@@ -236,6 +249,7 @@ export class ApiService {
     alertDate?: string | null;
     assigneeIds?: number[];
     parentTaskId?: number | null;
+    expectedTime?: number | null;
   }) {
     return this.http.post<Task>(`${API}/tasks`, data);
   }

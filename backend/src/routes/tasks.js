@@ -36,6 +36,34 @@ function setAssignees(taskId, assigneeIds) {
   }
 }
 
+function getSubtasks(parentId) {
+  const rows = db
+    .prepare(
+      "SELECT * FROM tasks WHERE parent_task_id = ? ORDER BY created_at",
+    )
+    .all(parentId);
+  return attachAssignees(rows);
+}
+
+function getParentSummary(parentId) {
+  if (!parentId) return null;
+  return db
+    .prepare("SELECT id, title, status FROM tasks WHERE id = ?")
+    .get(parentId);
+}
+
+function parseExpectedTime(value) {
+  if (value === undefined) return { omitted: true };
+  if (value === null || value === "") return { seconds: null };
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0 || Math.floor(n) !== n) {
+    return {
+      error: "O tempo esperado tem de ser um número inteiro de segundos",
+    };
+  }
+  return { seconds: n };
+}
+
 function stopActiveTimersForTask(taskId) {
   const now = new Date().toISOString();
   const actives = db
@@ -114,11 +142,13 @@ router.get("/", (req, res) => {
     t.*, tl.name as task_list_name,
     p.id AS project_id,
     p.name AS project_name,
-    p.team_id AS team_id
+    p.team_id AS team_id,
+    parent.title AS parent_title
     FROM tasks t
     JOIN task_assignees ta ON ta.task_id = t.id
     LEFT JOIN task_lists tl ON tl.id = t.task_list_id
     LEFT JOIN projects p ON p.id = tl.project_id
+    LEFT JOIN tasks parent ON parent.id = t.parent_task_id
     WHERE ta.user_id = ? ORDER BY t.created_at DESC`,
     )
     .all(user_id);
@@ -173,6 +203,7 @@ router.post("/", (req, res) => {
     assigneeIds = [],
     parentTaskId = null,
     docs_url = "",
+    expectedTime,
   } = req.body;
 
   let { dueDate = null, alertDate = null } = req.body;
@@ -194,13 +225,36 @@ router.post("/", (req, res) => {
       });
   }
 
+  let resolvedListId = taskListId || null;
+  let resolvedParentId = null;
+  if (parentTaskId != null && parentTaskId !== "") {
+    const parentId = +parentTaskId;
+    if (!Number.isInteger(parentId) || parentId <= 0) {
+      return res.status(400).json({ error: "Tarefa principal inválida" });
+    }
+    const parent = db.prepare("SELECT * FROM tasks WHERE id = ?").get(parentId);
+    if (!parent) {
+      return res.status(404).json({ error: "Tarefa principal não encontrada" });
+    }
+    if (parent.parent_task_id) {
+      return res
+        .status(400)
+        .json({ error: "Só é permitido um nível de subtarefas" });
+    }
+    if (!canViewTask(req.user.id, parentId)) {
+      return res.status(403).json({ error: "Sem acesso à tarefa principal" });
+    }
+    resolvedParentId = parentId;
+    resolvedListId = parent.task_list_id || null;
+  }
+
   let list = null;
-  if (taskListId) {
+  if (resolvedListId) {
     list = db
       .prepare(
         "SELECT tl.*, p.team_id FROM task_lists tl JOIN projects p ON p.id = tl.project_id WHERE tl.id = ?",
       )
-      .get(taskListId);
+      .get(resolvedListId);
     if (!list) return res.status(404).json({ error: "Lista não encontrada" });
     if (!isTeamMember(req.user.id, list.team_id)) {
       return res.status(403).json({ error: "Sem acesso a este projeto" });
@@ -220,15 +274,25 @@ router.post("/", (req, res) => {
     dueDate = null;
   }
 
+  let expectedSeconds = null;
+  if (!resolvedParentId) {
+    const parsedExpected = parseExpectedTime(expectedTime);
+    if (parsedExpected.error) {
+      return res.status(400).json({ error: parsedExpected.error });
+    }
+    if (!parsedExpected.omitted) expectedSeconds = parsedExpected.seconds;
+  }
+
   const result = db
     .prepare(
       `
-    INSERT INTO tasks (task_list_id, title, description, status, priority, due_date, created_by_user_id, next_alert_date, docs_url,alert_offset_days)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?)
+    INSERT INTO tasks (task_list_id, parent_task_id, title, description, status, priority, due_date, created_by_user_id, next_alert_date, docs_url,alert_offset_days, expected_time)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `,
     )
     .run(
-      taskListId || null,
+      resolvedListId || null,
+      resolvedParentId,
       title.trim(),
       description.trim(),
       status,
@@ -238,6 +302,7 @@ router.post("/", (req, res) => {
       alertDate,
       parsedDocsUrl.url,
       alert_offset_days,
+      expectedSeconds,
     );
 
   const taskId = result.lastInsertRowid;
@@ -278,6 +343,7 @@ router.get("/my_tasks", (req, res) => {
         t.due_date,
         t.created_at,
         t.completed_at,
+        t.parent_task_id,
 
         tl.id AS task_list_id,
         tl.name AS task_list_name,
@@ -343,7 +409,8 @@ router.get("/:taskId", (req, res) => {
     .all(taskId)
     .map((r) => r.user_id);
 
-  const subtasks = db.prepare("SELECT * FROM tasks ORDER BY created_at").all();
+  const parent = getParentSummary(task.parent_task_id);
+  const subtasks = task.parent_task_id ? [] : getSubtasks(taskId);
 
   const comments = db
     .prepare(
@@ -358,8 +425,9 @@ router.get("/:taskId", (req, res) => {
   res.json({
     ...task,
     assigneeIds,
+    parent_title: parent?.title || null,
     recurrence: getRecurrency(taskId) || null,
-    subtasks: attachAssignees(subtasks),
+    subtasks,
     comments,
     dependencies: getTaskDependencies(taskId),
   });
@@ -459,6 +527,7 @@ router.put("/:taskId", (req, res) => {
     next_alert_date,
     docs_url,
     taskListId,
+    expectedTime,
   } = req.body;
   let status = statusBody;
 
@@ -475,7 +544,17 @@ router.put("/:taskId", (req, res) => {
     }
   }
 
-  if (taskListId !== undefined && taskListId !== null) {
+  const parsedExpected = parseExpectedTime(expectedTime);
+  if (parsedExpected.error) {
+    return res.status(400).json({ error: parsedExpected.error });
+  }
+  if (!parsedExpected.omitted && ctx.parent_task_id) {
+    return res.status(400).json({
+      error: "Só as tarefas principais podem ter tempo esperado",
+    });
+  }
+
+  if (taskListId !== undefined && taskListId !== null && !ctx.parent_task_id) {
     const targetListId = +taskListId;
     if (!Number.isInteger(targetListId) || targetListId <= 0) {
       return res.status(400).json({ error: "Lista inválida" });
@@ -505,6 +584,9 @@ router.put("/:taskId", (req, res) => {
         targetListId,
         taskId,
       );
+      db.prepare(
+        "UPDATE tasks SET task_list_id = ? WHERE parent_task_id = ?",
+      ).run(targetListId, taskId);
     }
   }
 
@@ -599,6 +681,13 @@ router.put("/:taskId", (req, res) => {
     if (status === "done" && recurrenceRuleExists(taskId) === true) {
       createRecurrency(taskId, req.user.id);
     }
+  }
+
+  if (admin && !parsedExpected.omitted) {
+    db.prepare("UPDATE tasks SET expected_time = ? WHERE id = ?").run(
+      parsedExpected.seconds,
+      taskId,
+    );
   }
 
   syncCompletedAt(taskId, ctx.status, status);
@@ -942,7 +1031,7 @@ router.get("/:projectId/get_closed_tasks", (req, res) => {
 
   const tasks = db
     .prepare(
-      `SELECT * FROM tasks WHERE status = 'done' AND task_list_id IN(SELECT id FROM task_lists WHERE project_id = ?)`,
+      `SELECT * FROM tasks WHERE status = 'done' AND parent_task_id IS NULL AND task_list_id IN(SELECT id FROM task_lists WHERE project_id = ?)`,
     )
     .all(projectId);
   const assigneesStmt = db.prepare(

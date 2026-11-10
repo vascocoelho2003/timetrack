@@ -144,8 +144,12 @@ router.get("/:listId/tasks", (req, res) => {
   tasks = db
     .prepare(
       `
-      SELECT * FROM tasks WHERE task_list_id = ?
-      ORDER BY created_at DESC
+      SELECT t.*,
+        (SELECT COUNT(*) FROM tasks s WHERE s.parent_task_id = t.id) AS subtask_count,
+        (SELECT COUNT(*) FROM tasks s WHERE s.parent_task_id = t.id AND s.status = 'done') AS subtask_done_count
+      FROM tasks t
+      WHERE t.task_list_id = ? AND t.parent_task_id IS NULL
+      ORDER BY t.created_at DESC
     `,
     )
     .all(listId);

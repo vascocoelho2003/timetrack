@@ -96,12 +96,45 @@
       <div class="modal-overlay" (click)="closeTask()">
         <div class="modal card" (click)="$event.stopPropagation()">
             <h4>{{ selectedTask.title }}</h4>
+            @if (selectedTask.parent_task_id) {
+              <p class="muted subtask-parent-link">
+                Subtarefa de
+                <a href="#" (click)="openTask(selectedTask.parent_task_id); $event.preventDefault()">{{ selectedTask.parent_title || 'tarefa principal' }}</a>
+              </p>
+            }
             <p class="muted">{{ selectedTask.description || 'Sem descrição' }}</p>
             <div class="detail-row">
               <div><strong>Estado:</strong> {{ statusLabel(selectedTask.status) }}</div>
               <div><strong>Prioridade:</strong> {{ selectedTask.priority }}</div>
               <div><strong>Prazo:</strong> {{ formatDateDMY(selectedTask.due_date) }}</div>
+              @if (selectedTask.status === 'done') {
+                <div>
+                  <label>Conclusão</label>
+                  <input type="date" [value]="completionDate" disabled />
+                </div>
+              }
             </div>
+
+          @if (!selectedTask.parent_task_id) {
+            <div class="form-section-body">
+              <h4>Subtarefas</h4>
+              @if (selectedTask.subtasks?.length) {
+                @for (subtask of selectedTask.subtasks; track subtask.id) {
+                  <button type="button" class="subtask-row" (click)="openTask(subtask.id)">
+                    <span class="subtask-row-main">
+                      <strong>{{ subtask.title }}</strong>
+                      <span class="muted">{{ formatDateDMY(subtask.due_date) }}</span>
+                    </span>
+                    <span class="subtask-row-meta">
+                      <span class="status-pill" [attr.data-status]="subtask.status">{{ statusLabel(subtask.status) }}</span>
+                    </span>
+                  </button>
+                }
+              } @else {
+                <p class="muted">Ainda não existem subtarefas.</p>
+              }
+            </div>
+          }
 
           <div class="time-entries-section">
             <h4>Registos de tempo</h4>
@@ -152,6 +185,20 @@
             <div class="time-total">
               <strong>Total de tempo:</strong> {{ fmt(totalTime) }}
             </div>
+            @if (!selectedTask.parent_task_id) {
+              <div class="time-compare">
+                <div><strong>Tempo esperado:</strong> {{ selectedTask.expected_time ? fmt(selectedTask.expected_time) : 'Não definido' }}</div>
+                <div>
+                  <strong>Tempo real:</strong> {{ fmt(actualTimeSeconds) }}
+                  @if (selectedTask.subtasks?.length) {
+                    <span class="muted"> (inclui subtarefas)</span>
+                  }
+                </div>
+                @if (timeVarianceLabel) {
+                  <div [class]="'time-compare-' + timeVarianceState">{{ timeVarianceLabel }}</div>
+                }
+              </div>
+            }
           </div>
 
           <div class="comments-section">

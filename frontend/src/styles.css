@@ -631,6 +631,134 @@ select:focus {
   margin-top: 1rem;
 }
 
+.task-modal {
+  max-width: 720px;
+  max-height: min(90vh, 880px);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.task-modal .modal-header {
+  margin: 0;
+  padding: 1rem 1.25rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.task-modal .subtask-parent-link {
+  margin: 0;
+  padding: 0.55rem 1.25rem 0;
+  font-size: 0.85rem;
+}
+
+.task-modal-body {
+  flex: 1;
+  min-height: 0;
+  padding: 1rem 1.25rem 1rem;
+  overflow-y: auto;
+}
+
+.task-modal-footer {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0.85rem 1.25rem 1.1rem;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.task-modal-footer.modal-actions {
+  margin-top: 0;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem 1rem;
+}
+
+.field-span {
+  grid-column: 1 / -1;
+}
+
+.field-action {
+  display: flex;
+  align-items: flex-end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.field label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.task-readonly h4 {
+  margin: 0 0 0.35rem;
+}
+
+.task-readonly-desc {
+  margin: 0 0 0.75rem;
+}
+
+.section-title {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.section-count {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.45rem;
+  padding: 0.08rem 0.45rem;
+  border-radius: 999px;
+  background: var(--border);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.modal.card.task-modal .form-section {
+  margin-top: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.modal.card.task-modal .task-modal-body .form-section:first-of-type {
+  margin-top: 0;
+}
+
+.modal.card.task-modal .form-section summary {
+  padding: 0.65rem 0.9rem;
+}
+
+.modal.card.task-modal .form-section-body {
+  padding: 0 0.9rem 0.9rem;
+  background: var(--surface);
+  border-radius: 0 0 10px 10px;
+}
+
+.form-section-body .time-compare {
+  margin: 0.75rem 0;
+}
+
+@media (max-width: 640px) {
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .assignee-checks {
   display: flex;
   flex-wrap: wrap;
@@ -744,9 +872,91 @@ select:focus {
 }
 
 .subtask-row {
-  padding: 0.35rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.45rem 0;
   font-size: 0.9rem;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  border: none;
   border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.subtask-row:hover {
+  color: var(--primary);
+}
+
+.subtask-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.subtask-row-meta {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.task-subtasks-count {
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.duration-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.duration-fields input {
+  width: 4.75rem;
+}
+
+.duration-suffix {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-right: 0.35rem;
+}
+
+.time-compare {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.time-compare-over {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.time-compare-under {
+  color: #166534;
+  font-weight: 600;
+}
+
+.time-compare-even {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.subtask-parent-link {
+  margin: 0 0 0.75rem;
 }
 
 /* Reports */

@@ -1,7 +1,27 @@
 <div class="page project-page">
     <a [routerLink]="['/teams', project?.team_id]" class="back-link">← Equipa</a>
     <div class="page-header">
-      <h2>{{ project?.name }}</h2>
+      @if (isAdmin && editingProjectName) {
+        <div class="project-name-edit">
+          <input
+            class="project-name-input"
+            [(ngModel)]="projectNameDraft"
+            (keydown.enter)="saveProjectName(); $event.preventDefault()"
+            (keydown.escape)="cancelRenameProject()"
+            (blur)="saveProjectName()"
+            placeholder="Nome do projeto" />
+          @if (projectNameError) {
+            <p class="field-error">{{ projectNameError }}</p>
+          }
+        </div>
+      } @else {
+        <h2
+          [class.project-name-editable]="isAdmin"
+          [title]="isAdmin ? 'Clicar para alterar o nome' : ''"
+          (click)="isAdmin && startRenameProject()">
+          {{ project?.name }}
+        </h2>
+      }
       <div class="inline-form header-actions">
         <div class="view-switch" role="group" aria-label="Vista">
           <button class="btn btn-ghost" type="button" [class.active]="viewMode === 'board'" (click)="viewMode = 'board'">Board</button>
@@ -112,12 +132,21 @@
                     <span class="status-pill" [attr.data-status]="task.status">{{ statusLabel(task.status) }}</span>
                     <span class="priority-pill" [attr.data-priority]="task.priority">{{ task.priority }}</span>
                   </div>
+                  @if (task.subtask_count) {
+                    <div class="task-subtasks-count">{{ task.subtask_done_count || 0 }}/{{ task.subtask_count }} subtarefas</div>
+                  }
                   <div class="task-assignees">
                     @for (a of task.assignees; track a.id) {
                       <span class="assign-pill">{{ a.username }}</span>
                     }
                   </div>
-                  <div class="task-total-time">Tempo total: {{ fmt(task.total_time || 0) }}</div>
+                  <div class="task-total-time">
+                    @if (task.expected_time) {
+                      Real {{ fmt(task.total_time || 0) }} / Esperado {{ fmt(task.expected_time) }}
+                    } @else {
+                      Tempo total: {{ fmt(task.total_time || 0) }}
+                    }
+                  </div>
                 </div>
               }
             </div>
@@ -178,7 +207,12 @@
         </div>
         @for (entry of pagedListViewTasks; track entry.task.id) {
           <div class="list-table-row" [attr.data-status]="entry.task.status" (click)="openTask(entry.task.id)">
-            <span>{{ entry.task.title }}</span>
+            <span>
+              {{ entry.task.title }}
+              @if (entry.task.subtask_count) {
+                <small class="muted"> ({{ entry.task.subtask_done_count || 0 }}/{{ entry.task.subtask_count }})</small>
+              }
+            </span>
             <span>{{ entry.listName }}</span>
             <span>@for (a of entry.task.assignees; track a.id){{{a.username}}<br>}</span>
             <span>{{ formatDate(entry.task.due_date) }}</span>
@@ -197,111 +231,182 @@
 
     @if (selectedTask) {
       <div class="modal-overlay" (click)="closeTask()">
-        <div class="modal card" (click)="$event.stopPropagation()">
+        <div class="modal card task-modal" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h3>{{ isAdmin ? 'Editar tarefa' : 'Tarefa' }}</h3>
+            <h3>{{ isSubtask ? (isAdmin ? 'Editar subtarefa' : 'Subtarefa') : (isAdmin ? 'Editar tarefa' : 'Tarefa') }}</h3>
             <button class="btn-icon" (click)="closeTask()">×</button>
           </div>
+          @if (isSubtask) {
+            <p class="muted subtask-parent-link">
+              Subtarefa de
+              <a href="#" (click)="openParentTask(); $event.preventDefault()">{{ selectedTask.parent_title || 'tarefa principal' }}</a>
+            </p>
+          }
 
+          <div class="task-modal-body">
           @if (isAdmin) {
-            <label>Título</label>
-            <input [(ngModel)]="editTitle" />
-
             <details class="form-section" open>
               <summary>Detalhes</summary>
-              <div class="form-section-body">
-                <label>Descrição</label>
-                <textarea [(ngModel)]="editDescription" rows="3"></textarea>
-                <label>Estado</label>
-                <select [(ngModel)]="editStatus">
-                  <option value="todo" [disabled]="hasRegisteredTime">Por fazer</option>
-                  <option value="doing">Em progresso</option>
-                  <option value="done">Concluída</option>
-                </select>
-                <label>Prioridade</label>
-                <select [(ngModel)]="editPriority">
-                  <option value="low">Baixa</option>
-                  <option value="medium">Média</option>
-                  <option value="high">Alta</option>
-                </select>
-                <label>Prazo</label>
-                <input type="date" [(ngModel)]="editDueDate" />
-                <label>Data de Alerta</label>
-                <input type="date" [(ngModel)]="editAlertDate" />
-                <label>Atribuídos</label>
-                <app-assignee-select
-                  [members]="members"
-                  [(selectedIds)]="editAssignees" />
+              <div class="form-section-body field-grid">
+                <div class="field field-span">
+                  <label>Título</label>
+                  <input [(ngModel)]="editTitle" />
+                </div>
+                <div class="field field-span">
+                  <label>Descrição</label>
+                  <textarea [(ngModel)]="editDescription" rows="3"></textarea>
+                </div>
+                <div class="field">
+                  <label>Estado</label>
+                  <select [(ngModel)]="editStatus">
+                    <option value="todo" [disabled]="hasRegisteredTime">Por fazer</option>
+                    <option value="doing">Em progresso</option>
+                    <option value="done">Concluída</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Prioridade</label>
+                  <select [(ngModel)]="editPriority">
+                    <option value="low">Baixa</option>
+                    <option value="medium">Média</option>
+                    <option value="high">Alta</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Prazo</label>
+                  <input type="date" [(ngModel)]="editDueDate" />
+                </div>
+                <div class="field">
+                  <label>Data de alerta</label>
+                  <input type="date" [(ngModel)]="editAlertDate" />
+                </div>
+                @if (editStatus === 'done') {
+                  <div class="field">
+                    <label>Conclusão</label>
+                    <input type="date" [value]="completionDate" disabled />
+                  </div>
+                }
+                <div class="field field-span">
+                  <label>Atribuídos</label>
+                  <app-assignee-select
+                    [members]="members"
+                    [(selectedIds)]="editAssignees" />
+                </div>
               </div>
             </details>
           } @else {
-            <h4>{{ selectedTask.title }}</h4>
-            <p class="muted">{{ selectedTask.description || 'Sem descrição' }}</p>
-            @if (canChangeStatus) {
-              <label>Estado</label>
-              <select [(ngModel)]="editStatus" (change)="saveStatusOnly()">
-                <option value="todo" [disabled]="hasRegisteredTime">A fazer</option>
-                <option value="doing">Em progresso</option>
-                <option value="done">Concluída</option>
-              </select>
-            } @else {
-              <p><strong>Estado:</strong> {{ statusLabel(selectedTask.status) }}</p>
-            }
+            <div class="task-readonly">
+              <h4>{{ selectedTask.title }}</h4>
+              <p class="muted task-readonly-desc">{{ selectedTask.description || 'Sem descrição' }}</p>
+              <div class="field-grid">
+                <div class="field">
+                  <label>Estado</label>
+                  @if (canChangeStatus) {
+                    <select [(ngModel)]="editStatus" (change)="saveStatusOnly()">
+                      <option value="todo" [disabled]="hasRegisteredTime">A fazer</option>
+                      <option value="doing">Em progresso</option>
+                      <option value="done">Concluída</option>
+                    </select>
+                  } @else {
+                    <p>{{ statusLabel(selectedTask.status) }}</p>
+                  }
+                </div>
+                @if (editStatus === 'done') {
+                  <div class="field">
+                    <label>Conclusão</label>
+                    <input type="date" [value]="completionDate" disabled />
+                  </div>
+                }
+              </div>
+            </div>
           }
 
-          @if (canTrackTime || timeEntries.length || activeOnThisTask) {
+          @if (!isSubtask || canTrackTime || timeEntries.length || activeOnThisTask) {
             <details class="form-section">
-              <summary>Time tracking</summary>
+              <summary>
+                <span class="section-title">
+                  Tempo
+                  <span class="section-count">{{ fmt(actualTimeSeconds) }}</span>
+                </span>
+              </summary>
               <div class="form-section-body">
-                @if (activeOnThisTask) {
-                  <p class="timer-running">⏱ {{ fmt(timer.elapsedSeconds()) }}</p>
-                  <button class="btn btn-danger" (click)="stopTimer()">Parar timer</button>
-                } @else if (canTrackTime) {
-                  <button class="btn btn-primary" (click)="startTimer()" [disabled]="!!timer.activeEntry()">
-                    Iniciar timer
-                  </button>
-                }
-                @if (timeEntries.length) {
-                  <ul class="time-list">
-                    @for (e of timeEntries; track e.id) {
-                      <li>
-                        @if (editingTimeEntryId === e.id) {
-                          <div class="time-entry-edit">
-                            <label>Início
-                              <input type="datetime-local" [(ngModel)]="editTimeStart" />
-                            </label>
-                            <label>Fim
-                              <input type="datetime-local" [(ngModel)]="editTimeEnd" />
-                            </label>
-                            @if (timeEntryError) {
-                              <p class="field-error">{{ timeEntryError }}</p>
-                            }
-                            <div class="inline-form">
-                              <button class="btn btn-primary btn-sm" type="button" (click)="saveTimeEntry()">Guardar</button>
-                              <button class="btn btn-ghost btn-sm" type="button" (click)="cancelEditTimeEntry()">Cancelar</button>
-                            </div>
-                          </div>
-                        } @else {
-                          <div class="time-entry-row">
-                            <div class="time-entry-meta">
-                              <span>{{ e.user_name }} — {{ fmt(e.duration || 0) }}
-                                @if (e.edited) {
-                                  <span class="badge time-entry-edited">Editado</span>
-                                }
-                              </span>
-                              <span class="time-entry-range">{{ formatEntryRange(e) }}</span>
-                            </div>
-                            @if (canManageTimeEntry(e)) {
-                              <div class="time-entry-actions">
-                                <button class="btn btn-ghost btn-sm" type="button" (click)="startEditTimeEntry(e)">Editar</button>
-                                <button class="btn btn-danger btn-sm" type="button" (click)="deleteTimeEntry(e)">Eliminar</button>
-                              </div>
-                            }
-                          </div>
-                        }
-                      </li>
+                <br>
+                @if (!isSubtask) {
+                  @if (isAdmin) {
+                    <div class="field">
+                      <label>Tempo esperado</label>
+                      <div class="duration-fields">
+                        <input type="number" min="0" [(ngModel)]="editExpectedHours" placeholder="0" />
+                        <span class="duration-suffix">h</span>
+                        <input type="number" min="0" max="59" [(ngModel)]="editExpectedMinutes" placeholder="0" />
+                        <span class="duration-suffix">min</span>
+                      </div>
+                    </div>
+                  }
+                  <div class="time-compare">
+                    <div><strong>Esperado:</strong> {{ displayedExpectedSeconds ? fmt(displayedExpectedSeconds) : 'Não definido' }}</div>
+                    <div>
+                      <strong>Real:</strong> {{ fmt(actualTimeSeconds) }}
+                      @if (selectedTask.subtasks?.length) {
+                        <span class="muted"> (inclui subtarefas)</span>
+                      }
+                    </div>
+                    @if (timeVarianceLabel) {
+                      <div [class]="'time-compare-' + timeVarianceState">{{ timeVarianceLabel }}</div>
                     }
-                  </ul>
+                  </div>
+                }
+                @if (canTrackTime || timeEntries.length || activeOnThisTask) {
+                  @if (activeOnThisTask) {
+                    <p class="timer-running">⏱ {{ fmt(timer.elapsedSeconds()) }}</p>
+                    <button class="btn btn-danger" (click)="stopTimer()">Parar timer</button>
+                  } @else if (canTrackTime) {
+                    <button class="btn btn-primary" (click)="startTimer()" [disabled]="!!timer.activeEntry()">
+                      Iniciar timer
+                    </button>
+                  }
+                  @if (timeEntries.length) {
+                    <ul class="time-list">
+                      @for (e of timeEntries; track e.id) {
+                        <li>
+                          @if (editingTimeEntryId === e.id) {
+                            <div class="time-entry-edit">
+                              <label>Início
+                                <input type="datetime-local" [(ngModel)]="editTimeStart" />
+                              </label>
+                              <label>Fim
+                                <input type="datetime-local" [(ngModel)]="editTimeEnd" />
+                              </label>
+                              @if (timeEntryError) {
+                                <p class="field-error">{{ timeEntryError }}</p>
+                              }
+                              <div class="inline-form">
+                                <button class="btn btn-primary btn-sm" type="button" (click)="saveTimeEntry()">Guardar</button>
+                                <button class="btn btn-ghost btn-sm" type="button" (click)="cancelEditTimeEntry()">Cancelar</button>
+                              </div>
+                            </div>
+                          } @else {
+                            <div class="time-entry-row">
+                              <div class="time-entry-meta">
+                                <span>{{ e.user_name }} — {{ fmt(e.duration || 0) }}
+                                  @if (e.edited) {
+                                    <span class="badge time-entry-edited">Editado</span>
+                                  }
+                                </span>
+                                <span class="time-entry-range">{{ formatEntryRange(e) }}</span>
+                              </div>
+                              @if (canManageTimeEntry(e)) {
+                                <div class="time-entry-actions">
+                                  <button class="btn btn-ghost btn-sm" type="button" (click)="startEditTimeEntry(e)">Editar</button>
+                                  <button class="btn btn-danger btn-sm" type="button" (click)="deleteTimeEntry(e)">Eliminar</button>
+                                </div>
+                              }
+                            </div>
+                          }
+                        </li>
+                      }
+                    </ul>
+                  }
                 }
               </div>
             </details>
@@ -310,13 +415,15 @@
           @if (isAdmin) {
             <details class="form-section">
               <summary>Recorrência</summary>
-              <div class="form-section-body">
-                <div class="inline-form">
+              <div class="form-section-body field-grid">
+                <div class="field">
                   <label>Tipo</label>
                   <select [(ngModel)]="recurrenceRuleType">
                     <option value="fixed_day">Dia fixo</option>
                     <option value="business_day">Dia útil</option>
                   </select>
+                </div>
+                <div class="field">
                   <label>Frequência</label>
                   <select [(ngModel)]="recurrenceFrequency">
                     <option value="daily">Diária</option>
@@ -324,25 +431,35 @@
                     <option value="monthly">Mensal</option>
                     <option value="yearly">Anual</option>
                   </select>
-                  <br>
+                </div>
+                <div class="field">
                   <label>Intervalo</label>
                   <input type="number" min="1" [(ngModel)]="recurrenceInterval" />
                 </div>
                 @if (recurrenceFrequency === 'monthly' || recurrenceFrequency === 'yearly') {
-                  <p class="muted">O dia e o mês serão calculados automaticamente a partir do prazo da tarefa.</p>
+                  <p class="muted field-span">O dia e o mês serão calculados automaticamente a partir do prazo da tarefa.</p>
                 }
-                <button class="btn btn-primary" (click)="createRecurrence()">
-                  {{ recurrenceRule ? 'Atualizar recorrência' : 'Criar recorrência' }}
-                </button>
-                @if (recurrenceMessage) {
-                  <p class="muted">{{ recurrenceMessage }}</p>
-                }
+                <div class="field-span">
+                  <button class="btn btn-primary" (click)="createRecurrence()">
+                    {{ recurrenceRule ? 'Atualizar recorrência' : 'Criar recorrência' }}
+                  </button>
+                  @if (recurrenceMessage) {
+                    <p class="muted">{{ recurrenceMessage }}</p>
+                  }
+                </div>
               </div>
             </details>
           }
 
           <details class="form-section">
-            <summary>Dependências</summary>
+            <summary>
+              <span class="section-title">
+                Dependências
+                @if (currentDependencies.length) {
+                  <span class="section-count">{{ currentDependencies.length }}</span>
+                }
+              </span>
+            </summary>
             <div class="form-section-body">
               @if (currentDependencies.length) {
                 <ul class="dependency-list">
@@ -357,69 +474,162 @@
                 <p class="muted">Sem predecessoras.</p>
               }
               @if (isAdmin) {
-                <label>Predecessora</label>
-                <div class="dependency-search">
-                  <input
-                    [(ngModel)]="dependencySearch"
-                    (ngModelChange)="onDependencySearchChange()"
-                    placeholder="Pesquisar tarefa..." />
-                  @if (filteredPredecessorTasks.length) {
-                    <div class="dependency-results">
-                      @for (task of filteredPredecessorTasks; track task.id) {
-                        <button type="button" (click)="selectPredecessor(task)">{{ task.title }}</button>
+                <div class="field-grid">
+                  <div class="field field-span">
+                    <label>Predecessora</label>
+                    <div class="dependency-search">
+                      <input
+                        [(ngModel)]="dependencySearch"
+                        (ngModelChange)="onDependencySearchChange()"
+                        placeholder="Pesquisar tarefa..." />
+                      @if (filteredPredecessorTasks.length) {
+                        <div class="dependency-results">
+                          @for (task of filteredPredecessorTasks; track task.id) {
+                            <button type="button" (click)="selectPredecessor(task)">{{ task.title }}</button>
+                          }
+                        </div>
                       }
                     </div>
-                  }
+                    @if (selectedPredecessor) {
+                      <p class="muted">Selecionada: {{ selectedPredecessor.title }}</p>
+                    }
+                  </div>
+                  <div class="field">
+                    <label>Tipo</label>
+                    <select [(ngModel)]="dependencyType">
+                      <option value="FS">FS — Finish to Start</option>
+                      <option value="SS">SS — Start to Start</option>
+                      <option value="FF">FF — Finish to Finish</option>
+                      <option value="SF">SF — Start to Finish</option>
+                    </select>
+                  </div>
+                  <div class="field-action">
+                    <button class="btn btn-primary" type="button" (click)="addDependency()">Adicionar</button>
+                  </div>
                 </div>
-                @if (selectedPredecessor) {
-                  <p class="muted">Selecionada: {{ selectedPredecessor.title }}</p>
-                }
-                <label>Tipo de dependência</label>
-                <select [(ngModel)]="dependencyType">
-                  <option value="FS">FS — Finish to Start</option>
-                  <option value="SS">SS — Start to Start</option>
-                  <option value="FF">FF — Finish to Finish</option>
-                  <option value="SF">SF — Start to Finish</option>
-                </select>
-                <br><br><br>
-                <button class="btn btn-primary" type="button" (click)="addDependency()">Adicionar dependência</button>
                 @if (dependencyError) {
                   <p class="field-error">{{ dependencyError }}</p>
                 }
               }
             </div>
           </details>
+
           <details class="form-section">
-            <summary>Cliente</summary>
-            <div class="form-section-body">
-              <label>Cliente</label>
-              <select [(ngModel)]="clientId" name="clientId" required>
-                <option [ngValue]="null" disabled>Selecionar Cliente</option>
-                @for (client of clients; track client.id) {
-                  <option [ngValue]="client.id">{{ client.name }}</option>
+            <summary>Referências</summary>
+            <div class="form-section-body field-grid">
+              <div class="field">
+                <label>Cliente</label>
+                <select [(ngModel)]="clientId" name="clientId">
+                  <option [ngValue]="null">Selecionar cliente</option>
+                  @for (client of clients; track client.id) {
+                    <option [ngValue]="client.id">{{ client.name }}</option>
+                  }
+                </select>
+              </div>
+              <div class="field">
+                <label>Docs (URL)</label>
+                <input
+                  type="url"
+                  [(ngModel)]="editDocsUrl"
+                  placeholder="https://exemplo.com"
+                  (ngModelChange)="onDocsUrlChange()" />
+                @if (docsUrlError) {
+                  <p class="field-error">{{ docsUrlError }}</p>
                 }
-              </select>
+              </div>
             </div>
           </details>
 
-          <details class="form-section">
-            <summary>Docs</summary>
-            <div class="form-section-body">
-              <label>Docs (URL)</label>
-              <input
-                type="url"
-                [(ngModel)]="editDocsUrl"
-                placeholder="https://exemplo.com"
-                (ngModelChange)="onDocsUrlChange()" />
-              @if (docsUrlError) {
-                <p class="field-error">{{ docsUrlError }}</p>
-              }
-            </div>
-          </details>
+          @if (!isSubtask) {
+            <details class="form-section" [open]="!!selectedTask.subtasks?.length">
+              <summary>
+                <span class="section-title">
+                  Subtarefas
+                  @if (subtaskProgressLabel) {
+                    <span class="section-count">{{ subtaskProgressLabel }}</span>
+                  }
+                </span>
+              </summary>
+              <div class="form-section-body">
+                <br>
+                @if (selectedTask.subtasks?.length) {
+                  @for (subtask of selectedTask.subtasks; track subtask.id) {
+                    <button type="button" class="subtask-row" (click)="openTask(subtask.id)">
+                      <span class="subtask-row-main">
+                        <strong>{{ subtask.title }}</strong>
+                        <span class="muted">{{ formatDate(subtask.due_date) }}</span>
+                      </span>
+                      <span class="subtask-row-meta">
+                        <span class="status-pill" [attr.data-status]="subtask.status">{{ statusLabel(subtask.status) }}</span>
+                        <span class="priority-pill" [attr.data-priority]="subtask.priority">{{ subtask.priority }}</span>
+                      </span>
+                    </button>
+                  }
+                } @else {
+                  <p class="muted">Ainda não existem subtarefas.</p>
+                }
+                @if (canManageSubtasks) {
+                  @if (!showNewSubtaskForm) {
+                    <br>
+                    <button class="btn btn-ghost" type="button" (click)="showNewSubtaskForm = true">Adicionar subtarefa</button>
+                  } @else {
+                    <div class="field-grid">
+                      <div class="field field-span">
+                        <label>Título</label>
+                        <input [(ngModel)]="newSubtaskTitle" placeholder="Título da subtarefa" />
+                      </div>
+                      <div class="field field-span">
+                        <label>Descrição</label>
+                        <textarea [(ngModel)]="newSubtaskDescription" rows="2"></textarea>
+                      </div>
+                      <div class="field">
+                        <label>Prioridade</label>
+                        <select [(ngModel)]="newSubtaskPriority">
+                          <option value="low">Baixa</option>
+                          <option value="medium">Média</option>
+                          <option value="high">Alta</option>
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label>Prazo</label>
+                        <input type="date" [(ngModel)]="newSubtaskDueDate" />
+                      </div>
+                      <div class="field">
+                        <label>Data de alerta</label>
+                        <input type="date" [(ngModel)]="newSubtaskAlertDate" />
+                      </div>
+                      <div class="field field-span">
+                        <label>Atribuídos</label>
+                        <app-assignee-select
+                          [members]="members"
+                          [(selectedIds)]="newSubtaskAssignees" />
+                      </div>
+                    </div>
+                    @if (newSubtaskError) {
+                      <p class="field-error">{{ newSubtaskError }}</p>
+                    }
+                    <div class="inline-form">
+                      <button class="btn btn-primary" type="button" (click)="createSubtask()">Criar subtarefa</button>
+                      <button class="btn btn-ghost" type="button" (click)="resetNewSubtask()">Cancelar</button>
+                    </div>
+                  }
+                }
+              </div>
+            </details>
+          }
 
           <details class="form-section">
-            <summary>Comentários</summary>
+            <summary>
+              <span class="section-title">
+                Comentários
+                @if (selectedTask.comments?.length) {
+                  <span class="section-count">{{ selectedTask.comments?.length }}</span>
+                }
+              </span>
+            </summary>
             <div class="form-section-body">
+
+            <br>
               @for (c of selectedTask.comments || []; track c.id) {
                 <div class="comment">
                   <div class="comment-header">
@@ -437,22 +647,22 @@
               </div>
             </div>
           </details>
-            <br>
-            @if (saveError) {
-              <div class="error-banner error-banner-actions" role="alert">
-                <span class="error-banner-icon" aria-hidden="true">!</span>
-                <div class="error-banner-body">
-                  <strong>Não foi possível alterar o estado</strong>
-                  <p>{{ saveError }}</p>
-                </div>
+          @if (saveError) {
+            <div class="error-banner error-banner-actions" role="alert">
+              <span class="error-banner-icon" aria-hidden="true">!</span>
+              <div class="error-banner-body">
+                <strong>Não foi possível alterar o estado</strong>
+                <p>{{ saveError }}</p>
               </div>
-            }
-             <div class="modal-actions">
-              @if (isAdmin) {
-                <button class="btn btn-primary" (click)="saveTask()">Guardar</button>
-                <button class="btn btn-danger" (click)="deleteTask()">Eliminar</button>
-              }
             </div>
+          }
+          </div>
+          @if (isAdmin) {
+            <div class="modal-actions task-modal-footer">
+              <button class="btn btn-primary" (click)="saveTask()">Guardar</button>
+              <button class="btn btn-danger" (click)="deleteTask()">Eliminar</button>
+            </div>
+          }
         </div>
       </div>
     }
@@ -489,6 +699,13 @@
               <app-assignee-select
                 [members]="members"
                 [(selectedIds)]="newTaskAssignees" />
+              <label>Tempo esperado</label>
+              <div class="duration-fields">
+                <input type="number" min="0" [(ngModel)]="newExpectedHours" placeholder="0" />
+                <span class="duration-suffix">h</span>
+                <input type="number" min="0" max="59" [(ngModel)]="newExpectedMinutes" placeholder="0" />
+                <span class="duration-suffix">min</span>
+              </div>
             </div>
           </details>
 
