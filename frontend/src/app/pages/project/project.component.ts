@@ -68,6 +68,10 @@ export class ProjectComponent implements OnInit {
   newListName = '';
   editingListId: number | null = null;
   editingListName = '';
+  editingProjectName = false;
+  projectNameDraft = '';
+  projectNameError = '';
+  private savingProjectName = false;
   showNewTaskForm = false;
   newTaskListId = 0;
   newTaskTitle = '';
@@ -390,6 +394,54 @@ export class ProjectComponent implements OnInit {
         this.newListName = '';
         this.showNewList = false;
       });
+  }
+
+  startRenameProject(): void {
+    if (!this.isAdmin || !this.project) return;
+    this.editingProjectName = true;
+    this.projectNameDraft = this.project.name;
+    this.projectNameError = '';
+    setTimeout(() => {
+      const input = document.querySelector(
+        '.project-name-input',
+      ) as HTMLInputElement | null;
+      input?.focus();
+      input?.select();
+    });
+  }
+
+  cancelRenameProject(): void {
+    this.editingProjectName = false;
+    this.projectNameDraft = '';
+    this.projectNameError = '';
+    this.savingProjectName = false;
+  }
+
+  saveProjectName(): void {
+    if (!this.project || !this.editingProjectName || this.savingProjectName)
+      return;
+    const name = this.projectNameDraft.trim();
+    if (!name) {
+      this.projectNameError = 'O nome do projeto é obrigatório.';
+      return;
+    }
+    if (name === this.project.name) {
+      this.cancelRenameProject();
+      return;
+    }
+    this.savingProjectName = true;
+    this.api.updateProject(this.project.id, { name }).subscribe({
+      next: (updated) => {
+        this.project = { ...this.project!, name: updated.name };
+        this.savingProjectName = false;
+        this.cancelRenameProject();
+      },
+      error: (err) => {
+        this.savingProjectName = false;
+        this.projectNameError =
+          err.error?.error || 'Não foi possível alterar o nome do projeto.';
+      },
+    });
   }
 
   startRenameList(list: TaskList): void {

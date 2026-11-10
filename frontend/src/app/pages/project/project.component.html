@@ -1,7 +1,27 @@
 <div class="page project-page">
     <a [routerLink]="['/teams', project?.team_id]" class="back-link">← Equipa</a>
     <div class="page-header">
-      <h2>{{ project?.name }}</h2>
+      @if (isAdmin && editingProjectName) {
+        <div class="project-name-edit">
+          <input
+            class="project-name-input"
+            [(ngModel)]="projectNameDraft"
+            (keydown.enter)="saveProjectName(); $event.preventDefault()"
+            (keydown.escape)="cancelRenameProject()"
+            (blur)="saveProjectName()"
+            placeholder="Nome do projeto" />
+          @if (projectNameError) {
+            <p class="field-error">{{ projectNameError }}</p>
+          }
+        </div>
+      } @else {
+        <h2
+          [class.project-name-editable]="isAdmin"
+          [title]="isAdmin ? 'Clicar para alterar o nome' : ''"
+          (click)="isAdmin && startRenameProject()">
+          {{ project?.name }}
+        </h2>
+      }
       <div class="inline-form header-actions">
         <div class="view-switch" role="group" aria-label="Vista">
           <button class="btn btn-ghost" type="button" [class.active]="viewMode === 'board'" (click)="viewMode = 'board'">Board</button>
