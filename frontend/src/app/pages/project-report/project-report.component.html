@@ -34,13 +34,14 @@
             <th>Colaborador/Tempo</th>
             <th>Estado</th>
             <th>Data do Registo</th>
-            <th>Tempo Total</th>
+            <th>Duração Real</th>
+            <th>Duração Esperada</th>
           </tr>
         </thead>
         <tbody>
           @for (list of listsWithTasks; track list.id) {
             <tr class="group-header">
-              <td colspan="5">Lista de Tarefas: {{ list.name }}</td>
+              <td colspan="6">Lista de Tarefas: {{ list.name }}</td>
             </tr>
             @for (task of list.tasks; track task.id) {
               <tr class="task-row">
@@ -67,11 +68,12 @@
                 }
                 <td>{{ task.due_date?.substring(0, 10) }}</td>
                 <td class="time">{{ formatDuration(task.total_time) }}</td>
+                <td class="time">{{ formatExpectedDuration(task.expected_time) }}</td>
               </tr>
             }
           } @empty {
             <tr>
-              <td colspan="5" class="empty-hint">Não foram encontrados registos.</td>
+              <td colspan="6" class="empty-hint">Não foram encontrados registos.</td>
             </tr>
           }
         </tbody>
