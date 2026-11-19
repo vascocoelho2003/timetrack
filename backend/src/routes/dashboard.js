@@ -211,6 +211,7 @@ router.get("/project_report/:projectId", authMiddleware, async (req, res) => {
             t.id AS task_id,
             t.title,
             t.status,
+            t.expected_time,
             te.created_at as due_date, 
             u.id AS user_id,
             u.username,
@@ -285,6 +286,7 @@ router.get("/project_report/:projectId", authMiddleware, async (req, res) => {
         status: row.status,
         due_date: row.due_date,
         total_time: 0,
+        expected_time: row.expected_time ?? null,
         assignees: [],
       };
 

@@ -153,6 +153,7 @@ export interface taskForReport {
   status: string;
   due_date: string | null;
   total_time: number;
+  expected_time: number | null;
   assignees: assigneesForReport[];
 }
 

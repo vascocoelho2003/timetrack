@@ -114,6 +114,13 @@ export class ProjectReportComponent implements OnInit {
     ].join(':');
   }
 
+  formatExpectedDuration(seconds: number | null | undefined): string {
+    if (seconds == null || Number(seconds) <= 0) {
+      return '—';
+    }
+    return this.formatDuration(seconds);
+  }
+
   async exportPdf(): Promise<void> {
     if (!this.dados) {
       return;
@@ -160,7 +167,7 @@ export class ProjectReportComponent implements OnInit {
         body.push([
           {
             content: `Lista de Tarefas: ${list.name}`,
-            colSpan: 5,
+            colSpan: 6,
             styles: { fontStyle: 'bold', fillColor: [250, 250, 250] },
           },
         ]);
@@ -176,6 +183,7 @@ export class ProjectReportComponent implements OnInit {
             this.getStatusLabel(task.status),
             this.formatPdfDate(task.due_date),
             this.formatDuration(task.total_time),
+            this.formatExpectedDuration(task.expected_time),
           ]);
         }
       }
@@ -189,7 +197,8 @@ export class ProjectReportComponent implements OnInit {
             'Colaborador/Tempo',
             'Estado',
             'Data do Registo',
-            'Tempo Total',
+            'Duração Real',
+            'Duração Esperada',
           ],
         ],
         body,
@@ -211,11 +220,12 @@ export class ProjectReportComponent implements OnInit {
           lineWidth: { top: 0.25, bottom: 0.25, left: 0, right: 0 },
         },
         columnStyles: {
-          0: { cellWidth: 58 },
-          1: { cellWidth: 48 },
-          2: { cellWidth: 28 },
-          3: { cellWidth: 25 },
-          4: { cellWidth: 27 },
+          0: { cellWidth: 42 },
+          1: { cellWidth: 38 },
+          2: { cellWidth: 24 },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 23 },
+          5: { cellWidth: 23 },
         },
         didParseCell: (data) => {
           if (

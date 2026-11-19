@@ -114,19 +114,6 @@ function subtrairDias(dataInput, dias) {
 }
 
 /**
- * Obtém o tipo de recorrência de uma tarefa
- * @param {*} taskId
- * @returns
- */
-function typeofRecurrency(taskId) {
-  const rec = getRecurrency(taskId);
-  if (rec) {
-    return rec.rule_type;
-  }
-  return null;
-}
-
-/**
  * Cria uma regra de recorrência para uma tarefa
  * @param {*} taskId
  * @param {*} userid
