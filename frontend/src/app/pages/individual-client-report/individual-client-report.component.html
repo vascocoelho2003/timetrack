@@ -55,10 +55,10 @@
     </table>
   </div>
   @if (totalPages > 1) {
-    <div class="pagination">
-      <button class="btn btn-ghost" [disabled]="page === 1" (click)="page = page - 1">Anterior</button>
-      <span class="muted">Página {{ page }} de {{ totalPages }}</span>
-      <button class="btn btn-ghost" [disabled]="page === totalPages" (click)="page = page + 1">Seguinte</button>
-    </div>
+    <nav class="pagination" aria-label="Paginação">
+      <button type="button" class="pagination-btn" [disabled]="page === 1" (click)="page = page - 1" aria-label="Anterior">‹</button>
+      <span class="pagination-status">Página {{ page }} de {{ totalPages }}</span>
+      <button type="button" class="pagination-btn" [disabled]="page === totalPages" (click)="page = page + 1" aria-label="Seguinte">›</button>
+    </nav>
   }
 </div>

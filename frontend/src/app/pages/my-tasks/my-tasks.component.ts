@@ -68,6 +68,10 @@ export class MyTasksComponent implements OnInit {
   newComment = '';
   viewMode: 'list' | 'calendar' = 'list';
   timeEntries: TimeEntry[] = [];
+  timePage = 1;
+  timePageSize = 5;
+  commentPage = 1;
+  commentPageSize = 5;
   editingTimeEntryId: number | null = null;
   editTimeStart = '';
   editTimeEnd = '';
@@ -512,6 +516,8 @@ export class MyTasksComponent implements OnInit {
         this.isAdmin = true;
       }
       this.cancelEditTimeEntry();
+      this.timePage = 1;
+      this.commentPage = 1;
       this.api
         .getTaskTimeEntries(row.id)
         .subscribe((entries) => (this.timeEntries = entries));
@@ -938,6 +944,30 @@ export class MyTasksComponent implements OnInit {
       .subscribe((entries) => (this.timeEntries = entries));
   }
 
+  get totalTimePages(): number {
+    return Math.max(1, Math.ceil(this.timeEntries.length / this.timePageSize));
+  }
+
+  get pagedTimeEntries(): TimeEntry[] {
+    this.timePage = Math.min(this.timePage, this.totalTimePages);
+    const start = (this.timePage - 1) * this.timePageSize;
+    return this.timeEntries.slice(start, start + this.timePageSize);
+  }
+
+  get comments(): Comment[] {
+    return this.selectedTask?.comments || [];
+  }
+
+  get totalCommentPages(): number {
+    return Math.max(1, Math.ceil(this.comments.length / this.commentPageSize));
+  }
+
+  get pagedComments(): Comment[] {
+    this.commentPage = Math.min(this.commentPage, this.totalCommentPages);
+    const start = (this.commentPage - 1) * this.commentPageSize;
+    return this.comments.slice(start, start + this.commentPageSize);
+  }
+
   postComment() {
     if (!this.selectedTask || !this.newComment.trim()) return;
     this.api
@@ -948,6 +978,7 @@ export class MyTasksComponent implements OnInit {
           comment,
         ];
         this.newComment = '';
+        this.commentPage = this.totalCommentPages;
       });
   }
 

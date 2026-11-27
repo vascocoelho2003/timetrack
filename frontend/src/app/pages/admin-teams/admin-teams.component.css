@@ -108,28 +108,6 @@ tbody tr:last-child td {
   border-bottom: none;
 }
 
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  margin: 16px 0;
-  font-size: 13px;
-}
-
-.pagination button {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.pagination button:disabled {
-  cursor: default;
-  opacity: 0.5;
-}
 
 @media (max-width: 640px) {
   .page {

@@ -43,6 +43,10 @@ export class ClosedTasksComponent {
   isAdmin = false;
   selectedTask: (Task & { comments?: Comment[] }) | null = null;
   timeEntries: TimeEntry[] = [];
+  timePage = 1;
+  timePageSize = 5;
+  commentPage = 1;
+  commentPageSize = 5;
   editingTimeEntryId: number | null = null;
   editTimeStart = '';
   editTimeEnd = '';
@@ -55,6 +59,30 @@ export class ClosedTasksComponent {
       (sum, entry) => sum + (entry.duration || 0),
       0,
     );
+  }
+
+  get totalTimePages(): number {
+    return Math.max(1, Math.ceil(this.timeEntries.length / this.timePageSize));
+  }
+
+  get pagedTimeEntries(): TimeEntry[] {
+    this.timePage = Math.min(this.timePage, this.totalTimePages);
+    const start = (this.timePage - 1) * this.timePageSize;
+    return this.timeEntries.slice(start, start + this.timePageSize);
+  }
+
+  get comments(): Comment[] {
+    return this.selectedTask?.comments || [];
+  }
+
+  get totalCommentPages(): number {
+    return Math.max(1, Math.ceil(this.comments.length / this.commentPageSize));
+  }
+
+  get pagedComments(): Comment[] {
+    this.commentPage = Math.min(this.commentPage, this.totalCommentPages);
+    const start = (this.commentPage - 1) * this.commentPageSize;
+    return this.comments.slice(start, start + this.commentPageSize);
   }
 
   get actualTimeSeconds(): number {
@@ -117,6 +145,8 @@ export class ClosedTasksComponent {
       this.selectedTask = task;
       this.newComment = '';
       this.cancelEditTimeEntry();
+      this.timePage = 1;
+      this.commentPage = 1;
       this.apiService.getTaskTimeEntries(taskId).subscribe((entries) => {
         this.timeEntries = entries;
       });
@@ -229,6 +259,7 @@ export class ClosedTasksComponent {
           comment,
         ];
         this.newComment = '';
+        this.commentPage = this.totalCommentPages;
       });
   }
 

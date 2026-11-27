@@ -136,13 +136,6 @@ tbody tr:hover {
   white-space: normal !important;
 }
 
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-}
 
 .footnote {
   margin: 0.75rem 0 0;
