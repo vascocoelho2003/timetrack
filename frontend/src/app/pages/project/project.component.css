@@ -106,7 +106,12 @@
 
 .project-page .board {
   gap: 1.1rem;
-  padding: 0.15rem 0.15rem 1.25rem;
+  padding: 0.15rem 0.15rem 0.35rem;
+  scrollbar-width: none;
+}
+
+.project-page .board::-webkit-scrollbar {
+  display: none;
 }
 
 .project-page .board-column.card {
@@ -342,10 +347,8 @@
   justify-self: start;
 }
 
-.list-pagination {
-  justify-content: center;
-  margin-top: 12px;
-  gap: 8px;
+.project-page .pagination {
+  margin-top: 0.85rem;
 }
 
 .field-error {

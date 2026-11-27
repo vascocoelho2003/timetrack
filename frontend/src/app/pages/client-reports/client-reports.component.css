@@ -209,13 +209,6 @@ tbody tr.selected {
   white-space: normal !important;
 }
 
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-}
 
 @media (max-width: 768px) {
   .client-reports-page {

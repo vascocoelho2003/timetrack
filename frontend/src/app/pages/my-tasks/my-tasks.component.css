@@ -64,14 +64,6 @@
   border-radius: 8px;
 }
 
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-}
-
 .empty-state {
   margin: 0;
   padding: 1.25rem 0.25rem;

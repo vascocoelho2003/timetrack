@@ -85,7 +85,11 @@
     }
     @if (viewMode === 'board') {
 
-      <div class="board" cdkDropListGroup>
+      <div
+        class="board"
+        cdkDropListGroup
+        #boardScroller
+        (scroll)="syncBoardNav()">
         @for (list of lists; track list.id) {
           <div class="board-column card">
             <div class="column-header">
@@ -158,6 +162,27 @@
           </div>
         }
       </div>
+      @if (boardNavVisible) {
+        <nav class="pagination" aria-label="Navegação das listas">
+          <button
+            type="button"
+            class="pagination-btn"
+            [disabled]="boardAtStart"
+            (click)="scrollBoard(-1)"
+            aria-label="Listas anteriores">
+            ‹
+          </button>
+          <span class="pagination-status">{{ boardNavLabel }}</span>
+          <button
+            type="button"
+            class="pagination-btn"
+            [disabled]="boardAtEnd"
+            (click)="scrollBoard(1)"
+            aria-label="Listas seguintes">
+            ›
+          </button>
+        </nav>
+      }
     } @else {
       <div class="card">
         <div class="inline-form list-view-filters">
@@ -220,11 +245,11 @@
           </div>
         }
         @if (totalListPages > 1) {
-          <div class="inline-form list-pagination">
-            <button class="btn btn-ghost" [disabled]="listPage === 1" (click)="listPage = listPage - 1">Anterior</button>
-            <span class="muted">Página {{ listPage }} de {{ totalListPages }}</span>
-            <button class="btn btn-ghost" [disabled]="listPage === totalListPages" (click)="listPage = listPage + 1">Seguinte</button>
-          </div>
+          <nav class="pagination" aria-label="Paginação">
+            <button type="button" class="pagination-btn" [disabled]="listPage === 1" (click)="listPage = listPage - 1" aria-label="Anterior">‹</button>
+            <span class="pagination-status">Página {{ listPage }} de {{ totalListPages }}</span>
+            <button type="button" class="pagination-btn" [disabled]="listPage === totalListPages" (click)="listPage = listPage + 1" aria-label="Seguinte">›</button>
+          </nav>
         }
       </div>
     }
@@ -367,7 +392,7 @@
                   }
                   @if (timeEntries.length) {
                     <ul class="time-list">
-                      @for (e of timeEntries; track e.id) {
+                      @for (e of pagedTimeEntries; track e.id) {
                         <li>
                           @if (editingTimeEntryId === e.id) {
                             <div class="time-entry-edit">
@@ -406,6 +431,13 @@
                         </li>
                       }
                     </ul>
+                    @if (totalTimePages > 1) {
+                      <nav class="pagination" aria-label="Paginação dos registos de tempo">
+                        <button type="button" class="pagination-btn" [disabled]="timePage === 1" (click)="timePage = timePage - 1" aria-label="Anterior">‹</button>
+                        <span class="pagination-status">Página {{ timePage }} de {{ totalTimePages }}</span>
+                        <button type="button" class="pagination-btn" [disabled]="timePage === totalTimePages" (click)="timePage = timePage + 1" aria-label="Seguinte">›</button>
+                      </nav>
+                    }
                   }
                 }
               </div>
@@ -630,7 +662,7 @@
             <div class="form-section-body">
 
             <br>
-              @for (c of selectedTask.comments || []; track c.id) {
+              @for (c of pagedComments; track c.id) {
                 <div class="comment">
                   <div class="comment-header">
                     <strong>{{ c.user_name }}</strong>
@@ -640,6 +672,13 @@
                   </div>
                   <p>{{ c.content }}</p>
                 </div>
+              }
+              @if (totalCommentPages > 1) {
+                <nav class="pagination" aria-label="Paginação dos comentários">
+                  <button type="button" class="pagination-btn" [disabled]="commentPage === 1" (click)="commentPage = commentPage - 1" aria-label="Anterior">‹</button>
+                  <span class="pagination-status">Página {{ commentPage }} de {{ totalCommentPages }}</span>
+                  <button type="button" class="pagination-btn" [disabled]="commentPage === totalCommentPages" (click)="commentPage = commentPage + 1" aria-label="Seguinte">›</button>
+                </nav>
               }
               <div class="inline-form">
                 <input [(ngModel)]="newComment" placeholder="Adicionar comentário..." />

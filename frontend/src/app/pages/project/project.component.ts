@@ -1,4 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
@@ -46,7 +53,7 @@ import { AssigneeSelectComponent } from '../../shared/assignee-select/assignee-s
   styleUrls: ['./project.component.css'],
   templateUrl: './project.component.html',
 })
-export class ProjectComponent implements OnInit {
+export class ProjectComponent implements OnInit, OnDestroy {
   project: Project | null = null;
   lists: TaskList[] = [];
   clients: Client[] = [];
@@ -65,6 +72,13 @@ export class ProjectComponent implements OnInit {
   listFilterDueDate = '';
   listPage = 1;
   listPageSize = 10;
+  boardNavVisible = false;
+  boardAtStart = true;
+  boardAtEnd = true;
+  boardNavLabel = '';
+  private boardEl: HTMLElement | null = null;
+  private boardResizeObserver?: ResizeObserver;
+  private boardMutationObserver?: MutationObserver;
   newListName = '';
   editingListId: number | null = null;
   editingListName = '';
@@ -102,6 +116,10 @@ export class ProjectComponent implements OnInit {
   editAssignees: number[] = [];
   newComment = '';
   timeEntries: TimeEntry[] = [];
+  timePage = 1;
+  timePageSize = 5;
+  commentPage = 1;
+  commentPageSize = 5;
   editingTimeEntryId: number | null = null;
   editTimeStart = '';
   editTimeEnd = '';
@@ -276,6 +294,83 @@ export class ProjectComponent implements OnInit {
     this.api.getClients().subscribe((data) => {
       this.clients = data;
     });
+  }
+
+  @ViewChild('boardScroller')
+  set boardScrollerRef(ref: ElementRef<HTMLElement> | undefined) {
+    this.attachBoardObserver(ref?.nativeElement ?? null);
+  }
+
+  ngOnDestroy(): void {
+    this.boardResizeObserver?.disconnect();
+    this.boardMutationObserver?.disconnect();
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.syncBoardNav();
+  }
+
+  syncBoardNav(): void {
+    const el = this.boardEl;
+    if (!el || this.viewMode !== 'board') {
+      if (this.boardNavVisible) {
+        this.boardNavVisible = false;
+      }
+      return;
+    }
+
+    const visible = el.scrollWidth > el.clientWidth + 4;
+    const atStart = el.scrollLeft <= 2;
+    const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 2;
+    const pageSize = Math.max(1, el.clientWidth);
+    const total = Math.max(1, Math.ceil(el.scrollWidth / pageSize));
+    const current = Math.min(total, Math.floor(el.scrollLeft / pageSize) + 1);
+    const label = `${current} / ${total}`;
+
+    if (
+      visible !== this.boardNavVisible ||
+      atStart !== this.boardAtStart ||
+      atEnd !== this.boardAtEnd ||
+      label !== this.boardNavLabel
+    ) {
+      this.boardNavVisible = visible;
+      this.boardAtStart = atStart;
+      this.boardAtEnd = atEnd;
+      this.boardNavLabel = label;
+    }
+  }
+
+  scrollBoard(direction: -1 | 1): void {
+    const el = this.boardEl;
+    if (!el) return;
+    const column = el.querySelector('.board-column') as HTMLElement | null;
+    const amount = (column?.getBoundingClientRect().width ?? 280) + 18;
+    el.scrollBy({ left: direction * amount, behavior: 'smooth' });
+  }
+
+  private attachBoardObserver(el: HTMLElement | null): void {
+    if (this.boardEl === el) return;
+    this.boardResizeObserver?.disconnect();
+    this.boardMutationObserver?.disconnect();
+    this.boardEl = el;
+    if (!el) {
+      this.boardNavVisible = false;
+      return;
+    }
+    if (typeof ResizeObserver !== 'undefined') {
+      this.boardResizeObserver = new ResizeObserver(() => {
+        queueMicrotask(() => this.syncBoardNav());
+      });
+      this.boardResizeObserver.observe(el);
+    }
+    if (typeof MutationObserver !== 'undefined') {
+      this.boardMutationObserver = new MutationObserver(() => {
+        queueMicrotask(() => this.syncBoardNav());
+      });
+      this.boardMutationObserver.observe(el, { childList: true });
+    }
+    queueMicrotask(() => this.syncBoardNav());
   }
 
   loadBoard(projectId: number) {
@@ -631,6 +726,8 @@ export class ProjectComponent implements OnInit {
       this.taskDependencies = task.dependencies || [];
       this.resetRecurrenceForm(task.recurrence);
       this.cancelEditTimeEntry();
+      this.timePage = 1;
+      this.commentPage = 1;
       this.api
         .getTaskTimeEntries(taskId)
         .subscribe((e) => this.applyTimeEntries(e));
@@ -1111,6 +1208,30 @@ export class ProjectComponent implements OnInit {
       .subscribe((entries) => this.applyTimeEntries(entries));
   }
 
+  get totalTimePages(): number {
+    return Math.max(1, Math.ceil(this.timeEntries.length / this.timePageSize));
+  }
+
+  get pagedTimeEntries(): TimeEntry[] {
+    this.timePage = Math.min(this.timePage, this.totalTimePages);
+    const start = (this.timePage - 1) * this.timePageSize;
+    return this.timeEntries.slice(start, start + this.timePageSize);
+  }
+
+  get comments(): Comment[] {
+    return this.selectedTask?.comments || [];
+  }
+
+  get totalCommentPages(): number {
+    return Math.max(1, Math.ceil(this.comments.length / this.commentPageSize));
+  }
+
+  get pagedComments(): Comment[] {
+    this.commentPage = Math.min(this.commentPage, this.totalCommentPages);
+    const start = (this.commentPage - 1) * this.commentPageSize;
+    return this.comments.slice(start, start + this.commentPageSize);
+  }
+
   private applyTimeEntries(entries: TimeEntry[]) {
     this.timeEntries = entries;
     if (!this.selectedTask) return;
@@ -1133,6 +1254,7 @@ export class ProjectComponent implements OnInit {
           c,
         ];
         this.newComment = '';
+        this.commentPage = this.totalCommentPages;
       });
   }
 
